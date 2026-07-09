@@ -1,0 +1,150 @@
+/* ── Pedal Card Shell ─────────────────────────────────────────────── */
+.pedal-card {
+  position: absolute;
+  background: linear-gradient(180deg, #141414, #0e0e0e);
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 160px;
+  min-height: 60px;
+  user-select: none;
+}
+.pedal-card:hover { border-color: var(--hover-accent, #3a3a3a) !important; }
+
+/* ── Pedal Header (drag handle) ───────────────────────────────────── */
+.pedal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 10px 6px;
+  cursor: grab;
+  flex-shrink: 0;
+  border-bottom: 1px solid #1e1e1e;
+  background: rgba(255,255,255,.02);
+}
+.pedal-header:active { cursor: grabbing; }
+
+.pedal-title {
+  color: #888;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pedal-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pedal-btn {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  padding: 0;
+}
+.pedal-btn:hover { color: #aaa; background: rgba(255,255,255,.06); }
+
+/* ── Pedal Body ───────────────────────────────────────────────────── */
+.pedal-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+}
+
+/* ── Minimized state ──────────────────────────────────────────────── */
+.pedal-card.minimized .pedal-body { display: none; }
+.pedal-card.minimized { min-height: 0; }
+
+/* ── Resize handle ────────────────────────────────────────────────── */
+.pedal-resize {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  opacity: 0;
+  transition: opacity .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pedal-card:hover .pedal-resize { opacity: 1; }
+
+/* ── Pedal Shell (inner wrapper used in some pedals) ─────────────── */
+.pedal-shell { padding: 0; }
+.pedal-shell select { width: 100%; }
+
+/* ── Pro badge ────────────────────────────────────────────────────── */
+.pro-badge {
+  background: rgba(255,200,50,.12);
+  border: 1px solid rgba(255,200,50,.25);
+  color: #ffc832;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Catalog items ────────────────────────────────────────────────── */
+.catalog-item {
+  background: rgba(255,255,255,.03);
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.catalog-item:hover { border-color: #444; background: rgba(255,255,255,.05); }
+.catalog-item-info { flex: 1; }
+.catalog-item-name {
+  color: #ccc;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.catalog-item-desc {
+  color: #555;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.catalog-add-btn {
+  background: rgba(68,153,255,.15);
+  border: 1px solid rgba(68,153,255,.3);
+  color: #4499ff;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.catalog-add-btn:hover { background: rgba(68,153,255,.25); }

@@ -1,0 +1,127 @@
+/* ── Fretboard / Instrument Display ──────────────────────────────── */
+#tuning-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px 4px;
+}
+
+.tuning-combo {
+  background: #151515;
+  color: #aa8855;
+  border: 1px solid #333;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 9px;
+  cursor: pointer;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  transition: border-color .2s;
+}
+.tuning-combo:focus { border-color: #00ccff !important; outline: none; }
+
+#fb-rel {
+  position: relative;
+}
+
+#fb-svg {
+  width: 100%;
+  display: block;
+}
+
+#tuning-ov {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#note-readout {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 28px;
+  padding: 0 8px;
+}
+
+/* ── Piano keyboard (for piano instrument) ───────────────────────── */
+#piano-display {
+  width: 100%;
+  overflow-x: auto;
+  padding: 4px 8px 8px;
+}
+
+.piano-key-white {
+  fill: #e8e0d0;
+  stroke: #555;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill .1s;
+}
+.piano-key-white:hover { fill: #fff; }
+.piano-key-white.highlighted { fill: #8877dd; }
+.piano-key-white.root { fill: #5544cc; }
+
+.piano-key-black {
+  fill: #1a1a1a;
+  stroke: #000;
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill .1s;
+}
+.piano-key-black:hover { fill: #333; }
+.piano-key-black.highlighted { fill: #6655bb; }
+.piano-key-black.root { fill: #4433aa; }
+
+/* ── Vocal pitch display ─────────────────────────────────────────── */
+#vocals-display {
+  width: 100%;
+}
+
+.vocal-chromatic-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  overflow-x: auto;
+}
+
+.vocal-note-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 28px;
+}
+
+.vocal-note-label {
+  font-size: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #444;
+  letter-spacing: .5px;
+}
+
+.vocal-note-bar {
+  width: 24px;
+  height: 32px;
+  background: #1a1a1a;
+  border: 1px solid #222;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .1s;
+}
+
+.vocal-note-bar.active { border-color: #aa88ff; }
+.vocal-note-bar.root   { border-color: #7755dd; }
+
+.vocal-note-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, #aa88ff, rgba(170,136,255,.3));
+  transition: height .08s ease;
+  height: 0;
+}

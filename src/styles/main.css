@@ -1,0 +1,314 @@
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #0a0a0a;
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  overflow: hidden;
+  color: #ccc;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+/* ── Utility ──────────────────────────────────────────────────────── */
+.mono { font-family: 'JetBrains Mono', monospace; }
+.hidden { display: none !important; }
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes slideIn  { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse    { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── App Shell ────────────────────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: linear-gradient(90deg, #111, #0d0d0d);
+  border-bottom: 1px solid #222;
+  z-index: 50;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  top: 0;
+}
+
+.header-logo { display: flex; align-items: center; gap: 12px; }
+.header-logo-title { color: #eee; font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+.header-logo-sub  { color: #555; font-size: 9px; letter-spacing: 2px; }
+.header-actions   { display: flex; align-items: center; gap: 8px; }
+.header-divider   { width: 1px; height: 18px; background: #333; }
+
+/* ── Instrument Bar ───────────────────────────────────────────────── */
+#instrument-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.inst-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid #444;
+  color: #888;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  transition: all .2s;
+}
+.inst-btn.active {
+  background: rgba(0,204,255,.15);
+  border-color: #00ccff;
+  color: #00ccff;
+}
+
+/* ── Display Bar (notes / map / live / clear) ─────────────────────── */
+#display-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Instrument Display Panel ─────────────────────────────────────── */
+#instrument-display {
+  padding: 8px 0 4px;
+  flex-shrink: 0;
+}
+
+/* fretboard outer shell — full-bleed, height-capped for ultra-wide screens */
+.fb-outer {
+  border-radius: 0 !important;
+  border-left: none !important;
+  border-right: none !important;
+  max-height: 560px;
+  overflow: hidden;
+}
+
+/* fretboard outer shell */
+.fb-outer {
+  background: linear-gradient(180deg, #131313, #0a0a0a);
+  border-radius: 16px;
+  padding: 10px 10px 8px;
+  border: 1px solid #2a2a2a;
+  box-shadow: inset 0 2px 20px rgba(0,0,0,.6), 0 4px 30px rgba(0,0,0,.3);
+  width: 100%;
+}
+
+/* ── Board Area ───────────────────────────────────────────────────── */
+#board-area {
+  position: relative;
+  min-height: 800px;
+  flex-shrink: 0;
+}
+
+#board-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(40,30,20,.4) 0%, transparent 60%),
+    repeating-linear-gradient(90deg, rgba(30,20,10,.15) 0px, rgba(30,20,10,.15) 1px, transparent 1px, transparent 30px),
+    repeating-linear-gradient(0deg,  rgba(30,20,10,.10) 0px, rgba(30,20,10,.10) 1px, transparent 1px, transparent 30px),
+    linear-gradient(180deg, #111, #0a0a0a);
+}
+
+#pedals-container {
+  position: relative;
+  width: 100%;
+  min-height: 800px;
+  z-index: 1;
+  transform-origin: top left;
+  transition: transform .2s ease;
+}
+
+/* ── Zoom Control ─────────────────────────────────────────────────── */
+#board-zoom-ctrl {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15,15,15,.92);
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 5px 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+
+/* ── Catalog Drawer ───────────────────────────────────────────────── */
+#catalog-drawer {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 280px;
+  background: linear-gradient(180deg, #141414, #0e0e0e);
+  border-left: 1px solid #2a2a2a;
+  box-shadow: -10px 0 40px rgba(0,0,0,.5);
+  z-index: 200;
+  padding: 16px;
+  overflow-y: auto;
+  animation: slideIn .2s ease-out;
+  display: none;
+}
+#catalog-drawer.open { display: block; }
+
+/* ── Help Overlay ─────────────────────────────────────────────────── */
+#help-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 500;
+  overflow-y: auto;
+  padding: 20px;
+}
+#help-overlay.open { display: block; }
+
+/* ── Shared Buttons ───────────────────────────────────────────────── */
+.btn {
+  background: rgba(255,255,255,.06);
+  border: 1px solid #444;
+  color: #ccc;
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s;
+}
+.btn:hover { border-color: #666; color: #eee; }
+.btn.active-green  { background: rgba(102,170,85,.15); border-color: #66aa55; color: #66aa55; }
+.btn.active-blue   { background: rgba(68,153,255,.15);  border-color: #4499ff; color: #4499ff; }
+.btn.active-purple { background: rgba(136,119,221,.2);  border-color: #8877dd; color: #8877dd; }
+.btn.active-red    { background: rgba(255,80,80,.15);   border-color: #ff5050; color: #ff5050; }
+
+/* ── select ───────────────────────────────────────────────────────── */
+select {
+  background: #1a1a1a;
+  color: #ccc;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+}
+
+/* ── Chord / Key buttons ──────────────────────────────────────────── */
+.chord-btn {
+  background: rgba(255,255,255,.04);
+  border: 1px solid #444;
+  color: #999;
+  border-radius: 5px;
+  padding: 3px 7px;
+  cursor: pointer;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  transition: all .15s;
+}
+.chord-btn:hover { border-color: #666; color: #ccc; }
+.chord-btn.active { background: rgba(136,119,221,.2); border-color: #8877dd; color: #8877dd; }
+
+.key-chord-btn {
+  background: rgba(255,255,255,.03);
+  border: 1px solid #333;
+  color: #777;
+  border-radius: 5px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  transition: all .15s;
+  text-align: center;
+  line-height: 1.3;
+}
+.key-chord-btn:hover { border-color: #666; color: #ccc; }
+.key-chord-btn.active { background: rgba(136,119,221,.2); border-color: #8877dd; color: #8877dd; }
+
+/* ── Studio Mode ──────────────────────────────────────────────────── */
+#studio-mode {
+  display: flex;
+  flex-direction: column;
+}
+
+.stu-tbtn {
+  background: #1a1a1e;
+  border: 1px solid #333;
+  color: #888;
+  border-radius: 5px;
+  width: 28px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stu-tbtn:hover { background: #222; }
+
+/* ── Vocals instrument display ────────────────────────────────────── */
+#vocals-display {
+  width: 100%;
+  background: linear-gradient(180deg, #0f0f14, #0a0a10);
+  border-radius: 12px;
+  border: 1px solid #2a2a3a;
+  padding: 16px;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vocals-pitch-bar {
+  position: relative;
+  height: 48px;
+  background: #111118;
+  border-radius: 8px;
+  border: 1px solid #222;
+  overflow: hidden;
+}
+
+.vocals-pitch-needle {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: #aa88ff;
+  border-radius: 2px;
+  transition: left .08s linear;
+  box-shadow: 0 0 10px rgba(170,136,255,.6);
+}
+
+.vocals-range-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #555;
+}

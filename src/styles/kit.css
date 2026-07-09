@@ -1,0 +1,262 @@
+/* ════════════════════════════════════════════════════════════════════
+   Resonote Kit — "Option A" refined dark instrument component system.
+   Every redesigned pedal opts in with class="rk" and sets --rk-accent.
+   Components derive their soft fills / borders / glows from that one
+   accent via color-mix, so a pedal only declares its colour once.
+   ════════════════════════════════════════════════════════════════════ */
+
+.rk {
+  --rk-accent: #dd8844;
+  --rk-soft:   color-mix(in srgb, var(--rk-accent) 14%, transparent);
+  --rk-soft2:  color-mix(in srgb, var(--rk-accent) 22%, transparent);
+  --rk-line:   color-mix(in srgb, var(--rk-accent) 50%, #2c2c2c);
+  --rk-glow:   color-mix(in srgb, var(--rk-accent) 42%, transparent);
+  --rk-dim:    color-mix(in srgb, var(--rk-accent) 55%, #555);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  color: #c8c8c8;
+}
+
+/* ── Section + label ──────────────────────────────────────────────── */
+.rk-section { display: flex; flex-direction: column; gap: 7px; }
+.rk-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: #5c5c5c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rk-label .rk-label-hint { color: #444; font-weight: 500; letter-spacing: .5px; text-transform: none; }
+
+/* ── Smart Theory panel ───────────────────────────────────────────── */
+.rk-theory {
+  border: 1px solid color-mix(in srgb, var(--rk-accent) 26%, #242424);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, var(--rk-soft), color-mix(in srgb, var(--rk-accent) 6%, transparent)),
+    rgba(0,0,0,.18);
+  overflow: hidden;
+}
+.rk-theory-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  cursor: pointer;
+  user-select: none;
+}
+.rk-theory-bulb { font-size: 11px; filter: saturate(1.2); flex-shrink: 0; }
+.rk-theory-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: var(--rk-dim);
+  flex-shrink: 0;
+}
+.rk-theory-title {
+  flex: 1;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #d8d8d8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rk-theory-chev {
+  font-size: 9px;
+  color: #777;
+  transition: transform .22s ease;
+  flex-shrink: 0;
+}
+.rk-theory.is-open .rk-theory-chev { transform: rotate(90deg); }
+.rk-theory-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .26s ease;
+}
+.rk-theory.is-open .rk-theory-body { grid-template-rows: 1fr; }
+.rk-theory-body > div { overflow: hidden; min-height: 0; }
+.rk-theory-inner { padding: 0 11px 10px; display: flex; flex-direction: column; gap: 6px; }
+.rk-theory-what { font-size: 11px; line-height: 1.5; color: #bdbdbd; }
+.rk-theory-why  { font-size: 11px; line-height: 1.5; color: #9a9a9a; }
+.rk-theory-what b, .rk-theory-why b { color: var(--rk-dim); font-weight: 700; }
+.rk-theory-link {
+  align-self: flex-start;
+  margin-top: 2px;
+  background: var(--rk-soft);
+  border: 1px solid var(--rk-line);
+  color: var(--rk-dim);
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.rk-theory-link:hover { background: var(--rk-soft2); color: var(--rk-accent); }
+
+/* ── Big numeric readout + transport row ──────────────────────────── */
+.rk-readoutrow { display: flex; align-items: center; gap: 12px; }
+.rk-readout { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; flex: 1; }
+.rk-readout-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--rk-accent);
+  letter-spacing: -1px;
+  line-height: .92;
+}
+.rk-readout-num .rk-edit {
+  width: 92px; background: transparent; border: 0;
+  border-bottom: 2px solid var(--rk-accent);
+  color: var(--rk-accent); font: inherit; text-align: left; outline: none; padding: 0;
+}
+.rk-readout-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px; font-weight: 700; letter-spacing: 1.5px;
+  color: #6a6a6a; margin-top: 5px;
+}
+.rk-readout-sub b { color: var(--rk-dim); font-weight: 800; }
+
+/* ── Round play / stop transport ──────────────────────────────────── */
+.rk-play {
+  flex-shrink: 0;
+  width: 54px; height: 54px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, var(--rk-soft2), rgba(0,0,0,.35));
+  border: 1.5px solid var(--rk-line);
+  color: var(--rk-accent);
+  transition: all .16s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+.rk-play:hover { box-shadow: 0 0 16px var(--rk-glow), 0 2px 12px rgba(0,0,0,.4); }
+.rk-play.is-playing {
+  --rk-accent: #ff5a5a;
+  background: radial-gradient(circle at 35% 30%, rgba(255,90,90,.28), rgba(0,0,0,.35));
+  animation: rkPulse 1.4s ease-in-out infinite;
+}
+@keyframes rkPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,90,90,.0); } 50% { box-shadow: 0 0 16px 2px rgba(255,90,90,.35); } }
+
+/* ── Nudge stepper ────────────────────────────────────────────────── */
+.rk-nudge { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+.rk-nudge button {
+  width: 26px; height: 23px; border-radius: 6px; cursor: pointer;
+  background: rgba(255,255,255,.04);
+  border: 1px solid #3a3a3a; color: #999;
+  font-size: 13px; font-weight: 700; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .14s;
+}
+.rk-nudge button:hover { border-color: var(--rk-line); color: var(--rk-accent); background: var(--rk-soft); }
+
+/* ── Smooth slider ────────────────────────────────────────────────── */
+.rk-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 22px; background: transparent; cursor: pointer; margin: 0;
+  --rk-fill: 50%;
+}
+.rk-slider::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--rk-accent) 0%, var(--rk-accent) var(--rk-fill), #242424 var(--rk-fill), #242424 100%);
+  border: 1px solid #1c1c1c;
+}
+.rk-slider::-moz-range-track {
+  height: 6px; border-radius: 4px; background: #242424; border: 1px solid #1c1c1c;
+}
+.rk-slider::-moz-range-progress { height: 6px; border-radius: 4px; background: var(--rk-accent); }
+.rk-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 50%; margin-top: -7px;
+  background: radial-gradient(circle at 35% 30%, #fff6ec, var(--rk-accent));
+  border: 2px solid color-mix(in srgb, var(--rk-accent) 70%, #000);
+  box-shadow: 0 1px 6px rgba(0,0,0,.5), 0 0 10px var(--rk-glow);
+}
+.rk-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--rk-accent) 70%, #000);
+  background: radial-gradient(circle at 35% 30%, #fff6ec, var(--rk-accent));
+  box-shadow: 0 1px 6px rgba(0,0,0,.5), 0 0 10px var(--rk-glow);
+}
+.rk-scale {
+  display: flex; justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #444; margin-top: -3px; padding: 0 2px;
+}
+
+/* ── Segmented control (time sig, subdivision …) ──────────────────── */
+.rk-seg { display: flex; gap: 5px; flex-wrap: wrap; }
+.rk-seg-btn {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,.035);
+  border: 1px solid #333;
+  color: #888;
+  border-radius: 7px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 700;
+  transition: all .14s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.rk-seg-btn:hover { border-color: #4a4a4a; color: #bbb; }
+.rk-seg-btn.is-active {
+  background: var(--rk-soft);
+  border-color: var(--rk-line);
+  color: var(--rk-accent);
+  box-shadow: inset 0 0 10px color-mix(in srgb, var(--rk-accent) 10%, transparent);
+}
+
+/* ── Small chip ───────────────────────────────────────────────────── */
+.rk-chip {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,.04);
+  border: 1px solid #383838; color: #999;
+  border-radius: 6px; padding: 5px 9px; cursor: pointer;
+  font-size: 8.5px; font-weight: 700; letter-spacing: .5px; transition: all .14s;
+}
+.rk-chip:hover { border-color: #4a4a4a; color: #ccc; }
+.rk-chip.is-active { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }
+
+/* ── Beat row ─────────────────────────────────────────────────────── */
+.rk-beats { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.rk-beat {
+  width: 34px; height: 34px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  cursor: pointer; transition: transform .07s, box-shadow .1s, background .1s, border-color .1s;
+  background: rgba(255,255,255,.03); border: 2px solid #3a3a3a;
+}
+.rk-beat:hover { transform: translateY(-1px); }
+.rk-beat.is-on { transform: scale(1.06); }
+
+/* ── Preset strip ─────────────────────────────────────────────────── */
+.rk-presets {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 6px; border: 1px solid #262626; border-radius: 9px; background: rgba(255,255,255,.02);
+}
+.rk-preset {
+  font-family: 'JetBrains Mono', monospace;
+  height: 26px; min-width: 30px; border-radius: 6px; cursor: pointer;
+  font-size: 8.5px; font-weight: 800;
+  background: rgba(255,255,255,.04); border: 1px solid #3a3a3a; color: #888;
+  transition: all .14s;
+}
+.rk-preset:hover { border-color: #555; color: #bbb; }
+.rk-preset.is-hot { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }
+
+/* ── Generic kit button (transport-width actions etc.) ────────────── */
+.rk-btn {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,.04); border: 1px solid #3a3a3a; color: #aaa;
+  border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  font-size: 10px; font-weight: 700; letter-spacing: 1px; transition: all .14s;
+}
+.rk-btn:hover { border-color: var(--rk-line); color: var(--rk-accent); }
+.rk-btn.is-active { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }

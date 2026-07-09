@@ -1,0 +1,13 @@
+{
+  "appId": "com.resonote.app",
+  "appName": "Resonote",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

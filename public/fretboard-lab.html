@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Resonote · Fretboard Theory Lab</title>
+<style>
+  :root{
+    --bg:#0c0e0e; --panel:#15191a; --line:#262c2d; --ink:#dfe7e7; --dim:#8aa; --accent:#5ad1c0;
+    --gold:#ffd23f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#16201f,#0c0e0e);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .mono{font-family:'JetBrains Mono','SF Mono',ui-monospace,monospace}
+  header{padding:18px 22px 6px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+  header h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.3px}
+  header h1 span{color:var(--accent)}
+  header .sub{color:var(--dim);font-size:12px}
+  .wrap{max-width:1180px;margin:0 auto;padding:8px 18px 60px}
+  .modes{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 6px}
+  .mode-btn{background:#13191a;border:1px solid var(--line);color:#bcd;border-radius:9px;
+    padding:9px 13px;cursor:pointer;font-size:12.5px;font-weight:600;transition:.15s}
+  .mode-btn:hover{border-color:#3c6}
+  .mode-btn.on{background:color-mix(in srgb,var(--accent) 18%,transparent);border-color:var(--accent);color:#eafffb}
+  .desc{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:8px;padding:11px 14px;font-size:13px;line-height:1.55;color:#cfdada;margin:6px 0 14px}
+  .desc b{color:#fff}
+  .ctl{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .ctl .group{display:flex;align-items:center;gap:6px}
+  .ctl label{color:var(--dim);font-size:10px;letter-spacing:1px;text-transform:uppercase}
+  select,.pill{background:#11181a;border:1px solid var(--line);color:var(--ink);border-radius:7px;
+    padding:6px 9px;font-size:12px;font-family:inherit;cursor:pointer}
+  .pill.on{border-color:var(--accent);color:var(--accent)}
+  .board-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 8px 8px;overflow-x:auto}
+  svg{display:block;min-width:760px}
+  .legend{display:flex;gap:5px 14px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:#b9c4c4}
+  .legend .chip{display:flex;align-items:center;gap:6px}
+  .legend .dot{width:13px;height:13px;border-radius:50%;border:1px solid rgba(255,255,255,.25)}
+  .readout{min-height:30px;margin-top:10px;font-size:14px;color:#cfe;text-align:center}
+  .readout b{color:var(--gold);font-size:18px}
+  footer{color:#566;font-size:11px;text-align:center;margin-top:26px;line-height:1.6}
+  .tag{display:inline-block;background:#10302b;color:#7fe;border:1px solid #1d5;border-radius:5px;padding:1px 6px;font-size:9px;margin-left:6px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Reso<span>note</span> · Fretboard Theory Lab</h1>
+  <span class="sub">Five ways the neck can teach theory — pick what you like and I'll fold it into the app.</span>
+</header>
+
+<div class="wrap">
+  <div class="modes" id="modes"></div>
+  <div class="desc" id="desc"></div>
+
+  <div class="ctl">
+    <div class="group"><label>Root</label><select id="root"></select></div>
+    <div class="group" id="scaleGroup"><label>Scale</label><select id="scale"></select></div>
+    <div class="group" id="chordGroup"><label>Chord on top</label><select id="chord"></select></div>
+    <div class="group" id="chordBGroup" style="display:none"><label>Chord A → B</label><select id="chordA"></select><select id="chordB"></select></div>
+    <div class="group"><label>Labels</label>
+      <span class="pill on" id="lblToggle">Degree</span>
+    </div>
+  </div>
+
+  <div class="board-card">
+    <svg id="fb" viewBox="0 0 820 240" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+  <div class="readout mono" id="readout">Click any two notes to measure the interval between them.</div>
+  <div class="legend" id="legend"></div>
+
+  <footer>
+    Standalone prototype · no effect on the live app · served at <span class="mono">/fretboard-lab.html</span><br/>
+    Concepts drawn from the strongest ideas across guitar-theory tools (function coloring, chord-tone targeting, tension mapping, voice-leading).
+  </footer>
+</div>
+
+<script>
+const NOTES=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const FLAT={'C#':'D♭','D#':'E♭','F#':'G♭','G#':'A♭','A#':'B♭'};
+// low→high string open pitches (midi): E2 A2 D3 G3 B3 E4
+const OPEN=[40,45,50,55,59,64];            // index 0 = low E (bottom row)
+const NF=15;                                // frets shown
+const DEG_NAME=['R','♭2','2','♭3','3','4','♭5','5','♯5','6','♭7','7'];
+const DEG_LONG=['Root','♭9 / ♭2','9 / 2','♯9 / ♭3','3rd','11 / 4','♭5 / ♯11','5th','♭6 / ♯5','13 / 6','♭7','maj 7'];
+const ITV_NAME=['Unison','minor 2nd','Major 2nd','minor 3rd','Major 3rd','Perfect 4th','Tritone','Perfect 5th','minor 6th','Major 6th','minor 7th','Major 7th','Octave'];
+// Function-color palette (interval semitone → color)
+const DEG_COLOR=['#ffd23f','#d65db1','#6ec6ff','#ff9e3d','#ff5e5e','#56c271','#c77dff','#4d9de0','#b08968','#2ec4b6','#9d6bff','#7b5cff'];
+// Tension weight 0(rest)…1(max tension) per interval — for the heatmap
+const TENSION=[0,.95,.55,.35,.30,.40,1,.10,.55,.35,.55,.85];
+
+const SCALES={
+  'Major (Ionian)':[0,2,4,5,7,9,11],
+  'Natural Minor (Aeolian)':[0,2,3,5,7,8,10],
+  'Dorian':[0,2,3,5,7,9,10],
+  'Phrygian':[0,1,3,5,7,8,10],
+  'Lydian':[0,2,4,6,7,9,11],
+  'Mixolydian':[0,2,4,5,7,9,10],
+  'Locrian':[0,1,3,5,6,8,10],
+  'Harmonic Minor':[0,2,3,5,7,8,11],
+  'Melodic Minor':[0,2,3,5,7,9,11],
+  'Major Pentatonic':[0,2,4,7,9],
+  'Minor Pentatonic':[0,3,5,7,10],
+  'Blues':[0,3,5,6,7,10],
+};
+const CHORDS={
+  'Major (R 3 5)':[0,4,7],'Minor (R ♭3 5)':[0,3,7],'Dim (R ♭3 ♭5)':[0,3,6],'Aug (R 3 ♯5)':[0,4,8],
+  'Maj7':[0,4,7,11],'Dom7':[0,4,7,10],'Min7':[0,3,7,10],'m7♭5':[0,3,6,10],'Dim7':[0,3,6,9],
+  'Sus4':[0,5,7],'Sus2':[0,2,7],'Add9':[0,4,7,14],
+};
+
+let MODE='function', ROOT=0, SCALE='Major (Ionian)', CHORD='Major (R 3 5)',
+    CHORDA='Major (R 3 5)', CHORDB='Major (R 3 5)', CHORDB_ROOT=5, SHOW_DEG=true,
+    picks=[];
+
+// ── tiny synth ───────────────────────────────────────────────
+let actx;
+function tone(midi,dur=0.5){
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type='triangle';o.frequency.value=440*Math.pow(2,(midi-69)/12);
+    g.gain.value=0.0001;g.gain.exponentialRampToValueAtTime(.22,actx.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0008,actx.currentTime+dur);
+    o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+dur+.05);
+  }catch(e){}
+}
+
+const MODES=[
+  {id:'function',name:'🎨 Function Colors',
+   desc:'Every note is colored by its <b>scale degree</b> — the root is gold, the 3rd red, the 5th blue, the 7th purple. Once the colors are in your eye, you read <b>harmonic function</b> on the neck instantly instead of decoding note names. This is the single biggest upgrade for a player who thinks in numbers.'},
+  {id:'chordtone',name:'🎯 Chord-Tone Spotlight',
+   desc:'Pick a <b>scale</b> AND a <b>chord</b>. The chord tones (your <b>safe landing notes</b>) glow big and bright; the rest of the scale fades to passing tones. This is the key to melody and soloing — land phrases on the lit notes and you always sound "right" over the chord.'},
+  {id:'tension',name:'🌡️ Tension Heatmap',
+   desc:'Notes are shaded by how much <b>tension</b> they create against the root — cool/green = restful (root, 5th, 3rd), hot/red = unstable (♭2, tritone, 7th). It makes the <b>pull of dissonance</b> visible, so you can hear why some notes beg to resolve.'},
+  {id:'interval',name:'📏 Interval Explorer',
+   desc:'<b>Click any two notes</b> and the neck names the interval between them, shows the semitone count, and plays it. The fastest way to stop counting frets and start <i>recognizing</i> shapes — the octave shape, the 5th shape, the 3rd shape — by sight and sound.'},
+  {id:'voice',name:'🪢 Voice Leading',
+   desc:'Choose <b>Chord A</b> and <b>Chord B</b>. Lines connect each voice to its <b>nearest note</b> in the next chord — short lines mean smooth changes. Seeing the connective tissue is how you learn to move between chords without leaping all over the neck.'},
+];
+
+// ── DOM build ────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+function fillSel(el,arr,sel){el.innerHTML=arr.map(a=>`<option ${a===sel?'selected':''}>${a}</option>`).join('')}
+NOTES.forEach((n,i)=>{});
+$('root').innerHTML=NOTES.map((n,i)=>`<option value="${i}" ${i===ROOT?'selected':''}>${n}${FLAT[n]?' / '+FLAT[n]:''}</option>`).join('');
+fillSel($('scale'),Object.keys(SCALES),SCALE);
+fillSel($('chord'),Object.keys(CHORDS),CHORD);
+fillSel($('chordA'),Object.keys(CHORDS),CHORDA);
+fillSel($('chordB'),Object.keys(CHORDS),CHORDB);
+
+$('modes').innerHTML=MODES.map(m=>`<button class="mode-btn ${m.id===MODE?'on':''}" data-m="${m.id}">${m.name}</button>`).join('');
+$('modes').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;MODE=b.dataset.m;picks=[];syncUI();render();};
+$('root').onchange=e=>{ROOT=+e.target.value;render()};
+$('scale').onchange=e=>{SCALE=e.target.value;render()};
+$('chord').onchange=e=>{CHORD=e.target.value;render()};
+$('chordA').onchange=e=>{CHORDA=e.target.value;render()};
+$('chordB').onchange=e=>{CHORDB=e.target.value;render()};
+$('lblToggle').onclick=()=>{SHOW_DEG=!SHOW_DEG;$('lblToggle').textContent=SHOW_DEG?'Degree':'Note';$('lblToggle').classList.toggle('on',SHOW_DEG);render()};
+
+function syncUI(){
+  $('modes').querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('on',b.dataset.m===MODE));
+  $('desc').innerHTML=MODES.find(m=>m.id===MODE).desc;
+  $('scaleGroup').style.display=(MODE==='function'||MODE==='chordtone'||MODE==='tension')?'flex':'none';
+  $('chordGroup').style.display=(MODE==='chordtone')?'flex':'none';
+  $('chordBGroup').style.display=(MODE==='voice')?'flex':'none';
+  $('readout').style.display=(MODE==='interval')?'block':'none';
+  $('legend').style.display=(MODE==='function')?'flex':(MODE==='chordtone'?'flex':'none');
+}
+
+// ── geometry ─────────────────────────────────────────────────
+const W=820,H=240, PADL=34, PADR=14, TOP=24, BOT=H-26;
+const fx=f=> PADL + (f===0? 8 : (f-0.5)*( (W-PADL-PADR)/NF ));
+const fxLine=f=> PADL + f*((W-PADL-PADR)/NF);
+const sy=s=> BOT - s*((BOT-TOP)/5);   // s 0..5 low→high, low E at bottom
+
+function noteAt(strIdx,fret){const midi=OPEN[strIdx]+fret;return {midi,pc:((midi%12)+12)%12}}
+
+function render(){
+  syncUI();
+  const sc=SCALES[SCALE].map(i=>(ROOT+i)%12);
+  const chord=CHORDS[CHORD].map(i=>(ROOT+i)%12);
+  let svg='';
+  // board
+  svg+=`<rect x="${PADL-2}" y="${TOP-6}" width="${W-PADL-PADR+8}" height="${BOT-TOP+12}" rx="6" fill="#1b1410" stroke="#0c0907"/>`;
+  for(let f=0;f<=NF;f++){const x=fxLine(f);svg+=`<line x1="${x}" y1="${TOP-6}" x2="${x}" y2="${BOT+6}" stroke="${f===0?'#cfc6b5':'#5a5347'}" stroke-width="${f===0?4:1.5}"/>`;}
+  [3,5,7,9,12,15].forEach(f=>{const x=fx(f);const ys=f===12?[ (TOP+BOT)/2-22,(TOP+BOT)/2+22 ]:[(TOP+BOT)/2];ys.forEach(y=>svg+=`<circle cx="${x}" cy="${y}" r="4" fill="#3a3328"/>`);});
+  for(let s=0;s<6;s++){const y=sy(s);svg+=`<line x1="${PADL}" y1="${y}" x2="${W-PADR}" y2="${y}" stroke="#6b6253" stroke-width="${1+ (5-s)*0.25}"/>`;}
+  for(let f=1;f<=NF;f++)svg+=`<text x="${fx(f)}" y="${BOT+18}" text-anchor="middle" font-size="9" fill="#5a5347" font-family="monospace">${f}</text>`;
+
+  // notes
+  for(let s=0;s<6;s++)for(let f=0;f<=NF;f++){
+    const {midi,pc}=noteAt(s,f);
+    const inScale=sc.includes(pc), inChord=chord.includes(pc);
+    const deg=((pc-ROOT)%12+12)%12;
+    let show=false, fill='#2a2a2a', stroke='rgba(255,255,255,.12)', r=8.5, op=1, txt='', tcol='#fff', tsz=8;
+
+    if(MODE==='function'){
+      if(!inScale)continue; show=true; fill=DEG_COLOR[deg]; stroke='rgba(0,0,0,.3)';
+      r= deg===0?10.5:8.7; txt=SHOW_DEG?DEG_NAME[deg]:NOTES[pc]; tcol='#10110d'; tsz=deg===0?9.5:8.2;
+    }else if(MODE==='chordtone'){
+      if(!inScale)continue; show=true;
+      if(inChord){ fill=DEG_COLOR[deg]; r= deg===0?11:9.5; op=1; stroke='rgba(0,0,0,.35)'; tcol='#10110d'; txt=SHOW_DEG?DEG_NAME[deg]:NOTES[pc]; tsz=9; }
+      else { fill='#2f3a39'; r=5.6; op=.62; stroke='none'; txt=''; }
+    }else if(MODE==='tension'){
+      if(!inScale)continue; show=true;
+      const t=TENSION[deg]; // green→red
+      const rr=Math.round(60+t*195), gg=Math.round(200-t*150), bb=Math.round(120-t*70);
+      fill=`rgb(${rr},${gg},${bb})`; r= deg===0?10.5:8.5; stroke='rgba(0,0,0,.3)'; tcol='#0c0c0c'; txt=SHOW_DEG?DEG_NAME[deg]:NOTES[pc]; tsz=8;
+    }else if(MODE==='interval'){
+      show=true; const picked=picks.find(p=>p.s===s&&p.f===f);
+      if(picked){ fill='#ffd23f'; r=11; stroke='#fff'; tcol='#222'; txt=NOTES[pc]; tsz=9; }
+      else { fill= inScale? '#37474a':'#222'; r=7.5; stroke='rgba(255,255,255,.10)'; txt=''; }
+    }else if(MODE==='voice'){
+      continue; // drawn below as two chord sets
+    }
+    if(!show)continue;
+    svg+=`<g class="nt" data-s="${s}" data-f="${f}" style="cursor:pointer">`;
+    svg+=`<circle cx="${fx(f)}" cy="${sy(s)}" r="${r}" fill="${fill}" opacity="${op}" stroke="${stroke}" stroke-width="1.3"/>`;
+    if(txt)svg+=`<text x="${fx(f)}" y="${sy(s)+tsz*0.36}" text-anchor="middle" font-size="${tsz}" font-weight="700" fill="${tcol}" font-family="monospace" style="pointer-events:none">${txt}</text>`;
+    svg+=`</g>`;
+  }
+
+  // interval line + readout
+  if(MODE==='interval'&&picks.length===2){
+    const a=picks[0],b=picks[1];
+    svg+=`<line x1="${fx(a.f)}" y1="${sy(a.s)}" x2="${fx(b.f)}" y2="${sy(b.s)}" stroke="#ffd23f" stroke-width="2" stroke-dasharray="4,3" opacity=".7"/>`;
+    const m1=noteAt(a.s,a.f).midi,m2=noteAt(b.s,b.f).midi, semis=Math.abs(m2-m1);
+    const nm=ITV_NAME[Math.min(semis,12)]||(semis+' semitones');
+    $('readout').innerHTML=`${NOTES[noteAt(a.s,a.f).pc]} → ${NOTES[noteAt(b.s,b.f).pc]} &nbsp;=&nbsp; <b>${nm}</b> &nbsp;·&nbsp; ${semis} semitone${semis!==1?'s':''}`;
+  }else if(MODE==='interval'){
+    $('readout').innerHTML=`Click any two notes to measure the interval between them.`;
+  }
+
+  // voice leading
+  if(MODE==='voice'){
+    const rootA=ROOT, rootB=(ROOT+CHORDB_ROOT)%12;
+    const setA=voicing(CHORDS[CHORDA].map(i=>(rootA+i)%12), 3);
+    const setB=voicing(CHORDS[CHORDB].map(i=>(rootB+i)%12), 4);
+    // draw connecting lines (nearest voice)
+    setA.forEach(a=>{
+      let best=null,bd=99; setB.forEach(b=>{const d=Math.hypot(fx(b.f)-fx(a.f),sy(b.s)-sy(a.s));if(d<bd){bd=d;best=b}});
+      if(best)svg+=`<line x1="${fx(a.f)}" y1="${sy(a.s)}" x2="${fx(best.f)}" y2="${sy(best.s)}" stroke="#5ad1c0" stroke-width="2" opacity=".55"/>`;
+    });
+    const drawSet=(set,col,lbl)=>set.forEach(p=>{
+      svg+=`<circle cx="${fx(p.f)}" cy="${sy(p.s)}" r="9.5" fill="${col}" stroke="rgba(0,0,0,.35)" stroke-width="1.3"/>`;
+      svg+=`<text x="${fx(p.f)}" y="${sy(p.s)+3}" text-anchor="middle" font-size="8" font-weight="700" fill="#10110d" font-family="monospace">${NOTES[p.pc]}</text>`;
+    });
+    drawSet(setA,'#ffd23f');drawSet(setB,'#6ec6ff');
+    svg+=`<text x="${PADL}" y="16" font-size="11" fill="#ffd23f" font-family="monospace">● ${NOTES[rootA]} ${CHORDA.split(' ')[0]}</text>`;
+    svg+=`<text x="${PADL+150}" y="16" font-size="11" fill="#6ec6ff" font-family="monospace">● ${NOTES[rootB]} ${CHORDB.split(' ')[0]} (next)</text>`;
+  }
+
+  $('fb').innerHTML=svg;
+  $('fb').querySelectorAll('.nt').forEach(g=>g.onclick=()=>{
+    const s=+g.dataset.s,f=+g.dataset.f,{midi,pc}=noteAt(s,f);
+    tone(midi,.6);
+    if(MODE==='interval'){ const i=picks.findIndex(p=>p.s===s&&p.f===f);
+      if(i>=0)picks.splice(i,1); else { picks.push({s,f}); if(picks.length>2)picks.shift(); } render(); }
+  });
+
+  // legends
+  if(MODE==='function'||MODE==='chordtone'){
+    const degsInScale=SCALES[SCALE];
+    $('legend').innerHTML=degsInScale.map(d=>`<span class="chip"><span class="dot" style="background:${DEG_COLOR[d]}"></span>${DEG_NAME[d]} — ${DEG_LONG[d]}</span>`).join('');
+  }
+}
+// pick a simple one-octave voicing near the middle of the neck for voice-leading demo
+function voicing(pcs,baseStr){
+  const out=[];
+  pcs.forEach((pc,i)=>{
+    const s=Math.min(5,baseStr+i-1>=0?Math.floor((baseStr+i)%6):0);
+    // find this pc on string s between frets 2..9
+    let best=null;
+    for(let str=Math.max(0,baseStr-1+ (i%3)); str<6; str++){
+      for(let f=2;f<=9;f++){ if(noteAt(str,f).pc===pc){best={s:str,f,pc};break;} }
+      if(best)break;
+    }
+    if(!best){ for(let f=0;f<=12;f++){if(noteAt(baseStr,f).pc===pc){best={s:baseStr,f,pc};break;}} }
+    if(best && !out.some(o=>o.s===best.s)) out.push(best); else if(best) out.push(best);
+  });
+  return out;
+}
+
+// also let CHORDB sit a 4th up by default for a nicer demo
+CHORDB_ROOT=5;
+render();
+</script>
+</body>
+</html>

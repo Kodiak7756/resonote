@@ -1,0 +1,515 @@
+
+━━━ UNIT 1: 🎼 Foundations ━━━
+  L1 The Musical Alphabet
+       drill: "Alphabet Climb"  · 60bpm 4,4 · voicing: single notes
+       prog:  IC
+       focus: Hearing the musical alphabet as a physical climb on one string
+       → SCALES (Scale & Arp Explorer)
+  L2 Half Steps & Whole Steps
+       drill: "Step Sizes"  · 80bpm 4,4 · voicing: two-note intervals
+       prog:  IE
+       focus: Distinguishing half steps (tight) from whole steps (open) by feel and sound
+       → SCALES (Scale & Arp Explorer)
+  L3 Sharps, Flats & Enharmonics
+       drill: "Enharmonic Twins"  · 70bpm 4,4 · voicing: single notes
+       prog:  IC
+       focus: Hearing that enharmonics are the same pitch and learning both spellings
+       → SCALES (Scale & Arp Explorer)
+  L4 Octaves
+       drill: "Octave Leaps"  · 75bpm 4,4 · voicing: two-note octaves
+       prog:  IG
+       focus: Recognizing octave relationships across the neck (12 frets, same note)
+       → SCALES (Scale & Arp Explorer)
+  L5 The Open Strings: E A D G B E
+       drill: "String Names Locked In"  · 60bpm 4,4 · voicing: open strings
+       prog:  IE
+       focus: Internalizing the standard tuning (E-A-D-G-B-E) by name and feel
+       → PROGRESSION (Progression Studio · auto-plays)
+  L6 Finding Any Note on the Neck
+       drill: "Counting Up the Neck"  · 80bpm 4,4 · voicing: single notes ascending
+       prog:  IA
+       focus: Building muscle memory for finding notes by counting half steps from an open string
+       → SCALES (Scale & Arp Explorer)
+  🎤 UNIT IMPROV: "Fretboard Navigator" — backing: pop drums + IE IVA IE VB; solo E Major
+
+━━━ UNIT 2: 📏 Intervals ━━━
+  L7 What an Interval Actually Is
+       drill: "Octave Recognition"  · 75bpm 4,4 · voicing: octaves and other intervals
+       prog:  IC
+       focus: Hearing and playing octaves (12 semitones) as the unison interval
+       → SCALES (Scale & Arp Explorer)
+  L8 The 3rd: Major vs Minor (Happy vs Sad)
+       drill: "Third Mood Flip"  · 70bpm 4,4 · voicing: two-note thirds
+       prog:  IE iEm
+       focus: Hearing and playing the major vs. minor 3rd by ear and fret position
+       → SCALES (Scale & Arp Explorer)
+  L9 The Perfect 5th and Perfect 4th
+       drill: "Perfect Intervals Stable"  · 80bpm 4,4 · voicing: perfect 5ths and 4ths
+       prog:  IG
+       focus: Recognizing perfect 4ths and 5ths by their stable, consonant sound
+       → PROGRESSION (Progression Studio · auto-plays)
+  L10 The Tritone: The Most Unstable Interval
+       drill: "Devil in Music"  · 85bpm 4,4 · voicing: tritone and resolution
+       prog:  IC vii°F#Dim
+       focus: Hearing the tritone as the most unstable interval and its desire to resolve
+       → SCALES (Scale & Arp Explorer)
+  L11 Consonance vs Dissonance
+       drill: "Tension vs. Rest"  · 75bpm 4,4 · voicing: two-note intervals mixed
+       prog:  IA iA#m
+       focus: Feeling the difference between consonant (smooth) and dissonant (tense) intervals
+       → SCALES (Scale & Arp Explorer)
+  L12 Putting It Together: Build & Name Any Interval
+       drill: "Interval Build-Up"  · 80bpm 4,4 · voicing: stacked intervals
+       prog:  IC
+       focus: Hearing all intervals from unison to octave and internalizing their semitone counts
+       → SCALES (Scale & Arp Explorer)
+  🎤 UNIT IMPROV: "Interval Ear Master" — backing: jazz-swing drums + iiDMin7 VG7 (Dom) IC IC; solo C Major
+
+━━━ UNIT 3: 🔑 The Major Scale & Keys ━━━
+  L13 Building the Major Scale
+       drill: "W-W-H-W-W-W-H"  · 70bpm 4,4 · voicing: scale ascending
+       prog:  ID
+       focus: Internalizing the W-W-H-W-W-W-H formula by playing and hearing it in a new key
+       → SCALES (Scale & Arp Explorer)
+  L14 Scale Degrees & Their Names
+       drill: "Degrees and Their Jobs"  · 65bpm 4,4 · voicing: scale degrees
+       prog:  IC
+       focus: Learning the seven degree names and their functional character
+       → SCALES (Scale & Arp Explorer)
+  L15 Thinking in Numbers
+       drill: "Numbers Transpose"  · 85bpm 4,4 · voicing: chords in root position
+       prog:  1C 4F 5G 1C
+       focus: Understanding that chord numbers describe relationships, not fixed notes
+       → PROGRESSION (Progression Studio · auto-plays)
+  L16 Key Signatures: Sharps & Flats
+       drill: "Sharps and Flats"  · 75bpm 4,4 · voicing: scale with accidentals marked
+       prog:  IG IF
+       focus: Hearing how sharps and flats preserve the major scale formula in any key
+       → PROGRESSION (Progression Studio · auto-plays)
+  L17 The Circle of Fifths
+       drill: "Circle Hop"  · 80bpm 4,4 · voicing: root notes of each key
+       prog:  IC VG VD VA
+       focus: Feeling the circle of fifths as a map of keys connected by perfect 5ths
+       → SCALES (Scale & Arp Explorer)
+  L18 One Key Signature, Two Homes
+       drill: "Same Notes, New Home"  · 70bpm 4,4 · voicing: scales
+       prog:  IC iAm
+       focus: Hearing that relative major and minor share all their notes but have different tonal centers
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Key Explorer" — backing: rock drums + IG IVC VD IG; solo G Major
+
+━━━ UNIT 4: 🔺 Triads ━━━
+  L19 Stacking Thirds: The Major Triad
+       drill: "Triad Build from Root"  · 75bpm 4,4 · voicing: root position arpeggios
+       prog:  IC
+       focus: Hearing major triads as root + major 3rd + perfect 5th in a clear, voiced arrangement
+       → SCALES (Scale & Arp Explorer)
+  L20 The 3rd Decides: Major vs Minor
+       drill: "Third Decides Major/Minor"  · 80bpm 4,4 · voicing: root and 3rd
+       prog:  IG iGm
+       focus: Hearing how the 3rd is the emotional heart of any major or minor triad
+       → PROGRESSION (Progression Studio · auto-plays)
+  L21 Diminished: Two Minor 3rds
+       drill: "Tense Diminished"  · 75bpm 4,4 · voicing: diminished and resolution
+       prog:  vii°BDim IC
+       focus: Hearing diminished triads as unstable chords that pull toward resolution
+       → PROGRESSION (Progression Studio · auto-plays)
+  L22 Augmented: Two Major 3rds
+       drill: "Floating Augmented"  · 80bpm 4,4 · voicing: augmented triad
+       prog:  I+CAug
+       focus: Hearing augmented triads as symmetrical, bright-but-unresolved chords
+       → PROGRESSION (Progression Studio · auto-plays)
+  L23 Inversions: Same Chord, New Bottom Note
+       drill: "Inversion Smooth Moves"  · 85bpm 4,4 · voicing: root position, 1st and 2nd inversions
+       prog:  IC IVF
+       focus: Using inversions to connect chords smoothly without jumping around the neck
+       → PROGRESSION (Progression Studio · auto-plays)
+  L24 Triads Across the Neck
+       drill: "Movable Triad Shapes"  · 90bpm 4,4 · voicing: three-string triads
+       prog:  IG IIA iiiBm IVC
+       focus: Learning small, repeatable triad shapes that transpose by sliding them up or down
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Triad Melody Master" — backing: funk drums + viAm IID VE viAm; solo A Nat. Minor
+
+━━━ UNIT 5: 7️⃣ Seventh Chords ━━━
+  L25 Stacking the 7th
+       drill: "Triad + 7th, Every String"  · 80bpm 4,4 · voicing: open chords
+       prog:  IC Imaj7CMaj7
+       focus: Understanding how a 7th note sits as a voice on top of the triad without changing the core three notes underneath.
+       → SCALES (Scale & Arp Explorer)
+  L26 Major 7 vs Dominant 7
+       drill: "Lush vs. Bluesy: Maj7 and Dom7 Alternation"  · 90bpm 4,4 · voicing: triads-DGB
+       prog:  Imaj7CMaj7 I7C7 (Dom)
+       focus: Hearing the difference between a natural 7th (soft, dreamy) and a flat 7th (bluesy, restless).
+       → PROGRESSION (Progression Studio · auto-plays)
+  L27 The Minor 7
+       drill: "Minor 7: Smooth and Mellow"  · 85bpm 4,4 · voicing: open chords
+       prog:  iDm im7DMin7
+       focus: Recognizing how a flat 7th rounds off the harshness of a bare minor chord, creating that soul-and-R&B cushion.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L28 The Dominant 7 and the V→I Pull
+       drill: "The Tritone Pull: G7 to C"  · 100bpm 4,4 · voicing: shell (R-3-7)
+       prog:  V7G7 (Dom) IC
+       focus: Feeling the tritone's pull through the V7→I cadence—the engine of harmonic tension and resolution.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L29 The ii–V–I Progression
+       drill: "ii–V–I Progression: Three-Act Story"  · 100bpm 4,4 · voicing: shell (R-3-7)
+       prog:  iiDMin7 VG7 (Dom) ICMaj7
+       focus: Recognizing the three functions in one flowing progression: setup, tension, resolution.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L30 Darker Sevenths: m7♭5 and dim7
+       drill: "Yearning and Spooky: m7♭5 and Dim7"  · 75bpm 4,4 · voicing: triads-DGB
+       prog:  iiBm7♭5 vii°7BDim7
+       focus: Hearing the difference between half-diminished (yearning) and fully diminished (spooky), and understanding that both are unresolved tension.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Jazz Staple: Dm7–G7–Cmaj7" — backing: jazz-swing drums + iiDMin7 VG7 (Dom) ICMaj7; solo C Major
+
+━━━ UNIT 6: 🧲 Function, Tension & Resolution ━━━
+  L31 The Seven Chords of a Key
+       drill: "Seven Chords of the Key: I–ii–iii–IV–V–vi–vii°"  · 60bpm 4,4 · voicing: open chords
+       prog:  IC iiDm iiiEm IVF VG viAm vii°BDim IC
+       focus: Internalizing which chord qualities belong to each scale degree and recognizing the universal pattern that applies to every major key.
+       → SCALES (Scale & Arp Explorer)
+  L32 Home, Away, Tension
+       drill: "Tonic, Subdominant, Dominant: The Three Roles"  · 90bpm 4,4 · voicing: open chords
+       prog:  IC IVF VG IC
+       focus: Recognizing how context determines function: the same chord can feel like home, away, or like a waypoint depending on what surrounds it.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L33 Why V Pulls So Hard
+       drill: "The Tritone Tug: B–F in G7 Resolving to C"  · 80bpm 4,4 · voicing: shell (R-3-7)
+       prog:  V7G7 (Dom) IC
+       focus: Hearing and feeling the tritone's built-in pull to resolution, the mechanical heart of V→I.
+       → SCALES (Scale & Arp Explorer)
+  L34 The Authentic Cadence (V→I)
+       drill: "Authentic Cadence: V7→I, The Full Stop"  · 100bpm 4,4 · voicing: open chords
+       prog:  V7D7 (Dom) IG
+       focus: Internalizing the authentic cadence as the ultimate 'full stop' — the most conclusive way to end a phrase or song.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L35 Plagal & Half Cadences
+       drill: "Plagal (Soft) vs. Half (Unfinished): Two Other Cadences"  · 85bpm 4,4 · voicing: open chords
+       prog:  IVF IC
+       focus: Distinguishing cadences by their emotional finish: plagal is a soft 'amen,' half cadence is a question mark.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L36 The Deceptive Cadence
+       drill: "Deceptive Cadence: V→vi, The Surprise Landing"  · 95bpm 4,4 · voicing: open chords
+       prog:  V7G7 (Dom) viAm
+       focus: Hearing how a deceptive cadence uses the ear's expectation against itself—resolving the dominant to an unexpected chord.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L37 Suspensions: Hang, Then Resolve
+       drill: "Sus4→Major: Tiny Tension and Release"  · 100bpm 4,4 · voicing: open chords
+       prog:  Isus4CSus4 IC
+       focus: Understanding suspensions as miniature tension-and-release arcs within a single chord change.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L38 Tension to Resolution: The Full Arc
+       drill: "Full Arc: I→IV→V(sus4)→V7→I"  · 110bpm 4,4 · voicing: open chords
+       prog:  IG IVC V(sus4)DSus4 V7D7 (Dom) IG
+       focus: Recognizing how all the pieces fit together: function, cadence, suspension, and resolution form a cohesive arc.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Cadence Feels: V7→I and IV→I" — backing: rock drums + IG IVC V7D7 (Dom) IG; solo G Major
+
+━━━ UNIT 7: 🌙 Minor Keys & Harmony ━━━
+  L39 The Natural Minor Scale
+       drill: "Aeolian Climb in A Minor"  · 70bpm 4,4 · voicing: open chords
+       prog:  iAm VIF VIIG iAm
+       focus: Hearing the natural minor scale sit naturally over its own i, VI, and VII chords.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L40 The Seven Chords of a Minor Key
+       drill: "Walk the Minor Diatonic Chords"  · 80bpm 4,4 · voicing: open chords
+       prog:  iAm IIIC ivDm VIF VIIG iAm
+       focus: Memorizing which diatonic chords are minor, major, and where home (i) sits.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L41 Harmonic Minor & the Real V
+       drill: "Find the Leading Tone"  · 75bpm 4,4 · voicing: open chords
+       prog:  iAm ivDm VE iAm
+       focus: Hearing the raised-7th leading tone (G#) inside the major V resolve up to the minor tonic.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L42 Cadences Home in Minor
+       drill: "Minor ii–V–i Loop"  · 85bpm 4,4 · voicing: shell (R-3-7)
+       prog:  iiø7Bm7♭5 V7E7 (Dom) iAm
+       focus: The minor ii–V–i (Bm7♭5–E7–Am) — feeling the half-diminished tension resolve through the dominant into home.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L43 Melodic Minor — Fixing the Gap
+       drill: "Up Bright, Down Dark"  · 72bpm 4,4 · voicing: arpeggiated
+       prog:  iAm VE
+       focus: Hearing how raising the 6th and 7th brightens the ascent while the natural-minor descent keeps it dark.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L44 Relative vs Parallel Minor
+       drill: "Same Notes, Two Homes"  · 80bpm 4,4 · voicing: open chords
+       prog:  IC VG viAm V/viE
+       focus: Feeling the SAME key signature flip between its major home (C) and its relative minor home (Am).
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Solo Over a Minor ii–V–i Vamp" — backing: jazz-swing drums + iAm ivDm iiø7Bm7♭5 V7E7 (Dom) iAm; solo A Nat. Minor
+
+━━━ UNIT 8: 🎚️ Modes ━━━
+  L45 What a Mode Really Is
+       drill: "Same Notes, Different Home: C Major vs. D Dorian"  · 70bpm 4,4 · voicing: arpeggiated
+       prog:  IC iDm
+       focus: Internalizing that a mode is defined not by new notes, but by a new center and what chord anchors beneath it.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L46 Your Two Anchors: Ionian & Aeolian
+       drill: "Your Anchors: Bright Ionian and Dark Aeolian"  · 75bpm 4,4 · voicing: open chords
+       prog:  IA iAm
+       focus: Establishing Ionian and Aeolian as the anchor modes that the others modify—major and minor are the foundation.
+       → SCALES (Scale & Arp Explorer)
+  L47 Dorian: Minor, But Hopeful
+       drill: "Dorian's Hope: The Raised 6th (♮6)"  · 90bpm 4,4 · voicing: open chords
+       prog:  iDm im7DMin7
+       focus: Recognizing Dorian's identity as 'minor with a bright lift'—the ♮6 is the whole story.
+       → SCALES (Scale & Arp Explorer)
+  L48 Phrygian (Dark ♭2) & Lydian (Dreamy ♯4)
+       drill: "Opposites: Dark Phrygian (♭2) and Dreamy Lydian (♯4)"  · 80bpm 4,4 · voicing: open chords
+       prog:  iEm IF
+       focus: Hearing how a single altered note can shift a mode from dark and tense to light and floating.
+       → SCALES (Scale & Arp Explorer)
+  L49 Mixolydian: Major Gone Bluesy
+       drill: "Mixolydian: Major Gone Bluesy (♭7)"  · 100bpm 4,4 · voicing: open chords
+       prog:  IG I7G7 (Dom)
+       focus: Understanding Mixolydian as 'the major scale that belongs over a V7 chord'—its ♭7 is the bridge between major and blues.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L50 Locrian: The Unstable One
+       drill: "Locrian's Instability: Both ♭2 and ♭5"  · 75bpm 4,4 · voicing: open chords
+       prog:  i(m7♭5)Bm7♭5
+       focus: Recognizing Locrian as the 'unresolved' mode—its m7♭5 home chord means nothing in Locrian ever truly settles.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L51 Putting It to Work: Modes Over a Vamp
+       drill: "Modes Need a Vamp: D Dorian Over Dm7–G7"  · 100bpm 4,4 · voicing: open chords
+       prog:  iDMin7 IV7G7 (Dom)
+       focus: Internalizing that modes only 'sound like themselves' over their home chord—context is everything.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Dorian Groove: Dm7 Vamp with D Dorian Solo" — backing: funk drums + iDMin7; solo D Dorian
+
+━━━ UNIT 9: ⚡ Extensions & Alterations ━━━
+  L52 Add9 and 6/9: Sweetness Without the 7th
+       drill: "Add9: Major Triad + Shimmer (No 7th)"  · 85bpm 4,4 · voicing: open chords
+       prog:  IC Iadd9CAdd9
+       focus: Understanding add9 as 'major with a gift of shimmer'—a way to color a major triad without introducing tension.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L53 Sus2 and Sus4: Suspending the 3rd
+       drill: "Sus2 and Sus4: Removing the Major/Minor Identity"  · 90bpm 4,4 · voicing: open chords
+       prog:  sus4CSus4 sus2CSus2
+       focus: Hearing suspended chords as 'identity-neutral'—without the 3rd, the chord has no major or minor quality.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L54 9, 11, 13: Stacking on the Dominant 7
+       drill: "9, 11, 13: Stacking on the Dominant 7"  · 100bpm 4,4 · voicing: open chords
+       prog:  V7C7 (Dom) V9C9
+       focus: Recognizing that extensions still rely on the b7 to remain 'dominant'—without the flat 7, it's not really pulling home anymore.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L55 Augmented & Altered Dominants: Maximum Tension
+       drill: "Altered Dominants: Sharpening/Flattening for Extra Bite"  · 95bpm 4,4 · voicing: open chords
+       prog:  V7C7 (Dom) V7♯9C7♯9
+       focus: Understanding altered dominants as 'tension piled higher'—they don't change the dominant's function, just intensify its pull.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L56 Secondary Dominants: Borrowing a Pull
+       drill: "V/V: The Secondary Dominant (D7→G in C major)"  · 100bpm 4,4 · voicing: open chords
+       prog:  IC V/VD7 (Dom) VG
+       focus: Hearing how a secondary dominant borrows a note outside the key to add a surprising, temporary pull mid-progression.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L57 Borrowed Chords: Modal Interchange
+       drill: "Borrowed Chords: Minor iv in a Major Key (Fm in C major)"  · 85bpm 4,4 · voicing: open chords
+       prog:  IC IVF ivFm IC
+       focus: Recognizing borrowed chords as temporary guests from the parallel key—they add color without changing the tonal center.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Funky Extensions: Dm7–G13–Cmaj7" — backing: funk drums + iiDMin7 V13G13 ICMaj7; solo C Major
+
+━━━ UNIT 10: 🪢 Voice Leading ━━━
+  L58 Common Tones: Let Shared Notes Stay Put
+       drill: "Hold the Common Tone"  · 70bpm 4,4 · voicing: triads-DGB
+       prog:  IC viAm IVF IC
+       focus: Finding and physically holding common tones between neighboring chords.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L59 Move to the Nearest Note
+       drill: "Shortest Path Triads"  · 72bpm 4,4 · voicing: triads-DGB
+       prog:  IC VG viAm IVF
+       focus: Routing each moving voice by the shortest distance to the next chord tone.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L60 Inversions: Barely Move Your Hand
+       drill: "Stay in the Zone"  · 68bpm 4,4 · voicing: triads-DGB
+       prog:  IC IVF VG IC
+       focus: Choosing inversions so the hand barely moves between changes.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L61 The Sus Carry-Over Trick
+       drill: "Carry the Suspension"  · 76bpm 4,4 · voicing: open chords
+       prog:  I(sus4)DSus4 ID IV(sus2)GSus2 IVG
+       focus: Letting a sus4 grab carry over as the sus2 a 4th higher when the root moves up a 4th.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L62 Contrary Motion: Voices Going Opposite Ways
+       drill: "Spread the Outer Voices"  · 66bpm 4,4 · voicing: arpeggiated
+       prog:  IC iiiEm IVF VG
+       focus: Building contrary motion between the bass and the top voice.
+       → SCALES (Scale & Arp Explorer)
+  L63 Walking Bass Lines
+       drill: "Walk the Bass"  · 80bpm 4,4 · voicing: shell (R-3-7)
+       prog:  IC viAm iiDm VG7 (Dom)
+       focus: Connecting chord roots with a smooth stepwise walking bass line.
+       → SCALES (Scale & Arp Explorer)
+  🎤 UNIT IMPROV: "Smooth Operator: Voice-Lead the Loop" — backing: jazz-swing drums + ICMaj7 viAMin7 iiDMin7 VG7 (Dom); solo C Major
+
+━━━ UNIT 11: 🎤 Improvisation & Soloing ━━━
+  L64 Box 1: Your First Solo Shape
+       drill: "Box 1 Up-and-Down Vamp"  · 70bpm 4,4 · voicing: single-note scale run
+       prog:  iAm
+       focus: Locking the minor pentatonic Box 1 shape into your fingers and ear over its home chord.
+       → SCALES (Scale & Arp Explorer)
+  L65 The Five Boxes: One Scale, Whole Neck
+       drill: "Box-to-Box Slide"  · 60bpm 4,4 · voicing: single-note scale run
+       prog:  iAm
+       focus: Hearing and feeling that two boxes are the same scale, linked by a slide, not separate shapes.
+       → SCALES (Scale & Arp Explorer)
+  L66 The Blue Note: One Note of Grit
+       drill: "Blue-Note Passing Lick"  · 65bpm 4,4 · voicing: single-note scale run
+       prog:  iAm
+       focus: Using the blue note as a quick passing tone for grit without sounding out of tune.
+       → SCALES (Scale & Arp Explorer)
+  L67 Picking the Right Scale for the Song
+       drill: "Same Shape, Two Moods"  · 72bpm 4,4 · voicing: single-note scale run
+       prog:  IA iAm
+       focus: Choosing major vs minor pentatonic to fit the chord's quality, rooted on the same note.
+       → SCALES (Scale & Arp Explorer)
+  L68 Land on Chord Tones: The 3rds and 7ths
+       drill: "Hit the 3rd on Beat 1"  · 60bpm 4,4 · voicing: single-note scale run
+       prog:  I7G7 (Dom) IV7C7 (Dom)
+       focus: Targeting the 3rd of the current chord on the downbeat so your line follows the changes.
+       → SCALES (Scale & Arp Explorer)
+  L69 Phrasing: Play a Sentence, Then Breathe
+       drill: "Question and Answer"  · 68bpm 4,4 · voicing: single-note scale run
+       prog:  iAm
+       focus: Building solos from short call-and-response motifs with deliberate space between them.
+       → SCALES (Scale & Arp Explorer)
+  🎤 UNIT IMPROV: "Solo Over the Blues: Put It All Together" — backing: blues-shuffle drums + I7A7 (Dom) IV7D7 (Dom) I7A7 (Dom) V7E7 (Dom) IV7D7 (Dom) I7A7 (Dom); solo A Blues Minor
+
+━━━ UNIT 12: ✍️ Composition & Songwriting ━━━
+  L70 Pick a Progression by Feel
+       drill: "Same Chords, Two Moods"  · 80bpm 4,4 · voicing: open chords
+       prog:  IC VG viAm IVF
+       focus: Hearing chord FUNCTION (home / tension / shadow / lift) and how the starting chord sets the mood.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L71 What Chord Comes Next?
+       drill: "Resolve the Tension (V→I)"  · 76bpm 4,4 · voicing: open chords
+       prog:  IC IVF VG IC
+       focus: Feeling dominant→tonic pull (V→I) as the engine that makes a phrase sound finished.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L72 Add Colour on Purpose
+       drill: "Colour the V and Borrow the iv"  · 72bpm 4,4 · voicing: open chords
+       prog:  IC IVF ivFm V7G7 (Dom) IC
+       focus: Adding colour on purpose — the borrowed minor iv and the dominant V7 — without losing the home pull.
+       → SCALES (Scale & Arp Explorer)
+  L73 Write a Melody Over the Chords
+       drill: "Land on Chord Tones"  · 70bpm 4,4 · voicing: arpeggiated
+       prog:  IC viAm IVF VG
+       focus: Finding the chord tones of each chord so a melody knows where to land on strong beats.
+       → SCALES (Scale & Arp Explorer)
+  L74 Harmonic Rhythm & Song Form
+       drill: "Verse vs Chorus Harmonic Rhythm"  · 84bpm 4,4 · voicing: open chords
+       prog:  viAm IVF IC VG IC IVF
+       focus: Using harmonic rhythm (fast vs slow chord changes) to make a verse feel busy and a chorus feel spacious.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L75 Capstone: Write & Read 8 Bars
+       drill: "Read Back Your 8-Bar Chart"  · 88bpm 4,4 · voicing: open chords
+       prog:  IC VG viAm IVF IC VG IVF IC
+       focus: Reading a Nashville / lead-sheet chart in real time and hearing the 8-bar question-and-answer shape.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Write Your Own Verse-and-Chorus" — backing: pop drums + viAm IVF IC VG; solo C Major
+
+━━━ UNIT 13: 🥁 Rhythm, Strumming & Time ━━━
+  L76 Note Values: Quarters, Eighths & Sixteenths
+       drill: "Subdivision Ladder on One Chord"  · 60bpm 4,4 · voicing: open chords
+       prog:  IG IG IG IG
+       focus: Feeling how each note value evenly subdivides the SAME steady beat — the pulse stays put while the strums double up.
+       → SCALES (Scale & Arp Explorer)
+  L77 Triplets: Three Inside One Beat
+       drill: "Straight-to-Shuffle Switch"  · 70bpm 4,4 · voicing: power chords
+       prog:  IA7 (Dom) IA7 (Dom) IVD7 (Dom) IA7 (Dom)
+       focus: Hearing the difference between straight (2 per beat) and a triplet shuffle, and dropping the middle triplet note to make the blues bounce.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L78 Reading a Strum Pattern (D-DU-UDU)
+       drill: "The Everything Strum (D-DU-UDU)"  · 75bpm 4,4 · voicing: open chords
+       prog:  IG VD viEm IVC
+       focus: Locking the down-up hand motion to the eighth-note grid so downstrokes hit beats and upstrokes hit 'ands', even across chord changes.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L79 Downbeats, Upbeats & Syncopation
+       drill: "Off-Beat Funk Stabs"  · 84bpm 4,4 · voicing: shell (R-3-7)
+       prog:  iEMin7 iEMin7 IVA7 (Dom) iEMin7
+       focus: Putting the accent on the upbeats (the 'ands') while the foot stays on the downbeats — the core feel of syncopation.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L80 Time Signatures: 4/4, 3/4 & 6/8
+       drill: "Waltz Sway in 3/4"  · 96bpm 3,4 · voicing: open chords
+       prog:  IC VG viAm IVF
+       focus: Feeling a bar of THREE instead of four, with the accent planted firmly on beat 1 — the waltz pulse.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L81 Harmonic Rhythm & Locking to the Click
+       drill: "Lock the Backbeat"  · 80bpm 4,4 · voicing: open chords
+       prog:  viAm IVF IC VG
+       focus: Holding steady time against a backbeat-only click while keeping a one-chord-per-bar harmonic rhythm — your strum locked to the metronome.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Groove Lab: Solo Over a Pop Pulse" — backing: pop drums + IC VG viAm IVF; solo C Major Pent.
+
+━━━ UNIT 14: 🤙 Fingerstyle & Picking Patterns ━━━
+  L82 Meet Your Picking Hand: P-I-M-A
+       drill: "P-I-M-A Home Position Block"  · 60bpm 4,4 · voicing: open chords
+       prog:  IC VG
+       focus: Locking each finger to its home string so P (bass) and I-M-A (top three) fire without looking.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L83 Thumb Independence: The Steady Bass
+       drill: "Metronome Thumb"  · 65bpm 4,4 · voicing: open chords
+       prog:  IC IVF VG IC
+       focus: Thumb autopilot — keeping the bass perfectly steady even when a finger note lands on top.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L84 Alternating Bass: Travis Picking
+       drill: "Boom-Chick Travis Starter"  · 60bpm 4,4 · voicing: fingerstyle PIMA
+       prog:  IG IVC VD IG
+       focus: A rock-steady alternating bass that keeps marching while a finger note slips in between.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L85 Rolling Arpeggios: One Chord, Many Notes
+       drill: "P-I-M-A Roll & Return"  · 60bpm 4,4 · voicing: arpeggiated
+       prog:  iAm VIF IIIC VIIG
+       focus: Smooth, even arpeggio rolls up and back down with a consistent P-I-M-A finger order.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L86 Pinches & Blocked Chords
+       drill: "Pinch on the One"  · 62bpm 4,4 · voicing: fingerstyle PIMA
+       prog:  ID VA viBm IVG
+       focus: Landing a clean simultaneous pinch on the downbeat without disturbing the steady bass that follows.
+       → SCALES (Scale & Arp Explorer)
+  L87 One Pattern, Whole Progression
+       drill: "Pattern-Glued Progression"  · 60bpm 4,4 · voicing: fingerstyle PIMA
+       prog:  IC viAm IVF VG
+       focus: Keeping one picking pattern on autopilot across a four-chord loop while only the fretting hand moves.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Fingerstyle Free Flow" — backing: ballad drums + iAm VIF IIIC VIIG; solo A Minor Pent.
+
+━━━ UNIT 15: 🎶 Chord Changes & Playing Songs ━━━
+  L88 Smooth Changes: Anchor Fingers & Minimal Movement
+       drill: "C ↔ Am One-Minute Changes"  · 60bpm 4,4 · voicing: open chords
+       prog:  IC viAm
+       focus: Using a shared anchor finger so the change is a small pivot, not a full re-grip.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L89 The Three Chords That Run the World: I–IV–V
+       drill: "I–IV–V–I in G"  · 70bpm 4,4 · voicing: open chords
+       prog:  IG IVC VD IG
+       focus: Hearing and feeling the V→I 'home' pull when D resolves back to G.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L90 The Pop Progression: I–V–vi–IV
+       drill: "I–V–vi–IV Pop Loop in C"  · 75bpm 4,4 · voicing: open chords
+       prog:  IC VG viAm IVF
+       focus: Looping a four-chord pop progression smoothly and feeling the lift-then-dip of major→major→minor→major.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L91 The 12-Bar Blues by the Numbers
+       drill: "12-Bar Blues Shuffle in A"  · 80bpm 4,4 · voicing: power chords
+       prog:  I7A7 (Dom) IV7D7 (Dom) I7A7 (Dom) V7E7 (Dom) IV7D7 (Dom) I7A7 (Dom) V7E7 (Dom)
+       focus: Internalizing the 12-bar map — where the IV, I, and V land — so you can count through the whole form without looking.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L92 ii–V–I: The Jazz Homecoming
+       drill: "ii–V–I in C (Shell Voicings)"  · 65bpm 4,4 · voicing: shell (R-3-7)
+       prog:  iiDMin7 VG7 (Dom) ICMaj7
+       focus: Voice-leading a ii–V–I with minimal-movement shell voicings and hearing the V7→Imaj7 resolution.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L93 The 50s Progression & Transposing by Number
+       drill: "50s Progression — Same Numbers, Two Keys"  · 70bpm 4,4 · voicing: open chords
+       prog:  IG viEm IVC VD
+       focus: Transposing a progression by reading the I–vi–IV–V numbers into a new key.
+       → PROGRESSION (Progression Studio · auto-plays)
+  L94 Playing a Full Song Start to Finish
+       drill: "Full 8-Bar Tune in G — No Stops"  · 72bpm 4,4 · voicing: open chords
+       prog:  IG VD viEm IVC IVC IG VD IG
+       focus: Playing a whole short song start to finish in steady time, recovering from slips without breaking the groove.
+       → PROGRESSION (Progression Studio · auto-plays)
+  🎤 UNIT IMPROV: "Jam Over a I–V–vi–IV Loop" — backing: pop drums + IG VD viEm IVC; solo G Major

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resonote — Music Theory & Praxis</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0a0a0a">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="stylesheet" href="/src/styles/pedals.css">
+  <link rel="stylesheet" href="/src/styles/kit.css">
+  <link rel="stylesheet" href="/src/styles/fretboard.css">
+</head>
+<body>
+<div id="app">
+  <div id="header"></div>
+  <div id="session-bar" style="display:flex;gap:8px;padding:4px 10px;flex-wrap:wrap"></div>
+  <div id="instrument-bar"></div>
+  <div id="instrument-display"></div>
+  <div id="board-area">
+    <div id="board-bg"></div>
+    <div id="pedals-container"></div>
+    <div id="catalog-drawer"></div>
+    <div id="help-overlay"></div>
+  </div>
+  <div id="studio-mode" style="display:none"></div>
+  <div id="board-zoom-ctrl"></div>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
