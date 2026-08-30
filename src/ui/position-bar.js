@@ -45,28 +45,28 @@ export function buildPositionBar() {
 }
 
 function chip(label, on, attrs = '') {
-  return `<button ${attrs} style="border:1px solid ${on ? ACC : '#3a3a3a'};color:${on ? ACC : '#9aacac'};background:${on ? ACC + '22' : 'rgba(255,255,255,.02)'};border-radius:5px;padding:3px 8px;cursor:pointer;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:600">${label}</button>`;
+  return `<button ${attrs} style="border:1px solid ${on ? ACC : '#3a3a3a'};color:${on ? ACC : '#9aacac'};background:${on ? ACC + '22' : 'rgba(255,255,255,.02)'};border-radius:5px;padding:3px 8px;cursor:pointer;font-size:calc(9px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">${label}</button>`;
 }
 function step(label, attrs) {
-  return `<button ${attrs} style="border:1px solid #3a3a3a;color:#cdd;background:rgba(255,255,255,.03);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;line-height:1">${label}</button>`;
+  return `<button ${attrs} style="border:1px solid #3a3a3a;color:#cdd;background:rgba(255,255,255,.03);border-radius:4px;padding:2px 7px;cursor:pointer;font-size:calc(11px*var(--ui));line-height:1">${label}</button>`;
 }
-const lbl = t => `<span class="mono" style="color:#5b6b6b;font-size:8px;letter-spacing:1px;margin-left:6px">${t}</span>`;
+const lbl = t => `<span class="mono" style="color:#5b6b6b;font-size:calc(8px*var(--ui));letter-spacing:1px;margin-left:6px">${t}</span>`;
 
 function render(el) {
   const p = positionIsolation;
-  let h = `<span class="mono" style="color:#5b6b6b;font-size:8px;letter-spacing:1px">POSITION</span>`;
+  let h = `<span class="mono" style="color:#5b6b6b;font-size:calc(8px*var(--ui));letter-spacing:1px">POSITION</span>`;
   h += chip('All notes', !p.active, 'data-act="all"');
 
   if (p.defining) {
     const n = (p.customShape || []).length;
-    h += `<span style="color:${ACC};font-size:10px;margin-left:6px">✏ Tap frets on the neck to build a shape — ${n} note${n === 1 ? '' : 's'}</span>`;
+    h += `<span style="color:${ACC};font-size:calc(10px*var(--ui));margin-left:6px">✏ Tap frets on the neck to build a shape — ${n} note${n === 1 ? '' : 's'}</span>`;
     h += chip('Clear', false, 'data-act="clearshape"');
     h += chip('Done', false, 'data-act="done"');
   } else {
     h += lbl('WINDOW');
     h += step('◂', 'data-act="slide-"');
     const showWin = p.active && p.selectedPreset !== 'custom';
-    h += `<span class="mono" style="color:${showWin ? '#cdd' : '#556'};font-size:10px;min-width:34px;text-align:center">${showWin ? p.loFret + '–' + p.hiFret : '— —'}</span>`;
+    h += `<span class="mono" style="color:${showWin ? '#cdd' : '#556'};font-size:calc(10px*var(--ui));min-width:34px;text-align:center">${showWin ? p.loFret + '–' + p.hiFret : '— —'}</span>`;
     h += step('▸', 'data-act="slide+"');
 
     h += lbl('AT FRET');

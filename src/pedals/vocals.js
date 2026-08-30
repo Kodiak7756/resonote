@@ -1,102 +1,139 @@
-import { audio } from '../core/audio.js';
-import { NOTES } from '../core/music-theory.js';
+// ── 🎤 VOCALS — the third instrument surface ──────────────────────────
+// Not a tuner strip. The voice gets the same standing here that the fretboard and
+// the piano get: the app's highlight signals drive it, so any drill, lesson, scale
+// or song that lights the neck also lays down a ghosted path for the singer to
+// chase — the "transparent one to follow".
+//
+// The pitch reading itself lives in ui/pitch-trace.js; this file is the instrument
+// display's chrome: lane mode, the ball / trail / notation toggles, and persistence.
+import { createPitchTrace, LANE_MODES, LANE_MODE_LABELS } from '../ui/pitch-trace.js';
 
-const CHROMATIC = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-const LOW_OCTAVE  = 2;
-const HIGH_OCTAVE = 6;
-const TOTAL_NOTES = (HIGH_OCTAVE - LOW_OCTAVE + 1) * 12;
+const LS_KEY = 'rn-vocals-view';
+const DEFAULTS = { lanes: 'key', ball: true, trail: true, notation: false, seconds: 6 };
+const SECONDS_CHOICES = [4, 6, 10, 16];
 
-function noteToIndex(note, octave) {
-  const ni = CHROMATIC.indexOf(note);
-  if (ni < 0) return -1;
-  return (octave - LOW_OCTAVE) * 12 + ni;
+function loadView() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    const out = { ...DEFAULTS, ...(v && typeof v === 'object' ? v : {}) };
+    if (!LANE_MODES.includes(out.lanes)) out.lanes = DEFAULTS.lanes;
+    if (!SECONDS_CHOICES.includes(out.seconds)) out.seconds = DEFAULTS.seconds;
+    return out;
+  } catch (e) { return { ...DEFAULTS }; }
 }
+function saveView(v) { try { localStorage.setItem(LS_KEY, JSON.stringify(v)); } catch (e) {} }
+
+let _trace = null;          // one live trace at a time — a re-render replaces it
+
+const BTN = (on) => `background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};` +
+  `color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};border-radius:5px;font-family:'JetBrains Mono',monospace;` +
+  `font-size:calc(9px*var(--ui));font-weight:700;letter-spacing:.5px;padding:4px 9px;cursor:pointer`;
 
 export function renderVocalsDisplay() {
   const el = document.getElementById('vocals-display');
-  if (!el) return;
+  if (!el) return null;
 
+  // Idempotent: switching instruments away and back (or any repeat call) tears the
+  // previous trace down first, so only one rAF loop and one event listener exist.
+  if (_trace) { try { _trace.destroy(); } catch (e) {} _trace = null; }
+
+  const view = loadView();
+
+  // .rk carries the kit tokens. The voice bar lives in the header, not in a
+  // pedal card, so there is no accent to inherit — it lands on :root's neutral
+  // steel, which is the point: the instrument surface belongs to no one pedal.
+  // flex-direction is pinned because .rk otherwise stacks its children.
   el.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;padding:0 4px">
-      <span class="mono vocals-range-label">C${LOW_OCTAVE}</span>
-      <div class="vocals-pitch-bar" style="flex:1">
-        <div id="voc-bar-bg"></div>
-        <div id="voc-needle" class="vocals-pitch-needle" style="display:none;left:50%"></div>
+    <div id="voc-bar" class="rk" style="display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;gap:10px;padding:0 2px 2px">
+      <span class="mono" style="font-size:calc(9px*var(--ui));letter-spacing:1.2px;color:var(--rk-ink-mute)">🎤 VOICE</span>
+      <div id="voc-lanes" style="display:flex;gap:4px">
+        ${LANE_MODES.map(m => `<button class="voc-lane-btn" id="voc-lane-${m}" data-lanes="${m}" style="${BTN(view.lanes === m)}">${LANE_MODE_LABELS[m]}</button>`).join('')}
       </div>
-      <span class="mono vocals-range-label">C${HIGH_OCTAVE}</span>
-    </div>
-    <div style="display:flex;justify-content:center;align-items:baseline;gap:12px">
-      <span id="voc-note" class="mono" style="font-size:36px;font-weight:900;color:#333;line-height:1">—</span>
-      <div style="display:flex;flex-direction:column;gap:2px">
-        <span id="voc-freq" class="mono" style="color:#555;font-size:10px">— Hz</span>
-        <span id="voc-cents" class="mono" style="color:#555;font-size:10px;font-weight:700">—¢</span>
+      <span style="width:1px;height:16px;background:var(--rk-edge-soft)"></span>
+      <div id="voc-toggles" style="display:flex;gap:4px">
+        <button class="voc-toggle" id="voc-t-ball"     data-opt="ball"     style="${BTN(view.ball)}">● Ball</button>
+        <button class="voc-toggle" id="voc-t-trail"    data-opt="trail"    style="${BTN(view.trail)}">∿ Trail</button>
+        <button class="voc-toggle" id="voc-t-notation" data-opt="notation" style="${BTN(view.notation)}">𝄞 Notation</button>
       </div>
+      <span style="width:1px;height:16px;background:var(--rk-edge-soft)"></span>
+      <select id="voc-seconds" class="mono" style="background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink-dim);border-radius:5px;font-size:calc(9px*var(--ui));font-weight:700;padding:4px 6px;cursor:pointer;outline:none">
+        ${SECONDS_CHOICES.map(s => `<option value="${s}" ${s === view.seconds ? 'selected' : ''}>${s}s window</option>`).join('')}
+      </select>
+      <span class="mono" id="voc-legend" style="margin-left:auto;font-size:calc(8px*var(--ui));color:var(--rk-ink-mute);letter-spacing:.4px">
+        lanes = notes of the key · ghosted band = what to sing · ring green when you're on it
+      </span>
     </div>
-    <div id="voc-range-bar" style="display:flex;gap:2px;align-items:flex-end;padding:0 4px;height:24px"></div>`;
+    <div id="voc-trace" style="width:100%"></div>`;
 
-  buildRangeBar();
+  const mount = document.getElementById('voc-trace');
+  const built = createPitchTrace(mount, {
+    lanes: view.lanes, ball: view.ball, trail: view.trail,
+    notation: view.notation, seconds: view.seconds, height: 230,
+    onDestroy: () => { if (_trace === built) _trace = null; }   // lets the observer remount
+  });
+  _trace = built;
 
-  function buildRangeBar() {
-    const bar = document.getElementById('voc-range-bar');
-    if (!bar) return;
-    bar.innerHTML = '';
-    for (let i = 0; i < TOTAL_NOTES; i++) {
-      const div = document.createElement('div');
-      div.id = `voc-cell-${i}`;
-      div.style.cssText = `flex:1;height:${i % 12 === 0 ? '16px' : '8px'};background:#1a1a2a;border-radius:1px;transition:background .05s`;
-      bar.appendChild(div);
-    }
-  }
+  el.querySelectorAll('.voc-lane-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      view.lanes = b.dataset.lanes;
+      saveView(view);
+      _trace?.setLanes(view.lanes);
+      el.querySelectorAll('.voc-lane-btn').forEach(x => { x.style.cssText = BTN(x.dataset.lanes === view.lanes); });
+      _trace?.render();
+    });
+  });
 
-  const upd = () => {
-    const det = audio.detected;
-    const inTune = det && Math.abs(det.cents) < 10;
-    const cc = !det ? '#555' : inTune ? '#aa88ff' : Math.abs(det.cents) < 25 ? '#dd8844' : '#ff4466';
+  el.querySelectorAll('.voc-toggle').forEach(b => {
+    b.addEventListener('click', () => {
+      const k = b.dataset.opt;
+      view[k] = !view[k];
+      saveView(view);
+      _trace?.setOption(k, view[k]);
+      b.style.cssText = BTN(view[k]);
+      _trace?.render();
+    });
+  });
 
-    const noteEl  = document.getElementById('voc-note');
-    const freqEl  = document.getElementById('voc-freq');
-    const centsEl = document.getElementById('voc-cents');
-    const needle  = document.getElementById('voc-needle');
+  document.getElementById('voc-seconds')?.addEventListener('change', e => {
+    view.seconds = parseInt(e.target.value, 10) || DEFAULTS.seconds;
+    saveView(view);
+    _trace?.setOption('seconds', view.seconds);
+  });
 
-    if (noteEl) {
-      noteEl.textContent  = det ? det.note : '—';
-      noteEl.style.color  = det ? cc : '#333';
-      noteEl.style.textShadow = det ? `0 0 30px ${cc}66` : 'none';
-    }
-    if (freqEl)  freqEl.textContent  = det ? `${det.freq.toFixed(1)} Hz` : '— Hz';
-    if (centsEl) {
-      const c = det?.cents || 0;
-      centsEl.textContent = det ? `${c > 0 ? '+' : ''}${c}¢` : '—¢';
-      centsEl.style.color = cc;
-    }
+  return _trace;
+}
 
-    if (needle) {
-      if (det) {
-        const idx = noteToIndex(det.note, det.octave);
-        if (idx >= 0) {
-          needle.style.display = 'block';
-          needle.style.left    = `${(idx / (TOTAL_NOTES - 1)) * 100}%`;
-          needle.style.background   = cc;
-          needle.style.boxShadow    = `0 0 10px ${cc}88`;
-        }
-      } else {
-        needle.style.display = 'none';
-      }
-    }
+export function destroyVocalsDisplay() {
+  if (_trace) { try { _trace.destroy(); } catch (e) {} _trace = null; }
+}
 
-    for (let i = 0; i < TOTAL_NOTES; i++) {
-      const cell = document.getElementById(`voc-cell-${i}`);
-      if (!cell) continue;
-      if (det && noteToIndex(det.note, det.octave) === i) {
-        cell.style.background = cc;
-        cell.style.height = '24px';
-      } else {
-        cell.style.background = i % 12 === 0 ? '#2a2a3a' : '#1a1a2a';
-        cell.style.height = i % 12 === 0 ? '16px' : '8px';
-      }
-    }
+// ── Self-mounting ─────────────────────────────────────────────────────
+// main.js imports renderVocalsDisplay but nothing calls it — the vocals branch of
+// buildInstrumentView() only un-hides #vocals-display. Rather than reach into other
+// modules, watch that element's own visibility: buildInstrumentView() toggles its
+// inline `display`, so a style-attribute observer is the exact signal for "the user
+// switched to vocals". Guarded so an explicit call from elsewhere stays harmless.
+function mountWhenVisible(el) {
+  const check = () => {
+    const shown = el.style.display !== 'none' && el.getClientRects().length > 0;
+    if (shown && !_trace) renderVocalsDisplay();
   };
+  new MutationObserver(check).observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+  check();
+}
 
-  audio.on(upd);
-  upd();
+function waitForDisplay() {
+  const found = document.getElementById('vocals-display');
+  if (found) { mountWhenVisible(found); return; }
+  // #vocals-display is created by renderHeader() well after this module is imported.
+  const mo = new MutationObserver(() => {
+    const el = document.getElementById('vocals-display');
+    if (el) { mo.disconnect(); mountWhenVisible(el); }
+  });
+  mo.observe(document.documentElement, { childList: true, subtree: true });
+}
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', waitForDisplay, { once: true });
+  else waitForDisplay();
 }

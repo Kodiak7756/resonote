@@ -44,23 +44,31 @@ export const CURRICULUM = {
               "explain": "There's no H in music. After G the alphabet loops straight back to A — that's the whole trick to it."
             },
             {
+              "kind": "play",
+              "prompt": "After G the alphabet loops back around. Your reference note is G — play the note that comes NEXT in the alphabet: find any A on your guitar.",
+              "root": "G",
+              "targetNote": "A",
+              "targetIntervalFromRoot": 2,
+              "explain": "G to A — that's the wrap-around in action. And that A is the exact note the Alphabet Climb drill starts on, so you've already played beat one. The loop isn't just a rule; it's a note you can put a finger on."
+            },
+            {
               "kind": "mcq",
-              "prompt": "How many letter names does the musical alphabet use before it repeats?",
+              "prompt": "The drill climbs A to A up the open A string — the full seven-letter loop. Now run the same climb from the open low E string, one letter at a time: what note do you land back on at fret 12?",
               "audio": {
                 "kind": "scale",
-                "root": "A",
-                "scaleCat": "Diatonic",
-                "scaleName": "Nat. Minor",
-                "caption": "Count the steps up to the repeat"
+                "root": "E",
+                "scaleCat": "Modes",
+                "scaleName": "Phrygian",
+                "caption": "The same seven letters climbing from open E: E-F-G-A-B-C-D-E"
               },
               "options": [
-                "5",
-                "7",
-                "8",
-                "12"
+                "E",
+                "A",
+                "B",
+                "G"
               ],
-              "answer": 1,
-              "explain": "Seven letters: A B C D E F G, then it loops. (The 8th note you hear is just A again, one octave up — more on octaves soon.)"
+              "answer": 0,
+              "explain": "Every string runs the same seven-letter loop — only the starting letter changes. From E you climb E-F-G-A-B-C-D and land back on E at fret 12, exactly like the A string lands back on A. Now open Dynamic Practice, set the key to E, and run the climb up the low E string to prove it."
             }
           ],
           "drill": {
@@ -72,10 +80,10 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "root": "C",
-                "quality": "Major",
+                "root": "A",
+                "quality": "Minor",
                 "beats": 4,
-                "numeral": "I"
+                "numeral": "i"
               }
             ],
             "voicing": "single notes",
@@ -337,8 +345,42 @@ export const CURRICULUM = {
             {
               "kind": "play",
               "prompt": "Play the open A string (the 5th string, second-thickest).",
+              "root": "A",
               "targetNote": "A",
               "explain": "That's your A — the classic tuning reference note. Letting it ring open is the easiest way to hear and confirm the string name."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Each clip plays a pair of neighboring open strings, low note first. One pair has the odd, SMALLER gap. Which pair is G-to-B?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "A",
+                    "intervalSemitones": 5,
+                    "caption": "Pair A: two neighboring open strings"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "G",
+                    "intervalSemitones": 4,
+                    "caption": "Pair B: two neighboring open strings"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "Pair B is G up to B — only 4 frets, a major 3rd — while Pair A is A up to D, the 5-fret perfect 4th every other neighbor pair uses. That one tighter gap at G→B is why chord and scale shapes shift when they cross the B string."
+            },
+            {
+              "kind": "play",
+              "prompt": "Your THICKEST string is E. Now play the open THINNEST string — same letter, two octaves up.",
+              "root": "E",
+              "targetNote": "E",
+              "explain": "Both outer strings are E — one name, two octaves apart — so every open strum you play is framed by matching E's. That's last lesson's octave idea living inside your tuning. Now open Dynamic Practice, nudge the tempo up, and run the strum drill, naming all six strings until E-A-D-G-B-E is automatic."
             }
           ],
           "drill": {
@@ -689,6 +731,26 @@ export const CURRICULUM = {
               ],
               "answer": 0,
               "explain": "A is C up to F (5 semitones) — the perfect 4th, like the 'Here Comes the Bride' leap. B is the perfect 5th (7 semitones)."
+            },
+            {
+              "kind": "build",
+              "prompt": "Build this three-note ladder: C, then the G a perfect 5th above it, then the NEXT C above that. Count the semitones of each hop as you go.",
+              "mode": "notes",
+              "root": "C",
+              "targetIntervals": [
+                0,
+                7,
+                12
+              ],
+              "explain": "Here's the reveal: C up to G is 7 semitones — a perfect 5th. But G up to the next C is only 5 semitones — a perfect 4th. Same two note names, flipped over, and 7 + 5 = 12. Every perfect 4th is an upside-down perfect 5th — that's why they're both so stable."
+            },
+            {
+              "kind": "play",
+              "prompt": "Take it to a new key: play the perfect 5th above G — the note that turns G into a power chord.",
+              "root": "G",
+              "targetIntervalFromRoot": 7,
+              "targetNote": "D",
+              "explain": "7 semitones above G is D — root plus 5th is the whole power-chord skeleton, in any key. Now open Dynamic Practice below, set the key to G, and run the drill there: same 5th-and-4th moves, new home base."
             }
           ],
           "drill": {
@@ -733,16 +795,42 @@ export const CURRICULUM = {
           },
           "exercises": [
             {
-              "kind": "mcq",
-              "prompt": "Which interval splits the octave exactly in half and sounds the most tense?",
-              "options": [
-                "Perfect 5th",
-                "Major 3rd",
-                "Tritone",
-                "Minor 2nd"
+              "kind": "ear",
+              "prompt": "One of these is the rock-solid perfect 5th; the other is the restless tritone, one fret lower. Pick the TRITONE.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 7,
+                    "caption": "C to G — perfect 5th"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 6,
+                    "caption": "C to F# — tritone"
+                  }
+                }
               ],
-              "answer": 2,
-              "explain": "The tritone is 6 semitones — exactly half of the 12-semitone octave — and it's famously the most unstable, edgy interval."
+              "answer": 1,
+              "explain": "B is the tritone — just one fret shy of the 5th, yet A sits planted while B squirms. That 'Ma-ri-a' / Simpsons-theme edge is the sound of a question that hasn't been answered yet."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "The tritone sits one fret below the perfect 5th. The 5th above C is G — so the tritone above C is ___",
+              "options": [
+                "F",
+                "F#",
+                "G",
+                "G#"
+              ],
+              "answer": 1,
+              "explain": "Find any note's 5th, drop one fret, and you've found its tritone. That shortcut works from every root — keep it in your pocket for when you change the drill's key in Dynamic Practice."
             },
             {
               "kind": "play",
@@ -751,6 +839,14 @@ export const CURRICULUM = {
               "targetIntervalFromRoot": 6,
               "targetNote": "F#",
               "explain": "Six semitones above C is F# — the tritone. Notice how unsettled it sounds compared to the rock-solid 5th just one fret higher."
+            },
+            {
+              "kind": "play",
+              "prompt": "Transfer it: the 5th above G is D. Drop one fret to find the tritone above G, and play it.",
+              "root": "G",
+              "targetIntervalFromRoot": 6,
+              "targetNote": "C#",
+              "explain": "One fret below D is C# — the tritone above G. Same shortcut, new key. Now open Dynamic Practice, set the key to G, and run the drill there: the same restless pull, this time resolving up to D."
             }
           ],
           "drill": {
@@ -850,14 +946,8 @@ export const CURRICULUM = {
               {
                 "root": "C",
                 "quality": "Major",
-                "beats": 2,
+                "beats": 4,
                 "numeral": "I"
-              },
-              {
-                "root": "C#",
-                "quality": "Minor",
-                "beats": 2,
-                "numeral": "i"
               }
             ],
             "voicing": "two-note intervals mixed",
@@ -872,7 +962,7 @@ export const CURRICULUM = {
           "teach": {
             "summary": "Now combine number + quality + semitone count so you can name or find any interval on the fly. The 6ths and 7ths fill out the picture above the 5th, and inversions help you spot them fast.",
             "points": [
-              "Major 6th = 9 semitones (C to A); minor 7th = 10 (C to A#); major 7th = 11 (C to B).",
+              "Major 6th = 9 semitones (C to A); minor 7th = 10 (C to B♭ — same letter as the major 7th's B, flattened); major 7th = 11 (C to B).",
               "Flip an interval to its inversion: a major 3rd inverts to a minor 6th, and their semitones add up to 12.",
               "Major inverts to minor (and vice versa); perfect intervals stay perfect.",
               "Once you know the semitone count, the name follows automatically."
@@ -899,7 +989,7 @@ export const CURRICULUM = {
             },
             {
               "kind": "mcq",
-              "prompt": "You hear C up to A# (10 semitones). What interval is that?",
+              "prompt": "You hear C climb 10 semitones — landing on the fret guitarists often call A♯. What interval did you just hear?",
               "audio": {
                 "kind": "interval",
                 "root": "C",
@@ -913,7 +1003,29 @@ export const CURRICULUM = {
                 "Octave"
               ],
               "answer": 1,
-              "explain": "10 semitones is the minor 7th (C to A#) — the bluesy, slightly unresolved interval you hear at the top of every dominant 7 chord."
+              "explain": "10 semitones is the minor 7th (C to B♭) — the bluesy, slightly unresolved interval you hear at the top of every dominant 7 chord. (B♭, not A♯: a 7th keeps the 7th's letter, B, just flattened.)"
+            },
+            {
+              "kind": "build",
+              "prompt": "You know C up to E is a major 3rd (4 semitones). Now flip it: build from E up to the next C, and count the semitones.",
+              "mode": "notes",
+              "root": "E",
+              "targetIntervals": [
+                0,
+                8
+              ],
+              "explain": "E up to C is 8 semitones — a minor 6th. That's inversion in action: flip a major 3rd and it becomes a minor 6th, and 4 + 8 = 12. Two intervals you learned separately are literally the same two notes, just flipped — major always inverts to minor, and the pair always adds up to an octave."
+            },
+            {
+              "kind": "build",
+              "prompt": "Take it out of C: build a major 6th above G — tap the root and the 6th.",
+              "mode": "notes",
+              "root": "G",
+              "targetIntervals": [
+                0,
+                9
+              ],
+              "explain": "9 semitones above G is E — the same warm 'My Bonnie' leap, new root. Semitone counts are portable: they work from any note. Prove it — open Dynamic Practice below, set the key to G, and run the chromatic climb from G, naming each interval and its count as it sounds."
             }
           ],
           "drill": {
@@ -1036,6 +1148,50 @@ export const CURRICULUM = {
               ],
               "answer": 2,
               "explain": "Reading the pattern: W(1-2) W(2-3) H(3-4) W(4-5) W(5-6) W(6-7) H(7-8). The half steps sit between 3-4 and 7-8 — in C that's E-F and B-C, the two natural half steps."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both scales climb from C. One has the tight half step at 7-8 that pulls you home — the full Do-Re-Mi resolve. The other's last step is slack. Which is the true MAJOR scale?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "C",
+                    "scaleCat": "Modes",
+                    "scaleName": "Mixolydian",
+                    "caption": "C scale — version A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "C",
+                    "scaleCat": "Diatonic",
+                    "scaleName": "Major",
+                    "caption": "C scale — version B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is the major scale: its 7th note sits one half step under home, so 'Ti' leans hard into 'Do' and the climb resolves. A lowers that 7th, turning the last step into a slack whole step — the pull home vanishes. That H between 7-8 isn't trivia; it's the sound of the pattern."
+            },
+            {
+              "kind": "build",
+              "prompt": "Take the recipe somewhere new: apply W-W-H-W-W-W-H starting on D — tap all seven notes and discover which TWO notes the recipe forces to be sharp.",
+              "mode": "notes",
+              "root": "D",
+              "targetIntervals": [
+                0,
+                2,
+                4,
+                5,
+                7,
+                9,
+                11
+              ],
+              "explain": "D-E-F#-G-A-B-C#. The pattern itself forces F# (keeping W between 2-3) and C# (keeping the H between 7-8 that pulls into D). Sharps aren't decoration — they're what keeps the recipe intact from a new root. Now open Dynamic Practice, set the key to D, and run the drill there: same W-W-H-W-W-W-H, new home."
             }
           ],
           "drill": {
@@ -1267,7 +1423,51 @@ export const CURRICULUM = {
                 "B#"
               ],
               "answer": 2,
-              "explain": "The order of sharps is F C G D A E B, so F# is always first. That's why the simplest sharp key, G major, has exactly one sharp — F#."
+              "explain": "The order of sharps is F C G D A E B, so F# is always first — and it's no accident. The first sharp key is G, one 5th up from C, and F# is the single note G major must fix to keep W-W-H-W-W-W-H intact. Each key another 5th up sharpens one more note, in that same order."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips run up from G. One uses the key signature's F#, the other plays F natural. Which is the true G MAJOR — the one whose last step resolves home?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "G",
+                    "scaleCat": "Diatonic",
+                    "scaleName": "Major",
+                    "caption": "G scale, version A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "G",
+                    "scaleCat": "Modes",
+                    "scaleName": "Mixolydian",
+                    "caption": "G scale, version B"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A is G major — the F# sits one fret under G and pulls you home, so the scale finishes its sentence. B swaps in F natural, which puts a half step in the wrong place: slack and bluesy instead of resolved. That's the entire job of a key signature — protecting W-W-H-W-W-W-H. (Bonus: the slack version is a real scale called Mixolydian. You'll meet it later.)"
+            },
+            {
+              "kind": "build",
+              "prompt": "Now go the OTHER way. Build an F major scale from the same W-W-H-W-W-W-H recipe — tap its seven notes and discover the first FLAT.",
+              "mode": "notes",
+              "root": "F",
+              "targetIntervals": [
+                0,
+                2,
+                4,
+                5,
+                7,
+                9,
+                11
+              ],
+              "explain": "The recipe forces F G A B♭ C D E. That B♭ is the first flat — born exactly the way F# was: it's the one note the pattern breaks on. Sharps appear a 5th UP from C; flats appear a 5th DOWN. Now open Dynamic Practice, set the key to F, and run the drill there — listen for B♭ doing F#'s job."
             }
           ],
           "drill": {
@@ -1318,11 +1518,30 @@ export const CURRICULUM = {
           },
           "exercises": [
             {
-              "kind": "play",
-              "prompt": "Take one step clockwise on the circle of fifths from C — play the note a perfect 5th above C.",
-              "root": "C",
-              "targetIntervalFromRoot": 7,
-              "explain": "A perfect 5th is 7 semitones. Up 7 from C is G — the next key clockwise on the circle, and the key with one sharp (F#)."
+              "kind": "ear",
+              "prompt": "One of these hops from C is CLOCKWISE on the circle (adds a sharp), one is COUNTER-CLOCKWISE (adds a flat). Which is the clockwise perfect-5th hop?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 7,
+                    "caption": "Hop A from C"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 5,
+                    "caption": "Hop B from C"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A is the perfect 5th (C up to G) — clockwise, toward the sharps. B is the perfect 4th (C up to F) — counter-clockwise, toward the flats. They're the same two pulls you'll lean on all through this app: the 5th is the V→I 'pull home,' the 4th is the IV→I landing."
             },
             {
               "kind": "mcq",
@@ -1335,6 +1554,13 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "Clockwise = up a perfect 5th = add one sharp each step (C has 0, G has 1, D has 2...). Counter-clockwise goes the other way and adds flats."
+            },
+            {
+              "kind": "play",
+              "prompt": "You've hopped C → G. Now treat G as the new 1 and take the NEXT clockwise step — play the 5th degree of G.",
+              "root": "G",
+              "targetIntervalFromRoot": 7,
+              "explain": "You landed on D — two hops from C, two sharps (F# and C#). Notice what just happened: the new key's 1 (G) was the old key's 5. The circle is nothing but the 5-of-the-5, chained. To hear hop two for yourself, open Dynamic Practice below, set the key to D, and run the Circle Hop drill from there."
             }
           ],
           "drill": {
@@ -1539,6 +1765,37 @@ export const CURRICULUM = {
               "targetIntervalFromRoot": 4,
               "targetNote": "E",
               "explain": "Four semitones above C is E, the major 3rd. That one note is what makes the chord sound major."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Strum your open C chord — it rings five strings. How many DIFFERENT notes are you actually playing?",
+              "audio": {
+                "kind": "chord",
+                "root": "C",
+                "chordCat": "Triads",
+                "chordType": "Major",
+                "caption": "Open C chord — count the different notes"
+              },
+              "options": [
+                "5",
+                "4",
+                "3",
+                "2"
+              ],
+              "answer": 2,
+              "explain": "Just 3 — C, E and G, doubled across octaves. Your open C — the I chord you've played forever — was a stacked-thirds triad all along. Every cowboy chord is a triad in disguise."
+            },
+            {
+              "kind": "build",
+              "prompt": "Same recipe, new root: build a G major triad — root, +4 frets, +7 frets.",
+              "mode": "notes",
+              "root": "G",
+              "targetIntervals": [
+                0,
+                4,
+                7
+              ],
+              "explain": "G major = G (0), B (major 3rd, 4), D (perfect 5th, 7). The recipe never changes — only the root does. Now open Dynamic Practice below, set the key to G, and run the triad build there: same I chord, new home."
             }
           ],
           "drill": {
@@ -1686,10 +1943,10 @@ export const CURRICULUM = {
                 "Major",
                 "Minor",
                 "Diminished",
-                "Augmented"
+                "Power chord (just root & 5th)"
               ],
               "answer": 2,
-              "explain": "That's B diminished (B D F). Two stacked minor 3rds and a flat 5th give it that tense, unresolved sound."
+              "explain": "That's B diminished (B D F). Two stacked minor 3rds and a flat 5th give it that tense, unresolved sound. (It can't be a power chord — you can hear a 3rd in there, and a power chord has none.)"
             },
             {
               "kind": "build",
@@ -1801,6 +2058,26 @@ export const CURRICULUM = {
                 8
               ],
               "explain": "C aug = C (0), E (major 3rd, 4), G# (sharp 5th, 8). Two major 3rds stacked — the 5th sits a half step ABOVE a normal 5th."
+            },
+            {
+              "kind": "build",
+              "prompt": "Now build an E augmented triad — tap its notes.",
+              "mode": "notes",
+              "root": "E",
+              "targetIntervals": [
+                0,
+                4,
+                8
+              ],
+              "explain": "E aug = E, G#, C… wait. Those are the SAME three notes as C aug (C E G#)! Because every note is a major 3rd apart, the chord has no real root — C aug, E aug, and G# aug are one shape wearing three names. Learn it once, own it three times."
+            },
+            {
+              "kind": "play",
+              "prompt": "Transfer it: G major is G–B–D. Raise the 5th one fret and play the note that changed — the sharp 5th of G.",
+              "root": "G",
+              "targetNote": "D#",
+              "targetIntervalFromRoot": 8,
+              "explain": "D up to D# turns G major into G augmented (G–B–D#) — the exact raise-the-5th move you made in C. Now open the Dynamic Practice panel, set the key to G, and run the drill there to hear G aug float against plain G major."
             }
           ],
           "drill": {
@@ -2261,6 +2538,32 @@ export const CURRICULUM = {
           },
           "exercises": [
             {
+              "kind": "ear",
+              "prompt": "One of these is a bare A minor triad, the other is Am7. Which one is the minor 7 — rounder and more cushioned?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "A",
+                    "chordCat": "Triads",
+                    "chordType": "Minor"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "A",
+                    "chordCat": "7ths",
+                    "chordType": "Min7"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B adds the flat 7th (G) on top of the A minor triad — that single note rounds the sadness into something chilled-out and smooth. Keep this contrast in your ear: the drill has you make this exact change with your own hands."
+            },
+            {
               "kind": "build",
               "prompt": "Build an A minor 7 chord (Am7) — tap its four notes",
               "mode": "notes",
@@ -2275,22 +2578,35 @@ export const CURRICULUM = {
             },
             {
               "kind": "mcq",
-              "prompt": "How do you turn a minor triad into a minor 7 chord?",
+              "prompt": "Am7 is A-C-E-G. Now look at just its TOP three notes — C, E, G. What chord is that?",
               "audio": {
                 "kind": "chord",
                 "root": "A",
                 "chordCat": "7ths",
                 "chordType": "Min7",
-                "caption": "Am7"
+                "caption": "Am7 — listen for the chord hiding on top"
               },
               "options": [
-                "Add a flat 7th on top of the minor triad",
-                "Add a major 7th on top of the minor triad",
-                "Raise the flat 3rd to a major 3rd",
-                "Remove the 5th"
+                "A C major triad",
+                "An A minor triad",
+                "A G major triad",
+                "An E minor triad"
               ],
               "answer": 0,
-              "explain": "Minor 7 = minor triad + flat 7th. (Adding a major 7th instead would make the rarer, tenser minor-major 7 chord.)"
+              "explain": "Every minor 7 hides its relative major triad on top — Am7 is a C major chord floating over an A bass. That's why it sounds so smooth, and why Am7 and C6 are literally the same four notes."
+            },
+            {
+              "kind": "build",
+              "prompt": "Same recipe, new root: build an E minor 7 chord (Em7) — tap its four notes",
+              "mode": "notes",
+              "root": "E",
+              "targetIntervals": [
+                0,
+                3,
+                7,
+                10
+              ],
+              "explain": "Em7 is E (0), G (3), B (7), D (10) — and its top three notes G-B-D are a G major triad, E minor's relative major riding on top again. Now open Dynamic Practice, set the key to E, and run the drill there."
             }
           ],
           "drill": {
@@ -2500,10 +2816,29 @@ export const CURRICULUM = {
               "explain": "The ii chord is minor 7 (Dm7), the V is dominant 7 (G7), and the I is major 7 (Cmaj7). That ii=min7, V=dom7, I=maj7 pattern holds in every major key."
             },
             {
-              "kind": "play",
-              "prompt": "A ii–V–I in C resolves to its home chord, Cmaj7. Play the root note that the whole progression lands on.",
-              "targetNote": "C",
-              "explain": "The I chord is the home base — in the key of C, that root is C. The whole ii–V–I exists to deliver you there."
+              "kind": "build",
+              "prompt": "Build the ii chord of C major — a minor 7 on D. Tap its four notes.",
+              "mode": "notes",
+              "root": "D",
+              "targetIntervals": [
+                0,
+                3,
+                7,
+                10
+              ],
+              "explain": "D (0), F (3), A (7), C (10) — the minor-triad-plus-flat-7 recipe from two lessons back, now doing a JOB. Dm7 is the setup chord: it starts the handoff down a fifth to G7, which hands off home to Cmaj7."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You want to run this drill in G using Dynamic Practice. Applying ii = min7, V = dom7, I = maj7 to the G major scale, which chords do you get?",
+              "options": [
+                "Am7 → D7 → Gmaj7",
+                "Am7 → Dmaj7 → G7",
+                "Bm7 → D7 → Gmaj7",
+                "A7 → Dm7 → Gmaj7"
+              ],
+              "answer": 0,
+              "explain": "Count up the G major scale: 2nd = A, so ii = Am7; 5th = D, so V = D7; 1st = G, so I = Gmaj7. Same functions, new letters. Now open Dynamic Practice, set the key to G, and run the drill there."
             }
           ],
           "drill": {
@@ -2607,6 +2942,60 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "B is Bdim7 (B D F A♭) — every note is exactly three frets apart, giving that spooky, rootless suspense. A is the half-diminished Bm7♭5, tense but less symmetrical."
+            },
+            {
+              "kind": "build",
+              "prompt": "Now build Ddim7 — stack flat 3rds up from D and tap its four notes",
+              "mode": "notes",
+              "root": "D",
+              "targetIntervals": [
+                0,
+                3,
+                6,
+                9
+              ],
+              "explain": "D (0), F (3), A♭ (6), B (9)... look again: those are the SAME four notes as the Bdim7 you just heard (B D F A♭)! Because every note is exactly 3 frets apart, any of the four can act as the root — one dim7 is secretly four chords: Bdim7 = Ddim7 = Fdim7 = A♭dim7. Slide the shape up 3 frets and you haven't changed the chord at all."
+            },
+            {
+              "kind": "ear",
+              "prompt": "The m7♭5 is the ii chord of a minor key. In which clip does Bm7♭5 get to do its job — kicking off a handoff that lands home on a minor i?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "B",
+                    "progression": [
+                      {
+                        "root": "B",
+                        "cat": "7ths",
+                        "type": "m7♭5"
+                      },
+                      {
+                        "root": "E",
+                        "cat": "7ths",
+                        "type": "7 (Dom)"
+                      },
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Minor"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "B",
+                    "chordCat": "7ths",
+                    "chordType": "m7♭5"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A is a minor ii–V–i: Bm7♭5 → E7 → Am. The yearning chord exists to start exactly that handoff — that's why the drill labels it ii. Now open Dynamic Practice, set the key to G, and run the drill there: both chords land on F♯ — F♯m7♭5 is the ii of E minor (G's relative minor), and F♯dim7 is the vii°7 of G."
             }
           ],
           "drill": {
@@ -3440,7 +3829,7 @@ export const CURRICULUM = {
           "exercises": [
             {
               "kind": "ear",
-              "prompt": "Which pair creates a suspension that TIGHTENS then RELEASES (suspended chord resolving into its plain triad)?",
+              "prompt": "Both chords suspend, then resolve into plain C major. Which one resolves DOWNWARD into the 3rd — the sus4?",
               "earOptions": [
                 {
                   "label": "A",
@@ -3471,7 +3860,7 @@ export const CURRICULUM = {
                       {
                         "root": "C",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Sus2"
                       },
                       {
                         "root": "C",
@@ -3479,12 +3868,12 @@ export const CURRICULUM = {
                         "type": "Major"
                       }
                     ],
-                    "caption": "C → C (no change)"
+                    "caption": "Csus2 → C"
                   }
                 }
               ],
               "answer": 0,
-              "explain": "Csus4→C is the suspension: the suspended 4th (F) clashes slightly, then steps down to the 3rd (E) for the release. Option B never moves, so there's no tension to release."
+              "explain": "A is Csus4: the suspended 4th (F) FALLS a half step down into the 3rd (E). B is Csus2: the 2nd (D) RISES a whole step up into that same E. Both land on the identical C major chord — the giveaway is which direction the suspended note travels to get there."
             },
             {
               "kind": "build",
@@ -3497,6 +3886,47 @@ export const CURRICULUM = {
                 7
               ],
               "explain": "Csus4 is C, F, G — root (0), perfect 4th (5 semitones) replacing the 3rd, and perfect 5th (7). That 4th is the suspension that resolves down to E."
+            },
+            {
+              "kind": "build",
+              "prompt": "Now build Fsus2 — root, 2nd, and 5th from F. Tap its three notes.",
+              "mode": "notes",
+              "root": "F",
+              "targetIntervals": [
+                0,
+                2,
+                7
+              ],
+              "explain": "Fsus2 is F, G, C. Look again — that's the exact same three notes as the Csus4 you just built (C, F, G)! One shape, two names: it's Csus4 when the F falls to E, and Fsus2 when the G rises to A. The RESOLUTION decides what the chord is, not the notes."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Take the move to G major: in Gsus4, which note is suspended, and where does it resolve?",
+              "audio": {
+                "kind": "progression",
+                "root": "G",
+                "progression": [
+                  {
+                    "root": "G",
+                    "cat": "Triads",
+                    "type": "Sus4"
+                  },
+                  {
+                    "root": "G",
+                    "cat": "Triads",
+                    "type": "Major"
+                  }
+                ],
+                "caption": "Gsus4 → G: the 4th (C) falls to the 3rd (B)"
+              },
+              "options": [
+                "The 4th (C), falling a half step to the 3rd (B)",
+                "The 2nd (A), rising a whole step to the 3rd (B)",
+                "The 4th (C), rising to the 5th (D)",
+                "The 7th (F#), rising a half step to the root (G)"
+              ],
+              "answer": 0,
+              "explain": "Same one-note story in a new key: Gsus4's 4th (C) stands in for the 3rd (B), then falls a half step into it — exactly like F falling to E back in C. Now open Dynamic Practice, set the key to G, and run the Isus4 → I drill there to feel that click on a new root."
             }
           ],
           "drill": {
@@ -3920,6 +4350,30 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "iv in A minor is D minor (D F A). It's the dark, plaintive subdominant of the key. Option A, F major, is the VI chord."
+            },
+            {
+              "kind": "build",
+              "prompt": "Stack thirds on the 2nd degree of A minor: B, D, F. Tap the ii° chord as intervals from B — the root, a minor 3rd, and another minor 3rd on top.",
+              "mode": "notes",
+              "root": "B",
+              "targetIntervals": [
+                0,
+                3,
+                6
+              ],
+              "explain": "Two stacked MINOR 3rds (B→D, then D→F) is the recipe for a diminished triad. That double-minor stack is exactly why ii° is the one wobbly chord in every minor key — and why III and VI get left as the only majors."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "C major's diatonic chords are C, Dm, Em, F, G, Am, B°. A minor uses the exact same seven chords, reshuffled. Which one serves as A minor's iv?",
+              "options": [
+                "F",
+                "Em",
+                "Dm",
+                "G"
+              ],
+              "answer": 2,
+              "explain": "Dm — C major's ii is A minor's iv. A minor key's chords are its relative major's chords rotated to start on the 6th degree. Prove it in another key: open Dynamic Practice, set the key to E minor, and run the drill — you'll be strumming G major's seven chords, reshuffled around a new home."
             }
           ],
           "drill": {
@@ -5338,16 +5792,30 @@ export const CURRICULUM = {
           },
           "exercises": [
             {
-              "kind": "mcq",
-              "prompt": "An augmented triad is a major triad with one note changed. Which one?",
-              "options": [
-                "The root is flattened",
-                "The 3rd is flattened (making it minor)",
-                "The 5th is raised a half step",
-                "The 5th is lowered a half step"
+              "kind": "ear",
+              "prompt": "One of these chords raised its 5th a half step and now refuses to sit still. Pick the augmented one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "C",
+                    "chordCat": "Triads",
+                    "chordType": "Major"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "C",
+                    "chordCat": "Triads",
+                    "chordType": "Aug"
+                  }
+                }
               ],
-              "answer": 2,
-              "explain": "Aug = C-E-G#: you raise the 5th (G to G#). Raising it makes the chord symmetrical and restless, with no stable home."
+              "answer": 1,
+              "explain": "B is C augmented: raise the 5th (G to G#) and the triad becomes two stacked major 3rds — C to E, E to G#. Perfectly symmetrical, no home — that's the restlessness you heard. And symmetry hides a bonus: Caug, Eaug, and G#aug are the SAME three notes. One aug shape covers three roots — slide it up 4 frets and you get the very same chord."
             },
             {
               "kind": "ear",
@@ -5374,6 +5842,28 @@ export const CURRICULUM = {
               ],
               "answer": 0,
               "explain": "A is C7♯9 — the sharpened 9th (D#) grinds against the major 3rd (E) for that bluesy, gritty bite. B is the plain C7."
+            },
+            {
+              "kind": "build",
+              "prompt": "Build the Hendrix chord yourself. C7♯9 = a plain C7 (C-E-G-B♭) plus the sharpened 9: D♯. Tap all five notes.",
+              "mode": "notes",
+              "root": "C",
+              "targetIntervals": [
+                0,
+                4,
+                7,
+                10,
+                15
+              ],
+              "explain": "That D# sits one half step off the 3rd's octave (E) — that grind IS the bite you're about to drill. Flatten the 9 to D♭ instead and you get C7♭9: the same trick in the dark direction. In fact all four altered dominants — ♭9, ♯9, ♭5, ♯5 — are just ONE twisted note stacked on the same V7 pull."
+            },
+            {
+              "kind": "play",
+              "prompt": "Transfer it: in the key of G, the V7 is D7. Sharpen its 9 to make D7♯9 — play the note 15 semitones (an octave plus 3 frets) above D.",
+              "root": "D",
+              "targetIntervalFromRoot": 15,
+              "targetNote": "F",
+              "explain": "You landed on E# — the same fret as F, but here it's D7♯9's raised 9, grinding against F#, the chord's 3rd. Same one-twisted-note trick, new letters. Now open Dynamic Practice, set the key to G, and run the drill there: V7 to V7♯9, tension piled higher until it craves home."
             }
           ],
           "drill": {
@@ -5644,6 +6134,221 @@ export const CURRICULUM = {
             "pattern": "C major (I), then F major (IV diatonic), then F minor (iv borrowed from C minor). That A♭ (which appears in F minor) is the guest from C minor. It drops a shadow on the major sound—bittersweet, tender—then you return to C. The key stays C major; you just borrowed one chord to darken the moment.",
             "focus": "Recognizing borrowed chords as temporary guests from the parallel key—they add color without changing the tonal center."
           }
+        },
+        {
+          "id": "slash-chords-upper-structures",
+          "title": "Slash Chords: Triads Over a Bass",
+          "level": 57,
+          "teach": {
+            "summary": "Put a triad over a bass note that isn't its root and you get a slash chord (G/C = 'G over C'). The upper triad 'harvests' extensions of the bass: which degree you build it on decides the color you get.",
+            "points": [
+              "The formula: a triad built on a degree of the bass harvests that degree, its 3rd, and its 5th. G triad over C = C's 5·7·9 — a maj9 sound from one easy grip.",
+              "Em/C harvests 3·5·7 (= Cmaj7). D/C harvests 9·♯11·13 — the floating Lydian sound. Same bass, different triad, whole new color.",
+              "This is one of the oldest ideas in music: Baroque players read 'figured bass' — a bass note plus numbers saying what to stack above it. Nashville numbers are its great-grandchild.",
+              "Your bass hand states the FUNCTION (the 1, the 6…); your upper triad paints the COLOR. Two jobs, cleanly split."
+            ],
+            "demo": {
+              "kind": "chord",
+              "root": "C",
+              "chordCat": "7ths",
+              "chordType": "Maj7",
+              "caption": "Cmaj7 = C bass + an E minor triad on top (Em/C harvests 3·5·7)"
+            },
+            "earTip": "Play a plain C, then keep the C bass and swap the top to a G triad: the chord suddenly opens up and dreams a little — that's the 9th arriving. Slash chords are how players get big-sounding harmony with small, familiar shapes."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You hold a C bass and stack a G major triad (G-B-D) on top. Which degrees of C does that upper triad harvest?",
+              "options": [
+                "1 · 3 · 5",
+                "3 · 5 · 7",
+                "5 · 7 · 9",
+                "♭7 · 9 · 11"
+              ],
+              "answer": 2,
+              "explain": "G is C's 5th, B is its 7th, D is its 9th — so G/C harvests 5·7·9, a Cmaj9 color with no 3rd. A triad built on the 5th always harvests 5·7·9 of the bass."
+            },
+            {
+              "kind": "build",
+              "prompt": "Build the upper structure that turns a C bass into Cmaj7: tap the three notes of E minor (the triad on C's 3rd).",
+              "mode": "notes",
+              "root": "E",
+              "targetIntervals": [
+                0,
+                3,
+                7
+              ],
+              "explain": "E minor = E-G-B. Over a C bass that's C-E-G-B = Cmaj7. A triad built on the 3rd of the bass always harvests 3·5·7 — the maj7 recipe."
+            }
+          ],
+          "drill": {
+            "title": "Flavors Over One Bass",
+            "bpm": 60,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "C",
+                "quality": "Major",
+                "beats": 8,
+                "numeral": "I"
+              }
+            ],
+            "voicing": "upper-structure triads over a held C bass",
+            "pattern": "Hold a C bass (low E string, 8th fret) and cycle the upper triads on the D-G-B strings: C/C (home), Em/C (3·5·7 = maj7), G/C (5·7·9 = maj9), Am/C (adds the 6), D/C (9·♯11·13 = Lydian float), F/C (the 'amen' sus color), B♭/C (♭7·9·11 = gospel). Same bass, seven flavors — hear what each upper triad harvests.",
+            "focus": "Learning the slash-chord formula: the degree you build the upper triad on decides which extensions you harvest over the bass."
+          }
+        },
+        {
+          "id": "slash-flavors-a-string",
+          "title": "Slash Flavors: Second Position (A-String Bass)",
+          "level": 57,
+          "teach": {
+            "summary": "Same seven flavors, new address: the bass moves to the A string's 3rd fret and the triads drop into the low-fret zone. Same intervals, same harvests — different grips. This is how a relationship becomes portable.",
+            "points": [
+              "Nothing theoretical changes: G/C harvests 5·7·9 whether the C bass sits on the low E (8th fret) or the A string (3rd fret). The RELATIONSHIP is the lesson; the position is the variable.",
+              "The A-string zone pays rent: these grips sit where the open-position chords live, so pedal colors and walking bass lines share one hand position.",
+              "The trio stays on D-G-B, now around frets 1-7 — most flavors are one small move apart. Watch how little your fingers travel from Em/C to G/C: one finger, one fret.",
+              "In the Chord-Family Lab, the voicing cards labelled 'A-bass · 3fr' are exactly these grips — the Lab has been offering them all along."
+            ],
+            "demo": {
+              "kind": "chord",
+              "root": "C",
+              "chordCat": "7ths",
+              "chordType": "Maj7",
+              "caption": "Em/C at the A-string position: C bass (A-str 3) + E·G·B near the 5th fret — the same Cmaj7 harvest, relocated"
+            },
+            "earTip": "Play G/C at the low-E position, then at the A-string position. Close your eyes: the color is identical. When position stops changing what you HEAR, you own the relationship, not the shape."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You move a C-bass slash drill from the low E string (8th fret) to the A string (3rd fret). What changes?",
+              "options": [
+                "The harvested degrees change",
+                "Only the grips and register — the interval relationships are identical",
+                "The chord qualities change",
+                "The key changes"
+              ],
+              "answer": 1,
+              "explain": "C is C on any string. The upper triads still sit the same intervals above it, so every harvest (5·7·9, 3·5·7…) is untouched — only where your fingers go is different."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Why practice the same slash relationships in a second neck position at all?",
+              "options": [
+                "The second position sounds jazzier",
+                "Lower frets are always easier to play",
+                "So the knowledge attaches to the RELATIONSHIP instead of one memorized shape — and links the flavors to the open-position chords living nearby",
+                "It is required before learning barre chords"
+              ],
+              "answer": 2,
+              "explain": "One position can be memorized as pure choreography. A second position forces the abstraction — 'a triad on the 5th of my bass' — and the A-string zone connects the pedal flavors directly to the open-position walkdown vocabulary next door."
+            }
+          ],
+          "drill": {
+            "title": "Flavors Over One Bass — A-String Position",
+            "bpm": 60,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "C",
+                "quality": "Major",
+                "beats": 8,
+                "numeral": "I"
+              }
+            ],
+            "voicing": "upper-structure triads over a held C bass on the A string (5th string, 3rd fret)",
+            "pattern": "Hold the C bass at the A string's 3rd fret and cycle the same seven upper triads on the D-G-B strings, now in the low-fret zone: C/C (home), Em/C (maj7), G/C (maj9), Am/C (the 6th), D/C (Lydian float), F/C (amen), B♭/C (gospel). Same seven harvests as the 8th-fret version — new grips, same truths.",
+            "focus": "Transferring the slash-chord formula to a second neck position: the relationship is invariant, the shape is not."
+          }
+        },
+        {
+          "id": "slash-walking-bass",
+          "title": "Slash Chords in Motion: The Walking Bassline",
+          "level": 57,
+          "teach": {
+            "summary": "Slash chords' other job: motion. Keep the harmony diatonic and let the BASS walk down the scale — every step lands on a chord root, on a chord tone (an inversion: G/B, C/E), or on a 7th slipped underneath (Am/G = Am7).",
+            "points": [
+              "The walkdown: C → G/B → Am → Am/G → F → C/E → Dm7 → G7 → C. The bass alone spells the descending C major scale: C·B·A·G·F·E·D — then G turns it home.",
+              "Two kinds of walk chords. INVERSIONS put a chord tone in the bass (G/B = the 3rd of G; C/E = the 3rd of C). SEVENTH-BASSES tuck the ♭7 underneath (Am/G is Am7 with its 7th lowest).",
+              "Why it works: every bass note is a chord tone of the chord ringing above it. The bass gets a melody; the harmony never leaves the key.",
+              "Guitar's floor is E2, so the walk's low D folds up an octave (open D string). A bassist would keep descending — the LINE still reads on guitar because the pitch-class steps carry it."
+            ],
+            "demo": {
+              "kind": "chord",
+              "root": "G",
+              "chordCat": "Triads",
+              "chordType": "Major",
+              "caption": "G/B — the V chord with its 3rd (B) in the bass: the stair-step between C (bass C) and Am (bass A)"
+            },
+            "earTip": "Play C, then G/B, then Am, listening ONLY to the lowest note: C · B · A. That three-note descent is the hook of a hundred songs — the chords are along for the ride."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "In the walkdown C → G/B → Am, what does the bass line do?",
+              "options": [
+                "C · B · A — it steps down the scale",
+                "C · G · A — it leaps between roots",
+                "C · D · E — it steps up",
+                "C · C · C — it holds a pedal"
+              ],
+              "answer": 0,
+              "explain": "Each chord contributes one bass note: C's root, then G's 3rd (B), then Am's root. Root motion would leap C-G-A; putting G's 3rd in the bass turns the leap into the stepwise line C-B-A."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Am/G puts G under an A minor triad. G is not in the Am triad (A-C-E) — so what do the four notes A·C·E·G actually spell?",
+              "options": [
+                "Am6",
+                "Am7 — with the ♭7 in the bass",
+                "C/A",
+                "G6"
+              ],
+              "answer": 1,
+              "explain": "A·C·E·G is Am7 (1·♭3·5·♭7). Walking the bass to G doesn't leave the chord — it reveals its 7th. Every '/♭7' bass turns a triad into its own seventh chord, third inversion."
+            },
+            {
+              "kind": "build",
+              "prompt": "Build the passing chord between C and Am: tap the three notes of G major (its 3rd, B, will sit in the bass as G/B).",
+              "mode": "notes",
+              "root": "G",
+              "targetIntervals": [
+                0,
+                4,
+                7
+              ],
+              "explain": "G·B·D with B lowest is G/B — the V chord in first inversion. Between C (bass C) and Am (bass A), its B bass is the stair-step that connects them."
+            }
+          ],
+          "drill": {
+            "title": "The Walkdown: Walking Bass Through the Key",
+            "bpm": 66,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              { "root": "C", "quality": "Major", "numeral": "I", "beats": 2 },
+              { "root": "G", "quality": "Major", "numeral": "V", "beats": 2 },
+              { "root": "A", "quality": "Minor", "numeral": "vi", "beats": 2 },
+              { "root": "A", "quality": "Minor", "numeral": "vi", "beats": 2 },
+              { "root": "F", "quality": "Major", "numeral": "IV", "beats": 2 },
+              { "root": "C", "quality": "Major", "numeral": "I", "beats": 2 },
+              { "root": "D", "quality": "Minor", "numeral": "ii", "beats": 2 },
+              { "root": "G", "quality": "Major", "numeral": "V", "beats": 2 }
+            ],
+            "voicing": "open-position grips, bass walking down the scale",
+            "pattern": "C → G/B → Am → Am/G → F → C/E → Dm7 → G7, then around again. Play each grip, but LISTEN to the lowest string: the bass walks C-B-A-G-F-E-D and turns the corner home. In Dynamic Practice, layer 2 (Bass → chord) splits the walk from the harmony; layer 3 fingerpicks every grip.",
+            "focus": "Hearing the bass as a melody: every walkdown chord exists to put the next scale step in the bass."
+          }
         }
       ],
       "improv": {
@@ -5852,6 +6557,54 @@ export const CURRICULUM = {
           },
           "exercises": [
             {
+              "kind": "ear",
+              "prompt": "Both clips leave the I chord. In which one do the voices travel the SHORTEST total distance?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "E",
+                        "cat": "Triads",
+                        "type": "Minor"
+                      }
+                    ],
+                    "caption": "C → Em (I → iii): two notes hold, one slides"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Major"
+                      }
+                    ],
+                    "caption": "C → D (I → II): no shared notes, everything travels"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "Count the travel. In C → Em, the E and G never move and C slides just a half step down to B — ONE semitone of total motion. In C → D there are no shared notes, so C, E, and G all march up a whole step — SIX semitones. Smoothness isn't a vibe, it's arithmetic: the less total distance the voices cover, the more the chords melt together. That sliding-not-jumping sound is exactly what you're steering for in the drill."
+            },
+            {
               "kind": "mcq",
               "prompt": "Going from C major to G major, the note E needs to move. Which destination is the smoothest (nearest) choice?",
               "options": [
@@ -5862,6 +6615,30 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "G major is G-B-D. The nearest landing spot for E is D, just a whole step down. Jumping up to G (a minor 3rd) or up to B (a perfect 5th, 7 semitones) would cover far more distance and sound less connected."
+            },
+            {
+              "kind": "build",
+              "prompt": "Now route the WHOLE chord, not just one voice. C major is C-E-G, heading to the V chord: G parks, C slips down a half step, E steps down a whole step. Build the three landing notes.",
+              "mode": "notes",
+              "root": "G",
+              "targetIntervals": [
+                0,
+                4,
+                7
+              ],
+              "explain": "Look what you built: G-B-D — a complete G major chord — and no voice moved more than a whole step (G traveled 0 semitones, C→B just 1, E→D just 2). The V chord didn't get grabbed, it APPEARED out of the I chord for three semitones of total travel. That's the whole job in Shortest Path Triads: route every voice, not just one, by its nearest exit."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Transfer time — flip to the key of G. Going I → V (G-B-D to D-F♯-A), D is the common tone. Where does B go by the nearest path?",
+              "options": [
+                "Down a whole step to A",
+                "Up a minor 3rd to D",
+                "Down a perfect 4th to F♯",
+                "Stay on B"
+              ],
+              "answer": 0,
+              "explain": "Same routing, new letters: D parks, B slides a whole step down to A, and G slips a half step to F♯ — the I → V change costs three semitones of travel in ANY key. Now open Dynamic Practice, set the key to G, and run Shortest Path Triads there: same shortest paths, one letter-name over."
             }
           ],
           "drill": {
@@ -6544,6 +7321,27 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "A pentatonic scale has five notes, so there are five places to 'start' the repeating pattern — giving five connected boxes that tile the whole fretboard with the same notes."
+            },
+            {
+              "kind": "build",
+              "prompt": "Box 2 starts the same pattern from the NEXT scale note up from A — that's C. Tap the five box notes starting from C: R, 2, 3, 5, 6.",
+              "mode": "notes",
+              "root": "C",
+              "targetIntervals": [
+                0,
+                2,
+                4,
+                7,
+                9
+              ],
+              "explain": "Look at what you just built: C, D, E, G, A. Those are the SAME five notes as A minor pentatonic — and they're also exactly C MAJOR pentatonic. Every box of A minor pent is a box of C major pent: two scales, one neck-map."
+            },
+            {
+              "kind": "play",
+              "prompt": "Every box is anchored by its root. Play the A that anchors Box 2 — the octave above Box 1's low root.",
+              "root": "A",
+              "targetIntervalFromRoot": 0,
+              "explain": "Find the roots and the five shapes snap into place around them. Now open Dynamic Practice, set the key to E minor, and run the Box-to-Box Slide there — the whole ladder of boxes moves as one, and the E roots tell you where each box landed (bonus: those same boxes are now G major pentatonic)."
             }
           ],
           "drill": {
@@ -6811,13 +7609,52 @@ export const CURRICULUM = {
               "kind": "mcq",
               "prompt": "What is 'call-and-response' in a guitar solo?",
               "options": [
-                "Playing as many notes as possible without stopping",
+                "Playing one long continuous line with no rests so the energy never drops",
                 "Stating a short motif, then answering it with a related phrase",
-                "Always copying the singer exactly",
-                "Playing the same single note over and over"
+                "Repeating the exact same lick until the chord changes",
+                "Ending every phrase on the root so it always sounds finished"
               ],
               "answer": 1,
-              "explain": "Call-and-response means you play a short idea (the call) and then reply with a related phrase (the response) — like a musical conversation. Leaving space between them is what makes it breathe."
+              "explain": "Call-and-response means you play a short idea (the call) and then reply with a related phrase (the response) — like a musical conversation. The other three each miss an ingredient: no rests means no space, an exact repeat is an echo rather than an answer, and an ending rule alone isn't a conversation."
+            },
+            {
+              "kind": "build",
+              "prompt": "Build yourself a classic 3-note 'call' from A minor pentatonic: the root, the ♭3, and the 4.",
+              "mode": "notes",
+              "root": "A",
+              "targetIntervals": [0, 3, 5],
+              "explain": "A–C–D: root, ♭3, 4 — the opening move of a thousand blues licks. That's your question phrase for the drill: play it, rest two full beats, then answer it with a variation that ends on the root. And notice you built it from NUMBERS, not note names — that's exactly what makes a motif portable."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Your answer phrase has to land resolved over the Am chord. Which final note ends the sentence strongest?",
+              "options": [
+                "B — the 2nd",
+                "C — the ♭3",
+                "D♯ — the blue note",
+                "F — the ♭6"
+              ],
+              "answer": 1,
+              "audio": {
+                "kind": "chord",
+                "root": "A",
+                "chordCat": "Triads",
+                "chordType": "Minor",
+                "caption": "Am — the chord your phrase has to land on"
+              },
+              "explain": "C is a chord tone of Am (A–C–E). Ending on the root, ♭3, or 5th closes the sentence; the 2nd and the blue note hang in the air, and the ♭6 pulls away entirely. This is last lesson's chord-tone targeting applied to how a phrase ENDS — strong notes finish sentences."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Take your call on the road: move the drill to E minor. R, ♭3, 4 — what are your three notes now?",
+              "options": [
+                "E–G–A",
+                "E–G♯–A",
+                "E–F♯–B",
+                "A–C–D"
+              ],
+              "answer": 0,
+              "explain": "Same numbers, new letters: from E, the ♭3 is G and the 4 is A. Your motif travels as intervals, not as frets. Now open Dynamic Practice, set the key to E minor, and run Question and Answer there — same call, same space, new neighborhood."
             }
           ],
           "drill": {
@@ -7788,6 +8625,76 @@ export const CURRICULUM = {
               ],
               "answer": 2,
               "explain": "Four even notes per beat are sixteenth notes — the classic '1-e-and-a' count. Twice as fast as eighths, four times as fast as the quarter-note pulse."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Same pulse, same G chord. One clip fills each beat with TWO even hits (eighths), the other with FOUR (sixteenths). Pick the SIXTEENTHS.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      }
+                    ],
+                    "caption": "Two even hits per beat"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      }
+                    ],
+                    "caption": "Four even hits per beat"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B packs FOUR even hits into each beat — sixteenths, the '1-e-and-a' count. A only fits two, the '1-and' eighths. Notice your foot-tap never changed between clips; only how many strums you squeezed inside it. That packing ratio IS the note value."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You strum EIGHTH notes at 120 BPM, then SIXTEENTH notes at 60 BPM. How do your strumming hands compare?",
+              "options": [
+                "The sixteenths hand moves twice as fast",
+                "The eighths hand moves twice as fast",
+                "They move at the identical physical speed",
+                "You can't compare hands across different tempos"
+              ],
+              "answer": 2,
+              "explain": "Both work out to 240 strums per minute — 2 × 120 and 4 × 60. Note values aren't speeds, they're RATIOS to the pulse. Prove it with your own hands: open Dynamic Practice under the drill, run the ladder at 60 BPM, then set the tempo to 120 — your bar of sixteenths at 60 is the exact same hand motion as your bar of eighths at 120."
             }
           ],
           "drill": {
@@ -8118,15 +9025,15 @@ export const CURRICULUM = {
           "exercises": [
             {
               "kind": "mcq",
-              "prompt": "What is syncopation, in one sentence?",
+              "prompt": "Plot twist: you've been syncopating for a whole lesson already. In the D-DU-UDU pattern you learned, which strums land on the upbeats?",
               "options": [
-                "Playing as fast as you possibly can",
-                "Putting the accent on the off-beats (upbeats) instead of the strong downbeats",
-                "Only ever strumming on beat 1",
-                "Playing every chord twice"
+                "The downstrokes — they're the loudest",
+                "The upstrokes — every U falls on an 'and'",
+                "None of them — D-DU-UDU only hits the numbered beats",
+                "Only the first D of the bar"
               ],
               "answer": 1,
-              "explain": "Syncopation is shifting emphasis onto the weak beats — the 'ands' — or skipping an expected downbeat. It's about WHERE the accent lands, not how many or how fast the notes are."
+              "explain": "Every U in D-DU-UDU happens while your hand travels up — exactly when your foot is up, on the 'and'. And that gap on beat 3? A skipped downbeat with an upstroke right behind it. That's textbook syncopation: the accent landing where the ear doesn't expect it. You weren't just learning a strum pattern — you were already playing off the beat."
             },
             {
               "kind": "mcq",
@@ -8139,6 +9046,47 @@ export const CURRICULUM = {
               ],
               "answer": 2,
               "explain": "Upbeats are the 'and' of each beat — where your foot is UP, between the numbers. (Beats 2 and 4 are downbeats too; they're the 'backbeat,' but they're still on the numbers, not between them.)"
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Listen to the drill's vamp — these are the two chords you'll be stabbing on the 'ands'. What are they, in numbers?",
+              "audio": {
+                "kind": "progression",
+                "root": "E",
+                "progression": [
+                  {
+                    "root": "E",
+                    "cat": "7ths",
+                    "type": "Min7"
+                  },
+                  {
+                    "root": "A",
+                    "cat": "7ths",
+                    "type": "7 (Dom)"
+                  }
+                ],
+                "caption": "The Off-Beat Funk Stabs vamp: Em7 to A7"
+              },
+              "options": [
+                "i to IV — minor home, major four",
+                "I to V — major home to its five",
+                "i to v — both minor",
+                "ii to V — a jazz turnaround"
+              ],
+              "answer": 0,
+              "explain": "Em7 is home base — i, minor with a 7th for funk color. A sits a 4th above E, so A7 is IV, and a MAJOR four over a minor home is the classic funk flavor. Now the drill isn't just 'stab the off-beats' — it's 'stab i and IV on the ands', and a vamp you know by numbers works in any key."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Take it somewhere new: move the funk vamp to A minor. The same i–IV becomes which pair?",
+              "options": [
+                "Am7 to D7",
+                "Am7 to E7",
+                "Am7 to G7",
+                "A7 to D7"
+              ],
+              "answer": 0,
+              "explain": "Same numbers, new roots: A is the new home, so i = Am7, and a 4th up from A is D, so IV = D7. Now open Dynamic Practice, set the key to A minor, and run the drill there — foot on the downbeats, stabs on the 'ands', over Am7 to D7."
             }
           ],
           "drill": {
@@ -8244,6 +9192,116 @@ export const CURRICULUM = {
               ],
               "answer": 1,
               "explain": "6/8 is a compound meter: six eighth notes grouped into two main pulses of three each. You feel it as 'ONE-two-three / FOUR-five-six' — that rolling, lilting sway you hear in ballads and jigs."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two clips strum the same two chords, C (I) and G (V). In one, the chord changes every THREE hits; in the other, every FOUR. Count the hits between changes — which clip is the waltz?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      }
+                    ],
+                    "caption": "Clip A — I to V, counting the hits between changes"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major"
+                      }
+                    ],
+                    "caption": "Clip B — I to V, counting the hits between changes"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "Clip A moves to a new chord every THREE hits — that's a bar of 3/4, the waltz. Clip B waits FOUR hits — a bar of 4/4. A time signature is really just how far apart the heavy ONEs land: count the distance between the leans (here, each chord change lands on 'ONE') and you've read the meter by ear."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "The Waltz Sway drill below runs I–V–vi–IV in C — the SAME pop progression you've been strumming in 4/4. What actually changed?",
+              "options": [
+                "The chords — a waltz needs different harmony",
+                "Only the meter: three beats per bar instead of four; the numerals and chords are identical",
+                "The key — 3/4 songs live in minor keys",
+                "The qualities — chords turn minor in 3/4"
+              ],
+              "answer": 1,
+              "explain": "Harmony and meter are independent layers you can recombine: I–V–vi–IV is still C–G–Am–F whether you count to four or to three. So read the same numbers into G major — I–V–vi–IV becomes G–D–Em–C. Now open Dynamic Practice, set the key to G, and run the waltz there: same numerals, new key, same ONE-two-three sway."
             }
           ],
           "drill": {
@@ -8472,19 +9530,33 @@ export const CURRICULUM = {
                 "M (middle)"
               ],
               "answer": 2,
-              "explain": "P is the thumb (pulgar), and it covers the low end — strings 6, 5 and 4. The three fingers I, M and A take the top three strings, one each."
+              "explain": "P is the thumb (pulgar), and it owns the whole low end — strings 6, 5 and 4. Here's why the one-finger-one-string deal matters: when every finger has exactly one home, your picking hand finds strings by feel alone, and your eyes stay free to watch the fretting hand."
             },
             {
               "kind": "mcq",
-              "prompt": "Using the standard home assignment, which finger plays the high E string (string 1)?",
+              "prompt": "The drill block-plucks a I–V in C: a bar of C, then a bar of G. When you land on the G chord (V), which string does your thumb aim for?",
               "options": [
-                "P (thumb)",
-                "I (index)",
-                "M (middle)",
-                "A (ring)"
+                "String 5 — the thumb parks on the A string no matter what",
+                "String 6 — the low E, because that's where G keeps its root",
+                "String 4 — the D string, to stay close to the fingers",
+                "String 1 — the high E, to match the chord's top note"
               ],
-              "answer": 3,
-              "explain": "Working up from string 3: I plays G (3), M plays B (2), and A plays the high E (1). The thumb stays down on the bass strings."
+              "answer": 1,
+              "explain": "The thumb doesn't own one string — it hunts each chord's ROOT. C's root sits on string 5; G's root drops to string 6. That one re-aim is the only structural decision in the drill, and it's exactly the skill the Dynamic Practice key control stresses when the chords change under you."
+            },
+            {
+              "kind": "play",
+              "prompt": "Hold an open C and pluck ONLY the string your A (ring) finger owns — string 1, the open high E. That note isn't random: it's the 3rd of C, sitting on top of the chord.",
+              "root": "C",
+              "targetNote": "E",
+              "explain": "Your ring finger's home isn't just 'string 1' — on a C chord that string carries E, the 3rd. Every home string holds a chord tone: P grabs the root, and I-M-A hold the color on top. So the drill's block pluck isn't a hand trick — it's root-plus-triad, one chord tone per finger."
+            },
+            {
+              "kind": "play",
+              "prompt": "Transfer it: in the key of G, the drill's I–V becomes G–D. You already know G's thumb target (string 6) — now find the new one. Play D, the root of the V chord, on the open 4th string.",
+              "root": "D",
+              "targetNote": "D",
+              "explain": "Same job, new roots: in G the thumb aims at string 6 for the I (G) and string 4 for the V (D), while I-M-A never leave strings 3-2-1. Now open Dynamic Practice, set the key to G, and run the block-pluck drill there — the thumb re-aims, everything else stays home."
             }
           ],
           "drill": {
@@ -8739,32 +9811,16 @@ export const CURRICULUM = {
               "explain": "An arpeggio is just a 'broken' chord — the same notes, but sounded one after another in a flowing line rather than struck all at once."
             },
             {
-              "kind": "ear",
-              "prompt": "One option is a chord strummed all at once; the other is the same chord rolled as an arpeggio. Pick the ARPEGGIO.",
-              "earOptions": [
-                {
-                  "label": "A",
-                  "audio": {
-                    "kind": "chord",
-                    "root": "A",
-                    "chordCat": "Triads",
-                    "chordType": "Minor",
-                    "caption": "All notes together"
-                  }
-                },
-                {
-                  "label": "B",
-                  "audio": {
-                    "kind": "scale",
-                    "root": "A",
-                    "scaleCat": "Pentatonic",
-                    "scaleName": "Minor Pent.",
-                    "caption": "Notes rolled out one at a time"
-                  }
-                }
+              "kind": "mcq",
+              "prompt": "Hold Am (x02210) and roll P-I-M-A across strings 5·3·2·1. Which chord tones do your four fingers sound, in order?",
+              "options": [
+                "root · root (octave up) · ♭3 · 5",
+                "root · 3 · 5 · 7",
+                "root · 5 · root · 3",
+                "♭3 · root · 5 · root"
               ],
-              "answer": 1,
-              "explain": "B sounds the notes one after another in a flowing line — that spread-out, rolling delivery is the arpeggio feel. A lands every note at the same instant, which is a strum."
+              "answer": 0,
+              "explain": "Strings 5·3·2·1 of Am hold A · A · C · E — the root twice, then the ♭3 and the 5th. A roll isn't random notes: every finger owns a chord tone, and knowing WHICH tone each finger sounds is what turns a pattern into music."
             }
           ],
           "drill": {
@@ -8822,7 +9878,7 @@ export const CURRICULUM = {
               "root": "D",
               "chordCat": "Triads",
               "chordType": "Major",
-              "caption": "D major — pinch the bass (string 4) and the high E (string 1) together for a punchy accent"
+              "caption": "D major — pinch the bass (string 4) and string 1 at fret 2 (F♯) together for a punchy accent"
             },
             "earTip": "A pinch sounds like a single fat 'pop' — bass and treble fused into one hit. If you hear two separate notes a hair apart, your thumb and finger aren't landing together yet."
           },
@@ -8841,10 +9897,46 @@ export const CURRICULUM = {
             },
             {
               "kind": "play",
-              "prompt": "Hold a D major chord and play the high note of a pinch on its own first — the high E string (string 1), open.",
+              "prompt": "Hold a D major chord and play the high note of its pinch on its own first — string 1 at fret 2 (F♯, the 3rd of D).",
               "root": "D",
-              "targetNote": "E",
-              "explain": "The open high E is the treble half of a D-chord pinch. Land it cleanly alone, then practice firing it together with the thumb's bass note so they sound as one."
+              "targetNote": "F#",
+              "explain": "In the D shape your finger is already holding F♯ at fret 2 — that's the treble half of the pinch, and it's D's major 3rd, the note that makes the pinch sing. Land it cleanly alone, then fire it together with the thumb's bass D so they sound as one 'pop.'"
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips play a low D with the A above it — same notes, different timing. One staggers them into two separate plinks; the other fires them together like a pinch. Which one is the pinch?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "D",
+                    "intervalSemitones": 7
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "chord",
+                    "root": "D",
+                    "chordCat": "Triads",
+                    "chordType": "5"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "The notes match — only the timing differs. B fuses D and A into one fat 'pop'; A lets them land as two separate plinks. That's your self-check during the drill: if beat 1 sounds like clip A, your thumb and finger aren't arriving together yet. (The drill's D pinch stacks the 3rd, F♯, on top instead of the 5th — the fused attack is the same skill.)"
+            },
+            {
+              "kind": "build",
+              "prompt": "The drill's pinch fuses each chord's root bass with its 3rd on top — in D that's D under F♯. Move the I chord to G: tap the two notes you'd pinch together.",
+              "mode": "notes",
+              "root": "G",
+              "targetIntervals": [
+                0,
+                4
+              ],
+              "explain": "G under B — root + major 3rd, the exact pair the drill pinches in D. Same structure, new key: the I–V–vi–IV becomes G–D–Em–C, and every pinch is still root below with the 3rd on top (a ♭3 on Em). Now open Dynamic Practice, set the key to G, and run 'Pinch on the One' there."
             }
           ],
           "drill": {
@@ -9086,16 +10178,75 @@ export const CURRICULUM = {
               "explain": "An anchor finger sits on a note that BOTH chords contain, so it never lifts off. Keeping it planted gives your hand a pivot and makes the change smoother and faster."
             },
             {
-              "kind": "mcq",
-              "prompt": "You're practicing switching between two chords. What's the best way to actually get faster at it?",
-              "options": [
-                "Strum each chord once a day and hope it clicks",
-                "Always play them as fast as you can from the start",
-                "'One-minute changes' — switch back and forth for 60 seconds, counting clean changes",
-                "Memorize the notes but never play them together"
+              "kind": "ear",
+              "prompt": "Two chord changes, both starting from C. In one of them, part of the chord stays put and keeps ringing — the 'close cousins' sound. Which change SHARES notes?",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Minor"
+                      }
+                    ],
+                    "caption": "Change A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Minor"
+                      }
+                    ],
+                    "caption": "Change B"
+                  }
+                }
               ],
-              "answer": 2,
-              "explain": "One-minute changes build the muscle memory directly: a fixed pair of chords, switching for a minute, counting how many clean changes you get. Tomorrow you beat today's number. It's the classic fix for choppy changes."
+              "answer": 0,
+              "explain": "A was C to Am. C major is C–E–G and A minor is A–C–E — they share C and E, so two of the three notes never move and the chords sound like family. B was C to Dm (D–F–A): zero shared notes, so the whole sound picks up and relocates. Shared notes are what you just heard — and they're exactly where anchor fingers live."
+            },
+            {
+              "kind": "build",
+              "prompt": "C major is C–E–G. A minor is A–C–E. Tap ONLY the notes that appear in BOTH chords.",
+              "mode": "notes",
+              "root": "C",
+              "targetIntervals": [
+                0,
+                4
+              ],
+              "explain": "C and E — the two-note overlap you just heard. On the guitar that overlap IS your anchor: through the whole C↔Am change, your 1st finger holds the C on the B string and never lifts. And it's no accident — the I and vi chords of ANY key always share two notes, so every I↔vi change comes with a built-in anchor finger."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "The drill switches C↔Am — the I and vi of C major. Move the same change to G major: which pair of chords is it, and which two notes do they share?",
+              "options": [
+                "G↔Am, sharing G and C",
+                "G↔Em, sharing G and B",
+                "G↔Em, sharing E and D",
+                "G↔Bm, sharing B and D"
+              ],
+              "answer": 1,
+              "explain": "In G major the I is G (G–B–D) and the vi is Em (E–G–B) — the overlap is G and B, so this change has the same built-in anchor as C↔Am. Same numerals, same two shared notes, new shapes. (G↔Bm shares B and D too, but Bm is the iii of G, not the vi.) Now open Dynamic Practice, set the key to G, and run the one-minute changes drill on G↔Em."
             }
           ],
           "drill": {

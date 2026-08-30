@@ -25,6 +25,30 @@ export const OPEN_VOICINGS = {
   'Min6':    { 'A':[[-1,0,2,2,1,2]],'E':[[0,2,2,0,2,0]] }
 };
 
+// ── Close-position triads on a chosen 3-string set ───────────────────
+// Every compact grip of a triad constrained to exactly the given strings
+// (idxs low→high, si 0 = highest string): 3 rotations × per-string octave
+// choices, span ≤ 4 frets, max fret 17, sorted low-on-the-neck first.
+// Shared by the Voicing Lab (🧵 Workshop tab) and the Workouts pedal.
+export const TRIAD_QUALITIES = { Major: [0, 4, 7], Minor: [0, 3, 7], Dim: [0, 3, 6], Aug: [0, 4, 8] };
+export function findTriadsOnSet(rootPc, quality, idxs) {
+  const pcs = (TRIAD_QUALITIES[quality] || TRIAD_QUALITIES.Major).map(iv => (rootPc + iv) % 12);
+  const grips = [], seen = new Set();
+  for (let rot = 0; rot < 3; rot++) {
+    const order = [pcs[rot], pcs[(rot + 1) % 3], pcs[(rot + 2) % 3]];
+    const base = idxs.map((si, k) => ((order[k] - NOTES.indexOf(customTuning[si].note)) % 12 + 12) % 12);
+    for (let mask = 0; mask < 8; mask++) {
+      const frets = base.map((f, k) => f + ((mask >> k) & 1) * 12);
+      const mx = Math.max(...frets), mn = Math.min(...frets);
+      if (mx > 17 || mx - mn > 4) continue;
+      const key = frets.join(',');
+      if (seen.has(key)) continue; seen.add(key);
+      grips.push({ rot, frets, avg: (mx + mn) / 2, min: mn });
+    }
+  }
+  return grips.sort((a, b) => a.avg - b.avg);
+}
+
 // ── Barre shape templates ────────────────────────────────────────────
 export const BARRE_SHAPES = {
   'Major':   [{name:'E Shape (R6)',rootTab:0,rel:[0,2,2,1,0,0]},{name:'A Shape (R5)',rootTab:1,rel:[-1,0,2,2,2,0]}],
@@ -79,6 +103,59 @@ function validateShape(siFrets, chordNotes, rootNote) {
 }
 
 // ── Main voicing finder ───────────────────────────────────────────────
+// ── Slash-chord voicings: a BASS note + a major upper triad on a higher string set ──
+// (G/C = C bass + G triad.) findVoicings can't produce these — they're not a fixed quality
+// shape but a two-part construction — so the Chord-Family Lab asks for them here. Every grip:
+// bass on one of the two lowest strings, upper triad as a compact close-position rotation on
+// an adjacent 3-string set above it (D·G·B, G·B·E, A·D·G…), open strings free, reach ≤ 4 frets.
+export function findSlashVoicings(bassNote, upperSemis, upperQual) {
+  const ns = customTuning.length;
+  const bassPc = NOTES.indexOf(bassNote);
+  if (bassPc < 0 || upperSemis == null) return [];
+  const TRIAD = { maj: [0, 4, 7], min: [0, 3, 7], dim: [0, 3, 6] };
+  const upPcs = (TRIAD[upperQual] || TRIAD.maj).map(iv => (bassPc + upperSemis + iv) % 12);
+  const out = [], seen = new Set();
+  const noteOf = (si, f) => { const n = getNoteAtFret(customTuning[si].note, customTuning[si].octave, f); return { si, fret: f, note: n.note, octave: n.octave }; };
+  [ns - 1, ns - 2].forEach(bassSi => {
+    if (bassSi < 3) return;                        // need at least 3 strings above the bass
+    const openPc = NOTES.indexOf(customTuning[bassSi].note);
+    const bf0 = ((bassPc - openPc) % 12 + 12) % 12;
+    [bf0, bf0 + 12].forEach(bf => {
+      if (bf > 15) return;
+      for (let top = 0; top + 2 < bassSi; top++) {
+        const set = [top + 2, top + 1, top];       // low → high
+        for (let rot = 0; rot < 3; rot++) {
+          const order = [upPcs[rot], upPcs[(rot + 1) % 3], upPcs[(rot + 2) % 3]];
+          const base = set.map((si, k) => ((order[k] - NOTES.indexOf(customTuning[si].note)) % 12 + 12) % 12);
+          for (let mask = 0; mask < 8; mask++) {
+            const frets = base.map((f, k) => f + ((mask >> k) & 1) * 12);
+            const all = [bf, ...frets];
+            if (Math.max(...all) > 15) continue;
+            const fretted = all.filter(f => f > 0);
+            if (fretted.length && Math.max(...fretted) - Math.min(...fretted) > 4) continue;
+            // open strings in the TRIO only mix with low fretted notes — an open B under a
+            // 10th-fret melody note is a register jumble, not a usable grip
+            const upFretted = frets.filter(f => f > 0);
+            if (frets.some(f => f === 0) && upFretted.some(f => f > 5)) continue;
+            const positions = [noteOf(bassSi, bf), ...set.map((si, k) => noteOf(si, frets[k]))];
+            const key = positions.map(p => `${p.si}:${p.fret}`).join('|');
+            if (seen.has(key)) continue; seen.add(key);
+            const fr = positions.filter(p => p.fret > 0);
+            out.push({
+              positions: assignFingers(positions),
+              name: `${customTuning[bassSi].note}-bass · ${bf === 0 ? 'open' : bf + 'fr'}`,
+              cat: 'slash', priority: 0,
+              minFret: fr.length ? Math.min(...fr.map(p => p.fret)) : 0,
+              maxFret: fr.length ? Math.max(...fr.map(p => p.fret)) : 0
+            });
+          }
+        }
+      }
+    });
+  });
+  return out.sort((a, b) => a.minFret - b.minFret || a.maxFret - b.maxFret).slice(0, 10);
+}
+
 export function findVoicings(rootNote, chordNotes, qualityName) {
   const ns = customTuning.length;
   const results = [], seen = new Set();

@@ -2,6 +2,7 @@ import { NOTES } from '../core/music-theory.js';
 import { INSTRUMENTS, currentInstrument, getInst, customTuning, getNoteAtFret } from '../core/tuning.js';
 import { metroClock } from '../core/state.js';
 import { makeKnob } from '../ui/pedal-system.js';
+import { bus } from '../core/mixer.js';
 
 // ─── Exercise data ────────────────────────────────────────────────────────────
 
@@ -127,6 +128,7 @@ export function buildTechniqueContent(p) {
 
     setChordHighlight(
       note, allNotes, `${techCat}: ${label}`, positions,
+      // Fretboard overlay palette — the neck's own language, not chrome.
       { root: '#ff7744', tone: '#cc5522', rootStroke: '#ffaa66', toneStroke: '#dd7744' },
       focusPos,
     );
@@ -149,7 +151,7 @@ export function buildTechniqueContent(p) {
 
       function connectAndPlay() {
         o.connect(g);
-        g.connect(ctx.destination);
+        g.connect(bus(ctx, 'notes'));
         o.start(t);
         o.stop(t + 0.5);
       }
@@ -264,8 +266,10 @@ export function buildTechniqueContent(p) {
     const cells = document.querySelectorAll(`#body-${p.id} .tech-step`);
     cells.forEach((c, i) => {
       const isCur = p._techPlaying && i === stepIdx;
-      c.style.background   = isCur ? 'rgba(255,119,68,.4)' : '';
-      c.style.borderColor  = isCur ? '#ff7744' : 'rgba(255,119,68,.12)';
+      // Same two values the build below uses. Repaint with anything else and
+      // the strip's resting cells drift the moment playback starts.
+      c.style.background   = isCur ? 'var(--rk-soft2)' : 'var(--rk-soft)';
+      c.style.borderColor  = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
     });
   }
 
@@ -273,73 +277,76 @@ export function buildTechniqueContent(p) {
 
   function render() {
     const ex     = getEx();
-    const accent = '#ff7744';
+    const accent = 'var(--rk-accent)';
     const useBpm = metroClock.bpm || 80;
 
-    let h = `<div style="display:flex;flex-direction:column;gap:5px">`;
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:5px">`;
 
     // Category tabs
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
     Object.keys(TECHNIQUE_EXERCISES).forEach(tc => {
       const sym = TECHNIQUE_EXERCISES[tc].symbol;
-      h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:7px;${techCat === tc ? `background:rgba(255,119,68,.15);border-color:${accent};color:${accent}` : ''}">${sym} ${tc}</button>`;
+      h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:calc(7px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${sym} ${tc}</button>`;
     });
     h += `</div>`;
 
     // Description
-    h += `<div class="mono" style="color:#888;font-size:7px;text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
 
     // Exercise selector
     const exs = TECHNIQUE_EXERCISES[techCat]?.exercises || [];
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
     exs.forEach(e => {
-      h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:7px;padding:2px 5px;${exName === e.name ? `background:rgba(255,119,68,.15);border-color:${accent};color:${accent}` : ''}">${e.name}</button>`;
+      h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`;
     });
     h += `</div>`;
 
-    h += `<div class="mono" style="color:#999;font-size:8px;text-align:center">${ex.desc}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${ex.desc}</div>`;
 
     // String offset
     h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center">`;
-    h += `<span class="mono" style="color:#555;font-size:7px">START STRING</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">START STRING</span>`;
     customTuning.forEach((_, i) => {
-      h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:7px;min-width:18px;${stringOffset === i ? `background:rgba(255,119,68,.12);border-color:${accent};color:${accent}` : ''}">${i + 1}</button>`;
+      h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:calc(7px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`;
     });
     h += `</div>`;
 
     // Step display
-    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:rgba(255,119,68,.04);border:1px solid rgba(255,119,68,.1);border-radius:6px;padding:6px">`;
+    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px">`;
     ex.steps.forEach((step, si) => {
       const adj    = getAdjustedStep(step);
       const { note } = getNoteAtFret(customTuning[adj[0]].note, customTuning[adj[0]].octave, adj[1]);
       const isCur  = p._techPlaying && si === stepIdx;
-      const bg     = isCur ? 'rgba(255,119,68,.4)' : 'rgba(255,119,68,.08)';
-      const bc     = isCur ? '#ff7744' : 'rgba(255,119,68,.12)';
+      const bg     = isCur ? 'var(--rk-soft2)' : 'var(--rk-soft)';
+      const bc     = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
       const actionLabel = {
         pick: '♩', H: 'H', P: 'P', '/': '/', '\\': '\\',
         'b½': 'b½', b1: 'b1', r: 'rel', pb: 'pre', '~': '~', '~s': '~s', '~f': '~f',
       }[step[2]] || step[2];
 
       h += `<div class="tech-step" style="background:${bg};border:1.5px solid ${bc};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px;transition:all .1s">`;
-      h += `<div class="mono" style="color:${step[2] === 'pick' ? '#ffbb66' : '#ff9966'};font-size:11px;font-weight:800">${actionLabel}</div>`;
-      h += `<div class="mono" style="color:#aaa;font-size:7px;font-weight:600">${note}</div>`;
-      h += `<div class="mono" style="color:#555;font-size:6px">s${adj[0] + 1} f${adj[1]}</div>`;
+      h += `<div class="mono" style="color:${step[2] === 'pick' ? 'var(--rk-accent)' : 'var(--rk-dim)'};font-size:calc(11px*var(--ui));font-weight:800">${actionLabel}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${note}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div>`;
       h += `</div>`;
     });
     h += `</div>`;
 
     // Tempo display
     h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px">`;
-    h += `<span class="mono" style="color:#888;font-size:7px">TEMPO</span>`;
-    h += `<span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span>`;
-    h += `<span class="mono" style="color:#666;font-size:7px">BPM</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span>`;
     h += `</div>`;
 
-    // Play/stop button
-    const pc = p._techPlaying ? 'rgba(255,60,60,.2)'    : 'rgba(255,119,68,.15)';
-    const pb = p._techPlaying ? '#ff4444'                : accent;
-    const pt = p._techPlaying ? '#ff6666'                : accent;
-    h += `<button class="tech-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    // Play/stop button. While it reads ■ STOP it is not the pedal reporting that
+    // it is live — it is the control that halts the drill, so it leaves the pedal's
+    // lamp behind and takes the app-wide stop red. Every transport stops in one
+    // colour; hunting for the red thing has to work mid-exercise.
+    const pc = p._techPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
+    const pb = p._techPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
+    const pt = p._techPlaying ? 'var(--rk-stop)'      : accent;
+    h += `<button class="tech-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
 
     h += `</div>`;
     el.innerHTML = h;

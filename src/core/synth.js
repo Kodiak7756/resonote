@@ -3,6 +3,7 @@
 // triangle tones. Used by the Chord-Family Lab to "reveal" a chord's colour
 // and to play tension → resolution. Kept deliberately simple (no samples).
 import { NOTES } from './music-theory.js';
+import { bus } from './mixer.js';
 
 let _ctx = null;
 function ctx() {
@@ -45,7 +46,7 @@ export function playChordNotes(notes, opts = {}) {
     g.gain.setValueAtTime(0, st);
     g.gain.linearRampToValueAtTime(gain, st + 0.014);
     g.gain.exponentialRampToValueAtTime(0.0008, st + dur);
-    o.connect(g); g.connect(c.destination);
+    o.connect(g); g.connect(bus(c, 'notes'));
     o.start(st); o.stop(st + dur + 0.05);
   });
   return dur;

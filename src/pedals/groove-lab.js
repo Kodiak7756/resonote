@@ -3,6 +3,7 @@ import { INSTRUMENTS, currentInstrument, getInst } from '../core/tuning.js';
 import { metroClock, pedalBus, setChordHighlight, clearChordHighlight } from '../core/state.js';
 import { customTuning } from '../core/tuning.js';
 import { makeKnob } from '../ui/pedal-system.js';
+import { bus } from '../core/mixer.js';
 
 export const RHYTHM_PATTERNS = {
   'Guitar Strum': {
@@ -99,6 +100,9 @@ export function buildRhythmContent(p) {
     return { root: rn, notes: f2.map(i => NOTES[(NOTES.indexOf(rn) + i) % 12]), label: ch };
   }
 
+  // Everything handed to setChordHighlight below is the NECK's palette (root vs
+  // tone, fill vs stroke, plus the greyed-out 'muted' set). Shared language with
+  // every other pedal that lights the fretboard, so it stays literal.
   function highlightForStep(si) {
     if (currentInstrument === 'piano') return;
     const pat = getPat();
@@ -144,7 +148,7 @@ export function buildRhythmContent(p) {
       } else return;
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
       o.connect(g);
-      g.connect(c.destination);
+      g.connect(bus(c, 'notes'));
       o.start();
       o.stop(c.currentTime + 0.06);
     } catch (e) {}
@@ -205,8 +209,10 @@ export function buildRhythmContent(p) {
     const cells = document.querySelectorAll(`#body-${p.id} .rhythm-step`);
     cells.forEach((c, i) => {
       const isCur = p._rhythmPlaying && i === stepIdx;
-      c.style.background = isCur ? 'rgba(187,102,221,.4)' : '';
-      c.style.borderColor = isCur ? '#bb66dd' : 'rgba(187,102,221,.15)';
+      // The same two values render() builds the cells with, so the grid does not
+      // change appearance the first time the transport repaints it.
+      c.style.background = isCur ? 'var(--rk-soft2)' : 'var(--rk-soft)';
+      c.style.borderColor = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
     });
   }
 
@@ -214,14 +220,14 @@ export function buildRhythmContent(p) {
     const pat = getPat();
     ensureStepChords();
     const useBpm = metroClock.bpm || 120;
-    const accent = '#bb66dd';
+    const accent = 'var(--rk-accent)';
     const stepsPerBeat = pat.steps.length / pat.beats;
-    let h = `<div style="display:flex;flex-direction:column;gap:4px">`;
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:4px">`;
 
     // Category tabs
     h += `<div style="display:flex;gap:2px">`;
     Object.keys(RHYTHM_PATTERNS).forEach(c => {
-      h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="flex:1;font-size:7px;${cat === c ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${c}</button>`;
+      h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="flex:1;font-size:calc(7px*var(--ui));${cat === c ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${c}</button>`;
     });
     h += `</div>`;
 
@@ -229,17 +235,17 @@ export function buildRhythmContent(p) {
     const pats = RHYTHM_PATTERNS[cat] || {};
     h += `<div style="display:flex;flex-wrap:wrap;gap:2px">`;
     Object.keys(pats).forEach(pn => {
-      h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="font-size:6px;padding:2px 4px;${patName === pn ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${pn}</button>`;
+      h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="font-size:calc(6px*var(--ui));padding:2px 4px;${patName === pn ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${pn}</button>`;
     });
     h += `</div>`;
 
-    h += `<div class="mono" style="color:#888;font-size:7px;text-align:center">${pat.desc}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${pat.desc}</div>`;
 
     // Chord mode
     h += `<div style="display:flex;gap:2px;align-items:center">`;
-    h += `<span class="mono" style="color:#555;font-size:7px">CHORDS</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">CHORDS</span>`;
     [['uniform', 'Same'], ['per-step', 'Per Beat'], ['random', '🎲']].forEach(([m, label]) => {
-      h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="flex:1;font-size:7px;${chordMode === m ? `background:rgba(187,102,221,.12);border-color:${accent};color:${accent}` : ''}">${label}</button>`;
+      h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${chordMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${label}</button>`;
     });
     h += `</div>`;
 
@@ -247,18 +253,18 @@ export function buildRhythmContent(p) {
     if (chordMode === 'uniform') {
       h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
       COMMON_CHORDS.forEach(ch => {
-        h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="font-size:6px;padding:1px 3px;${uniformChord === ch ? `background:rgba(187,102,221,.12);border-color:${accent};color:${accent}` : ''}">${ch}</button>`;
+        h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${uniformChord === ch ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`;
       });
       h += `</div>`;
     }
 
     // Pattern grid with per-step chord labels
-    h += `<div style="background:rgba(187,102,221,.04);border:1px solid rgba(187,102,221,.1);border-radius:6px;padding:5px;overflow-x:auto">`;
+    h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:5px;overflow-x:auto">`;
 
     // Beat numbers
     h += `<div style="display:flex;gap:1px;margin-bottom:2px">`;
     for (let b = 0; b < pat.beats; b++) {
-      h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:#555;font-size:7px">${b + 1}</span></div>`;
+      h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${b + 1}</span></div>`;
     }
     h += `</div>`;
 
@@ -267,10 +273,13 @@ export function buildRhythmContent(p) {
     pat.steps.forEach((st, si) => {
       const isCur = p._rhythmPlaying && si === stepIdx;
       const isDownbeat = si % stepsPerBeat === 0;
-      const colors = { 'D': '#bb66dd', 'U': '#9944bb', '↓': '#bb66dd', '↑': '#9944bb', 'A': '#ff6688', 'x': '#666', 'g': '#555', '·': 'transparent' };
-      const bg = isCur ? 'rgba(187,102,221,.4)' : st !== '·' ? 'rgba(187,102,221,.1)' : 'rgba(255,255,255,.02)';
-      const bc = isCur ? '#bb66dd' : 'rgba(187,102,221,.15)';
-      const textColor = colors[st] || '#444';
+      // Down strokes are the accent, ups a quieter tint of it, an accented hit
+      // is the lamp at full; mutes and ghosts drop to micro-label ink. The glyph
+      // already names the stroke, so colour only carries WEIGHT here.
+      const colors = { 'D': 'var(--rk-accent)', 'U': 'var(--rk-dim)', '↓': 'var(--rk-accent)', '↑': 'var(--rk-dim)', 'A': 'var(--rk-hot)', 'x': 'var(--rk-ink-mute)', 'g': 'var(--rk-ink-mute)', '·': 'transparent' };
+      const bg = isCur ? 'var(--rk-soft2)' : st !== '·' ? 'var(--rk-soft)' : 'var(--rk-panel)';
+      const bc = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
+      const textColor = colors[st] || 'var(--rk-ink-mute)';
       h += `<div class="rhythm-step" style="flex:1;min-width:16px;height:22px;background:${bg};border:1px solid ${bc};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;transition:all .08s">`;
       h += `<span class="mono" style="color:${textColor};font-size:${st === '·' ? 7 : 9}px;font-weight:700">${st}</span>`;
       h += `</div>`;
@@ -284,10 +293,10 @@ export function buildRhythmContent(p) {
         const ch = stepChords[si];
         const isEdit = editStep === si;
         const isDownbeat = si % stepsPerBeat === 0;
-        const bg = isEdit ? 'rgba(187,102,221,.25)' : ch ? 'rgba(187,102,221,.1)' : 'rgba(255,255,255,.02)';
-        const col = ch ? '#bb88dd' : '#444';
-        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? '#bb66dd' : 'rgba(187,102,221,.08)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .08s">`;
-        h += `<span class="mono" style="color:${col};font-size:6px;font-weight:${ch ? 700 : 400}">${ch || ''}</span>`;
+        const bg = isEdit ? 'var(--rk-soft2)' : ch ? 'var(--rk-soft)' : 'var(--rk-panel)';
+        const col = ch ? 'var(--rk-accent)' : 'var(--rk-ink-mute)';
+        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .08s">`;
+        h += `<span class="mono" style="color:${col};font-size:calc(6px*var(--ui));font-weight:${ch ? 700 : 400}">${ch || ''}</span>`;
         h += `</div>`;
       });
       h += `</div>`;
@@ -301,37 +310,40 @@ export function buildRhythmContent(p) {
         ? [['A', 'Accent'], ['g', 'Ghost'], ['·', 'Rest']]
         : [['D', 'Down'], ['U', 'Up'], ['x', 'Mute'], ['·', 'Rest']];
     legendItems.forEach(([sym, label]) => {
-      h += `<span class="mono" style="color:#666;font-size:6px"><span style="color:${accent}">${sym}</span> ${label}</span>`;
+      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))"><span style="color:${accent}">${sym}</span> ${label}</span>`;
     });
     h += `</div></div>`;
 
     // Per-step chord picker (when editStep is set)
     if (editStep !== null && (chordMode === 'per-step' || chordMode === 'random')) {
-      h += `<div style="background:rgba(187,102,221,.06);border:1px solid rgba(187,102,221,.15);border-radius:5px;padding:5px">`;
-      h += `<div class="mono" style="color:#888;font-size:7px;margin-bottom:3px">Step ${editStep + 1} chord:</div>`;
+      h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:5px;padding:5px">`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-bottom:3px">Step ${editStep + 1} chord:</div>`;
       h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
       COMMON_CHORDS.forEach(ch => {
         const isCur = stepChords[editStep] === ch;
-        h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="font-size:6px;padding:1px 3px;${isCur ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${ch}</button>`;
+        h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${isCur ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`;
       });
       h += `</div>`;
       h += `<div style="display:flex;gap:3px;margin-top:3px">`;
-      h += `<button class="chord-btn rhy-pick-clear" style="font-size:7px;color:#888;flex:1">Clear (inherit)</button>`;
-      h += `<button class="chord-btn rhy-pick-done" style="font-size:7px;flex:1">Done</button>`;
+      h += `<button class="chord-btn rhy-pick-clear" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-mute);flex:1">Clear (inherit)</button>`;
+      h += `<button class="chord-btn rhy-pick-done" style="font-size:calc(7px*var(--ui));flex:1">Done</button>`;
       h += `</div></div>`;
     }
 
     // Tempo + Play
     h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px">`;
-    h += `<span class="mono" style="color:#888;font-size:7px">TEMPO</span>`;
-    h += `<span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span>`;
-    h += `<span class="mono" style="color:#666;font-size:7px">${pat.sub}</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${pat.sub}</span>`;
     h += `</div>`;
 
-    const pc = p._rhythmPlaying ? 'rgba(255,60,60,.2)' : 'rgba(187,102,221,.15)';
-    const pb = p._rhythmPlaying ? '#ff4444' : '#bb66dd';
-    const pt = p._rhythmPlaying ? '#ff6666' : '#bb66dd';
-    h += `<button class="rhy-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    // While it reads STOP this is the halt control, so it takes the app-wide stop
+    // red — one colour for "this ends it", found by reflex rather than by reading.
+    // The 'A' accent glyph in the grid above keeps --rk-hot: that one means LOUD.
+    const pc = p._rhythmPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
+    const pb = p._rhythmPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
+    const pt = p._rhythmPlaying ? 'var(--rk-stop)'      : 'var(--rk-accent)';
+    h += `<button class="rhy-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     el.innerHTML = h;
 

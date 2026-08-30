@@ -6,6 +6,8 @@ import { updateOverlays } from '../ui/fretboard.js';
 import { findVoicings, renderMiniDiagram, getKeyPositionZones, assignFingers, pickGrip } from '../core/voicings.js';
 import { catOfType, qualSuffix, getKeySeventhChords, getBorrowedChords, getSecondaryDominants } from '../harmony/functional-harmony.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
+import { encodeMidi, downloadMidi, midiFilename, stringFretToMidi, PPQ } from '../core/midi-writer.js';
+import { bus } from '../core/mixer.js';
 
 // ── Progression presets (degrees into the diatonic 7) ────────────────
 export const PROG_PRESETS = [
@@ -20,6 +22,9 @@ export const PROG_PRESETS = [
   { name: 'I-V-vi-III-IV',  degrees: [0, 4, 5, 2, 3] },
 ];
 
+// Fretboard overlay palette — the neck's language, not the panel's. Chrome in
+// this file inherits the card's accent; these four stay literal so a chord lit
+// from the Progression Studio looks the same as one lit from anywhere else.
 export const PROG_COLORS = {
   root:        '#ef9f27',
   tone:        '#a06a10',
@@ -253,7 +258,7 @@ export function buildProgressionContent(p) {
       osc.frequency.value = beatType === 'alternate' ? 760 : accent || beatType === 'accent' ? 900 : beatType === 'ghost' ? 500 : 600;
       gain.gain.value = beatType === 'ghost' ? 0.07 : accent || beatType === 'accent' ? 0.3 : 0.15;
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-      osc.connect(gain); gain.connect(ctx.destination);
+      osc.connect(gain); gain.connect(bus(ctx, 'notes'));
       osc.start(); osc.stop(ctx.currentTime + 0.06);
     } catch (e) {}
   }
@@ -287,6 +292,78 @@ export function buildProgressionContent(p) {
   function getGridChordAt(bi) {
     for (let i = bi; i >= 0; i--) if (customGrid[i]) return customGrid[i];
     return null;
+  }
+
+  // ── REAPER Bridge: export the painted grid as MIDI ───────────────────
+  function chordIntervalsFor(quality) {
+    for (const group of Object.values(CHORD_TYPES)) if (group[quality]) return group[quality];
+    return [0, 4, 7];
+  }
+
+  function exportProgressionMidi() {
+    const style = s.midiStyle || 'guitar';
+    const total = gridBars * beatsPerBar;
+    const beatTick = PPQ * 4 / (metroClock.unit || 4);   // one grid beat, honoring /8 time sigs
+    const spans = [];
+    for (let i = 0; i < total; i++) {
+      if (!customGrid[i]) continue;
+      let end = total;
+      for (let j = i + 1; j < total; j++) if (customGrid[j]) { end = j; break; }
+      spans.push({ cell: customGrid[i], start: i, beats: end - i });
+    }
+    const msgEl = el.querySelector('.prog-export-msg');
+    if (!spans.length) {
+      if (msgEl) { msgEl.textContent = 'Nothing to export — paint chords into the bars first'; msgEl.style.color = 'var(--rk-bad)'; }
+      return;
+    }
+    const notes = [];
+    for (const sp of spans) {
+      const chRoot = toSharp(sp.cell.root);
+      const iv = chordIntervalsFor(sp.cell.quality);
+      const startTick = sp.start * beatTick;
+      const durTick = sp.beats * beatTick;
+      const base = 48 + NOTES.indexOf(chRoot);           // chord root near C3 — guitar territory
+
+      if (style === 'guitar') {
+        const chNotes = getChordNotes(chRoot, iv);
+        const grip = pickGrip(chRoot, chNotes, sp.cell.quality, 'open');
+        if (grip?.positions?.length) {
+          const sorted = [...grip.positions].sort((a, b) => b.si - a.si);  // low string first
+          sorted.forEach((pos, k) => {
+            const m = stringFretToMidi(pos.si, pos.fret, customTuning);
+            if (m != null) notes.push({ tick: startTick + k * 12, note: m, vel: k === 0 ? 104 : 92, dur: Math.max(60, durTick - k * 12 - 12) });
+          });
+          continue;                                       // voiced — next chord
+        }                                                 // no grip found → fall through to block
+      }
+      if (style === 'arp') {
+        const tones = iv.map(x => base + x);
+        const seq = tones.length > 2 ? [...tones, ...tones.slice(1, -1).reverse()] : tones;
+        const eighth = beatTick / 2;
+        const count = Math.floor(durTick / eighth);
+        for (let k = 0; k < count; k++) {
+          notes.push({ tick: startTick + k * eighth, note: seq[k % seq.length], vel: k % 2 ? 84 : 98, dur: eighth - 15 });
+        }
+        continue;
+      }
+      // block chords (also the guitar fallback): tones + a low root for body
+      iv.forEach(x => notes.push({ tick: startTick, note: base + x, vel: 96, dur: durTick - 15 }));
+      notes.push({ tick: startTick, note: base - 12, vel: 86, dur: durTick - 15 });
+    }
+    const bpm = metroClock.bpm || 120;
+    const bytes = encodeMidi({
+      bpm,
+      timeSig: [beatsPerBar, metroClock.unit || 4],
+      trackName: `Resonote ${root} ${keyType} — ${progName || 'progression'}`,
+      notes,
+      endTick: total * beatTick,
+    });
+    downloadMidi(bytes, midiFilename(`prog-${root}-${keyType}-${style}-${bpm}bpm`));
+    if (msgEl) {
+      msgEl.style.color = 'var(--rk-accent)';
+      msgEl.textContent = `Exported ${spans.length} chords @ ${bpm} BPM (${beatsPerBar}/${metroClock.unit || 4}) — run Resonote Import in REAPER`;
+      setTimeout(() => { if (msgEl.isConnected) msgEl.textContent = ''; }, 4000);
+    }
   }
 
   // ── Picker helpers ───────────────────────────────────────────────────
@@ -395,7 +472,9 @@ export function buildProgressionContent(p) {
     const cells = document.querySelectorAll(`#body-${p.id} .grid-cell`);
     cells.forEach((cell, i) => {
       const isCur = p._progPlaying && i === beat;
-      cell.style.outline       = isCur ? '2px solid #ffc044' : 'none';
+      // The playhead is the pedal RUNNING, so it wears --rk-hot; the grid's own
+      // selected/current borders are built in render() and left alone here.
+      cell.style.outline       = isCur ? '2px solid var(--rk-hot)' : 'none';
       cell.style.outlineOffset = isCur ? '-2px' : '0';
     });
     const sounding = getGridChordAt(beat);
@@ -432,10 +511,12 @@ export function buildProgressionContent(p) {
       roSub  = `${useBpm} BPM · ${beatsPerBar}/${metroClock.unit || 4} · from metronome`;
     }
 
-    let h = `<div class="rk rk-prog" style="--rk-accent:#ef9f27">`;
+    // The accent arrives from the card; naming one here is what used to make
+    // this pedal orange no matter what the catalog said.
+    let h = `<div class="rk rk-prog">`;
 
     // Top blurb (Chord-Family-Lab style)
-    h += `<div style="font-size:9.5px;line-height:1.45;color:#c8c8c8;background:#ef9f271e;border-left:2px solid #ef9f27;padding:6px 8px;border-radius:4px">Build a progression by <b>function</b>: arm a chord from the FUNCTION row (or the COLOR drawer), then tap bars to drop it. Tap an empty slot and <b>✦ Fits here</b> ranks what sounds good there next.</div>`;
+    h += `<div style="font-size:calc(9.5px*var(--ui));line-height:1.45;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:6px 8px;border-radius:4px">Build a progression by <b>function</b>: arm a chord from the FUNCTION row (or the COLOR drawer), then tap bars to drop it. Tap an empty slot and <b>✦ Fits here</b> ranks what sounds good there next.</div>`;
 
     // ── KEY & MODE header ──
     h += `<div class="rk-section">
@@ -449,15 +530,24 @@ export function buildProgressionContent(p) {
     });
     h += `</div><div class="rk-seg" style="margin-top:5px">`;
     KEY_TYPES.forEach(kt => {
-      h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="flex:1;font-size:8.5px">${kt}</button>`;
+      h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="flex:1;font-size:calc(8.5px*var(--ui))">${kt}</button>`;
     });
     h += `</div></div>`;
 
     // ── Readout + transport ──
+    // The transport flips to ◼ while it runs, and at that moment it is the halt
+    // control — so it takes the app's one stop red, like every other halt. It has
+    // to be spelled out inline: .rk-play.is-playing paints from --rk-hot, which
+    // .rk resolved from the card's accent further up the tree, so re-pointing the
+    // accent on the button itself would never reach it. The pulse stays hot —
+    // that is the pedal reporting it is live, which is a different message.
+    const stopSkin = p._progPlaying
+      ? 'background:var(--rk-stop-soft);border-color:var(--rk-stop-edge);color:var(--rk-stop)'
+      : '';
     h += `<div class="rk-readoutrow">
-      <button class="rk-play prog-play${p._progPlaying ? ' is-playing' : ''}" title="${p._progPlaying ? 'Stop' : 'Play the progression'}">${p._progPlaying ? '◼' : '▶'}</button>
+      <button class="rk-play prog-play${p._progPlaying ? ' is-playing' : ''}" style="${stopSkin}" title="${p._progPlaying ? 'Stop' : 'Play the progression'}">${p._progPlaying ? '◼' : '▶'}</button>
       <div class="rk-readout">
-        <div class="rk-readout-num prog-readout-main" style="font-size:18px">${roMain}</div>
+        <div class="rk-readout-num prog-readout-main" style="font-size:calc(18px*var(--ui))">${roMain}</div>
         <div class="rk-readout-sub prog-readout-sub">${roSub}</div>
       </div>
       ${armedChord ? `<button class="rk-chip disarm-btn" style="align-self:center">DONE</button>` : ''}
@@ -468,14 +558,14 @@ export function buildProgressionContent(p) {
       <div class="rk-label">QUALITY</div>
       <div class="rk-seg">`;
     QUALITY_MODES.forEach(qm => {
-      h += `<button class="rk-seg-btn qual-btn${qm === qualityMode ? ' is-active' : ''}" data-qm="${qm}" style="flex:1;min-width:34px;font-size:8px;padding:5px 2px">${qm}</button>`;
+      h += `<button class="rk-seg-btn qual-btn${qm === qualityMode ? ' is-active' : ''}" data-qm="${qm}" style="flex:1;min-width:34px;font-size:calc(8px*var(--ui));padding:5px 2px">${qm}</button>`;
     });
     h += `</div>`;
     if (subs.length) {
       h += `<div class="rk-seg" style="margin-top:4px">`;
       subs.forEach(([val, lab]) => {
         const on = subAlt === val || (!subAlt && val === subs[0][0]);
-        h += `<button class="rk-seg-btn sub-pill${on ? ' is-active' : ''}" data-sub="${val}" style="font-size:8px;padding:4px 8px">${lab}</button>`;
+        h += `<button class="rk-seg-btn sub-pill${on ? ' is-active' : ''}" data-sub="${val}" style="font-size:calc(8px*var(--ui));padding:4px 8px">${lab}</button>`;
       });
       h += `</div>`;
     }
@@ -498,8 +588,8 @@ export function buildProgressionContent(p) {
       const primary   = numLabelMode === 'NUM' ? numLabel : nameLabel;
       const secondary = numLabelMode === 'NUM' ? nameLabel : numLabel;
       h += `<button class="rk-seg-btn fn-btn${armed ? ' is-active' : ''}" data-root="${c.root}" data-q="${q}" data-num="${c.numeral}" style="flex:1;min-width:40px;gap:1px;padding:6px 2px">
-        <span style="font-size:13px;font-weight:800;line-height:1">${primary}</span>
-        <span style="font-size:7.5px;opacity:.65;line-height:1">${secondary}</span>
+        <span style="font-size:calc(13px*var(--ui));font-weight:800;line-height:1">${primary}</span>
+        <span style="font-size:calc(7.5px*var(--ui));opacity:.65;line-height:1">${secondary}</span>
       </button>`;
     });
     h += `</div>`;
@@ -526,10 +616,10 @@ export function buildProgressionContent(p) {
         <span style="flex:1"></span>
         <span class="rk-label-hint">tap = ${armedChord ? 'paint' : 'select'} · right-click = clear</span>
       </div>
-      <div style="background:rgba(239,159,39,.04);border:1px solid rgba(239,159,39,.12);border-radius:8px;padding:6px;overflow-y:auto;max-height:190px">`;
+      <div style="background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:8px;padding:6px;overflow-y:auto;max-height:190px">`;
     for (let bar = 0; bar < gridBars; bar++) {
       h += `<div style="display:flex;gap:3px;margin-bottom:3px;align-items:center">`;
-      h += `<span class="mono" style="color:#5a5042;font-size:7px;min-width:14px;text-align:right">${bar + 1}</span>`;
+      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));min-width:14px;text-align:right">${bar + 1}</span>`;
       for (let b = 0; b < beatsPerBar; b++) {
         const bi     = bar * beatsPerBar + b;
         const ch     = customGrid[bi];
@@ -538,12 +628,12 @@ export function buildProgressionContent(p) {
         const isSel  = selectedBeat === bi;
         const label  = ch ? `${numLabelMode === 'NUM' ? ch.numeral : ch.root + sfx(ch.quality)}` : '';
         const sustain = !ch && active ? '╌' : '·';
-        const bg     = isSel ? 'rgba(239,159,39,.4)' : isCur ? 'rgba(239,159,39,.3)' : ch ? 'rgba(239,159,39,.16)' : 'rgba(255,255,255,.03)';
-        const border = isSel ? '#ffc044' : isCur ? '#ffc044' : ch ? 'rgba(239,159,39,.3)' : 'rgba(255,255,255,.06)';
-        const color  = ch ? '#ffc862' : '#4a4030';
-        h += `<div class="grid-cell" data-bi="${bi}" title="Bar ${bar + 1} beat ${b + 1}" style="flex:1;min-height:30px;background:${bg};border:1px solid ${border};border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;${b === 0 ? 'border-left-width:2px;border-left-color:rgba(239,159,39,.4)' : ''}">
+        const bg     = isSel ? 'var(--rk-soft2)' : isCur ? 'var(--rk-soft2)' : ch ? 'var(--rk-soft)' : 'var(--rk-panel)';
+        const border = isSel ? 'var(--rk-accent)' : isCur ? 'var(--rk-accent)' : ch ? 'var(--rk-line)' : 'var(--rk-edge-soft)';
+        const color  = ch ? 'var(--rk-accent)' : 'var(--rk-ink-mute)';
+        h += `<div class="grid-cell" data-bi="${bi}" title="Bar ${bar + 1} beat ${b + 1}" style="flex:1;min-height:30px;background:${bg};border:1px solid ${border};border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;${b === 0 ? 'border-left-width:2px;border-left-color:var(--rk-line)' : ''}">
           <span class="mono" style="color:${color};font-size:${ch ? 10 : 9}px;font-weight:${ch ? 800 : 400};line-height:1">${label || sustain}</span>
-          ${ch ? `<span class="mono" style="color:rgba(239,159,39,.5);font-size:6.5px;line-height:1">${numLabelMode === 'NUM' ? ch.root + sfx(ch.quality) : ch.numeral}</span>` : ''}
+          ${ch ? `<span class="mono" style="color:var(--rk-dim);font-size:calc(6.5px*var(--ui));line-height:1">${numLabelMode === 'NUM' ? ch.root + sfx(ch.quality) : ch.numeral}</span>` : ''}
         </div>`;
       }
       h += `</div>`;
@@ -553,7 +643,7 @@ export function buildProgressionContent(p) {
     h += `<div class="rk-seg" style="margin-top:5px;align-items:center">
       <span class="rk-label" style="margin-right:2px">LENGTH</span>`;
     [4, 8, 12, 16].forEach(bl => {
-      h += `<button class="rk-seg-btn prog-gl${gridBars === bl ? ' is-active' : ''}" data-gl="${bl}" style="font-size:8px;padding:4px 8px">${bl}</button>`;
+      h += `<button class="rk-seg-btn prog-gl${gridBars === bl ? ' is-active' : ''}" data-gl="${bl}" style="font-size:calc(8px*var(--ui));padding:4px 8px">${bl}</button>`;
     });
     h += `<span class="rk-label-hint" style="margin-left:4px">bars</span></div>`;
     h += `</div>`;
@@ -561,14 +651,14 @@ export function buildProgressionContent(p) {
     // ── SMART NEXT panel (only when a slot is selected) ──
     if (selectedBeat !== null) {
       const ranked = rankSmartNext(selectedBeat);
-      h += `<div class="rk-section" style="background:rgba(239,159,39,.05);border:1px solid rgba(239,159,39,.16);border-radius:9px;padding:8px">
+      h += `<div class="rk-section" style="background:var(--rk-soft);border:1px solid var(--rk-edge);border-radius:9px;padding:8px">
         <div class="rk-label">✦ FITS HERE <span class="rk-label-hint">bar ${Math.floor(selectedBeat / beatsPerBar) + 1} · beat ${(selectedBeat % beatsPerBar) + 1}</span></div>
         <div style="display:flex;flex-direction:column;gap:4px">`;
       ranked.slice(0, 5).forEach(c => {
-        h += `<button class="smart-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" style="display:flex;align-items:center;gap:8px;background:rgba(239,159,39,.08);border:1px solid rgba(239,159,39,.2);border-radius:7px;padding:5px 8px;cursor:pointer;text-align:left;width:100%">
-          <span class="mono" style="color:#ffc862;font-size:13px;font-weight:800;min-width:34px">${c.numeral}</span>
-          <span class="mono" style="color:#cc9a4e;font-size:9px;min-width:30px">${c.root}${sfx(c.quality)}</span>
-          <span style="color:#9a8a6a;font-size:9px;flex:1">${c.why}</span>
+        h += `<button class="smart-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" style="display:flex;align-items:center;gap:8px;background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:7px;padding:5px 8px;cursor:pointer;text-align:left;width:100%">
+          <span class="mono" style="color:var(--rk-accent);font-size:calc(13px*var(--ui));font-weight:800;min-width:34px">${c.numeral}</span>
+          <span class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));min-width:30px">${c.root}${sfx(c.quality)}</span>
+          <span style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));flex:1">${c.why}</span>
         </button>`;
       });
       h += `</div>`;
@@ -589,7 +679,7 @@ export function buildProgressionContent(p) {
         r += `</div>`;
         h += r;
       }
-      h += `<button class="rk-chip smart-clear" style="margin-top:6px;color:#cc7766">✕ clear this beat</button>`;
+      h += `<button class="rk-chip smart-clear" style="margin-top:6px;color:var(--rk-bad)">✕ clear this beat</button>`;
       h += `</div>`;
     }
 
@@ -598,7 +688,7 @@ export function buildProgressionContent(p) {
       <div class="rk-label">PRESET PROGRESSIONS <span class="rk-label-hint">tap to load into the timeline</span></div>
       <div class="rk-presets" style="flex-wrap:wrap">`;
     PROG_PRESETS.forEach(pr => {
-      h += `<button class="rk-preset prog-pr" data-pr="${pr.name}" style="font-size:8px;min-width:auto;padding:0 8px">${pr.name}</button>`;
+      h += `<button class="rk-preset prog-pr" data-pr="${pr.name}" style="font-size:calc(8px*var(--ui));min-width:auto;padding:0 8px">${pr.name}</button>`;
     });
     h += `</div></div>`;
 
@@ -619,9 +709,23 @@ export function buildProgressionContent(p) {
     }
     h += `<div style="display:flex;gap:6px;align-items:center;margin-top:6px">
         <button class="rk-chip prog-drill${drillMode ? ' is-active' : ''}" style="flex:1">🏋️ Transition Drill ${drillMode ? 'ON' : 'OFF'}</button>
-        ${drillMode && p._progPlaying ? `<span class="mono" style="color:#ef9f27;font-size:10px;font-weight:700">${drillScore.changes} changes</span>` : ''}
+        ${drillMode && p._progPlaying ? `<span class="mono" style="color:var(--rk-accent);font-size:calc(10px*var(--ui));font-weight:700">${drillScore.changes} changes</span>` : ''}
       </div>`;
     h += `</div>`;
+
+    // ── REAPER Bridge: export the progression as MIDI ──
+    h += `<div class="rk-section">
+      <div class="rk-label">REAPER BRIDGE <span class="rk-label-hint">export this progression as a .mid file</span></div>
+      <div style="display:flex;gap:4px;align-items:stretch">
+        <select class="prog-midi-style" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge);color:var(--rk-ink);border-radius:6px;padding:4px;font-size:calc(9px*var(--ui))">
+          <option value="guitar" ${(s.midiStyle || 'guitar') === 'guitar' ? 'selected' : ''}>Guitar voicings (strummed)</option>
+          <option value="block" ${s.midiStyle === 'block' ? 'selected' : ''}>Block chords (piano)</option>
+          <option value="arp" ${s.midiStyle === 'arp' ? 'selected' : ''}>Arpeggiated 8ths</option>
+        </select>
+        <button class="rk-chip prog-export-midi" title="Downloads a .mid — then run the Resonote Import action in REAPER" style="color:var(--rk-accent);border-color:var(--rk-line)">⇄ Export</button>
+      </div>
+      <div class="prog-export-msg mono" style="font-size:calc(8px*var(--ui));text-align:center;margin-top:3px;min-height:10px;color:var(--rk-accent)"></div>
+    </div>`;
 
     // ── Theory panel ──
     h += theoryPanelHTML('progression', PROG_THEORY);
@@ -748,6 +852,10 @@ export function buildProgressionContent(p) {
       if (p._progPlaying) stopPlaying(); else startPlaying();
     });
     el.querySelector('.prog-drill')?.addEventListener('click', e => { e.stopPropagation(); drillMode = !drillMode; render(); });
+
+    // REAPER Bridge export
+    el.querySelector('.prog-midi-style')?.addEventListener('change', e => { e.stopPropagation(); s.midiStyle = e.target.value; });
+    el.querySelector('.prog-export-midi')?.addEventListener('click', e => { e.stopPropagation(); exportProgressionMidi(); });
 
     wireTheoryPanel(el);
 

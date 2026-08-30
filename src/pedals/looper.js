@@ -62,46 +62,54 @@ export function buildLooperContent(p) {
   }
 
   function render() {
-    const accent = '#44bbdd';
-    let h = `<div style="display:flex;flex-direction:column;gap:6px">`;
+    const accent = 'var(--rk-accent)';
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:6px">`;
 
     if (tracks.length) {
       h += `<div style="display:flex;flex-direction:column;gap:3px">`;
       tracks.forEach((t, i) => {
-        const bg  = t.muted ? 'rgba(255,255,255,.02)' : 'rgba(68,187,221,.06)';
-        const col = t.muted ? '#555' : accent;
-        h += `<div style="display:flex;align-items:center;gap:4px;background:${bg};border:1px solid rgba(68,187,221,.1);border-radius:5px;padding:4px 6px">`;
-        h += `<span class="mono" style="color:${col};font-size:9px;font-weight:700;flex:1">${t.name}</span>`;
-        h += `<button class="chord-btn loop-mute" data-li="${i}" style="font-size:7px;padding:1px 5px;${t.muted ? 'color:#ff6666' : 'color:#888'}">M</button>`;
-        h += `<button class="chord-btn loop-solo" data-li="${i}" style="font-size:7px;padding:1px 5px;${t.solo ? 'color:#ffaa00;border-color:#ffaa00' : 'color:#888'}">S</button>`;
-        h += `<button class="chord-btn loop-del"  data-li="${i}" style="font-size:7px;padding:1px 5px;color:#ff4444">✕</button>`;
+        const bg  = t.muted ? 'var(--rk-panel)' : 'var(--rk-soft)';
+        const col = t.muted ? 'var(--rk-ink-mute)' : accent;
+        h += `<div style="display:flex;align-items:center;gap:4px;background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:4px 6px">`;
+        h += `<span class="mono" style="color:${col};font-size:calc(9px*var(--ui));font-weight:700;flex:1">${t.name}</span>`;
+        h += `<button class="chord-btn loop-mute" data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;${t.muted ? 'color:var(--rk-bad)' : 'color:var(--rk-ink-mute)'}">M</button>`;
+        h += `<button class="chord-btn loop-solo" data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;${t.solo ? 'color:var(--rk-accent);border-color:var(--rk-line)' : 'color:var(--rk-ink-mute)'}">S</button>`;
+        h += `<button class="chord-btn loop-del"  data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;color:var(--rk-bad)">✕</button>`;
         h += `</div>`;
       });
       h += `</div>`;
     } else {
-      h += `<div class="mono" style="color:#444;font-size:9px;text-align:center;padding:12px">No tracks yet. Hit record to start.</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px">No tracks yet. Hit record to start.</div>`;
     }
 
+    // Armed and rolling is this pedal's lamp turned up (--rk-hot), not a red
+    // one: a saturated red at hue 0 is what C looks like on the neck. The lamp
+    // only reports that the pedal is live — the buttons that END the take are a
+    // different job and wear the stop red instead, below.
     if (recording) {
-      h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;background:rgba(255,50,50,.08);border:1px solid rgba(255,50,50,.2);border-radius:6px">`;
-      h += `<div style="width:10px;height:10px;border-radius:50%;background:#ff4444"></div>`;
-      h += `<span class="mono" style="color:#ff6666;font-size:11px;font-weight:700">RECORDING...</span>`;
+      h += `<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:8px;background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:6px">`;
+      h += `<div style="width:10px;height:10px;border-radius:50%;background:var(--rk-hot);box-shadow:0 0 10px var(--rk-glow)"></div>`;
+      h += `<span class="mono" style="color:var(--rk-hot);font-size:calc(11px*var(--ui));font-weight:700">RECORDING...</span>`;
       h += `</div>`;
     }
 
+    // Both halves of the transport are toggles, and each one is a stop button only
+    // in its second state. So the red arrives with the ■ and leaves with it — a
+    // looper has two things running at once and you must be able to see, without
+    // reading, which of them the button in front of you is about to end.
     h += `<div style="display:flex;gap:4px">`;
     if (!recording) {
-      h += `<button class="loop-rec mono" style="background:rgba(255,60,60,.15);border:1px solid #ff4444;color:#ff4444;border-radius:8px;padding:7px;cursor:pointer;font-size:10px;font-weight:700;flex:1">● REC</button>`;
+      h += `<button class="loop-rec mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:var(--rk-accent);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">● REC</button>`;
     } else {
-      h += `<button class="loop-stoprec mono" style="background:rgba(255,60,60,.25);border:1px solid #ff4444;color:#ff6666;border-radius:8px;padding:7px;cursor:pointer;font-size:10px;font-weight:700;flex:1">■ STOP REC</button>`;
+      h += `<button class="loop-stoprec mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP REC</button>`;
     }
     if (!playing) {
-      h += `<button class="loop-play mono" style="background:rgba(68,187,221,.15);border:1px solid ${accent};color:${accent};border-radius:8px;padding:7px;cursor:pointer;font-size:10px;font-weight:700;flex:1">▶ PLAY</button>`;
+      h += `<button class="loop-play mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:${accent};border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">▶ PLAY</button>`;
     } else {
-      h += `<button class="loop-stop mono" style="background:rgba(68,187,221,.25);border:1px solid ${accent};color:${accent};border-radius:8px;padding:7px;cursor:pointer;font-size:10px;font-weight:700;flex:1">■ STOP</button>`;
+      h += `<button class="loop-stop mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP</button>`;
     }
     h += `</div>`;
-    h += `<div class="mono" style="color:#555;font-size:7px;text-align:center">${tracks.length} track${tracks.length !== 1 ? 's' : ''} · Mute (M) Solo (S) per track · Loops on playback</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${tracks.length} track${tracks.length !== 1 ? 's' : ''} · Mute (M) Solo (S) per track · Loops on playback</div>`;
     h += `</div>`;
     el.innerHTML = h;
 

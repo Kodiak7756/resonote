@@ -4,11 +4,11 @@
 //  shared master-clock/key-bus/audio subscription layer (bound once per
 //  instance, dispatched to the active tab) so nothing leaks on tab switch.
 //
-//  Build status: POSITIONS ported. GROOVE / FINGER / TECHNIQUE land in the
-//  next passes (placeholder until then). Consolidation of the old four
-//  pedals happens once all tabs are proven.
+//  Now FIVE tabs: the Voicing Lab (string-set triads & voice leading) mounts
+//  as the 🧵 VOICINGS tab — its UI lives in voicing-lab.js and embeds here.
 // ════════════════════════════════════════════════════════════════════
 import { NOTES, SCALE_TYPES, toSharp } from '../core/music-theory.js';
+import { buildVoicingLabContent } from './voicing-lab.js';
 import { currentInstrument, customTuning, getNoteAtFret, getInst } from '../core/tuning.js';
 import { setChordHighlight, clearChordHighlight, setGhostHighlight, clearGhostHighlight, pedalBus, metroClock } from '../core/state.js';
 import { audio } from '../core/audio.js';
@@ -18,6 +18,7 @@ import { RHYTHM_PATTERNS } from './groove-lab.js';
 import { FINGER_PATTERNS, getFingerInstrument } from './finger-trainer.js';
 import { TECHNIQUE_EXERCISES } from './technique-builder.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
+import { bus } from '../core/mixer.js';
 
 // ── Arpeggio catalogue + palettes (from position-workout.js) ─────────
 const ARP_TYPES = {
@@ -25,18 +26,27 @@ const ARP_TYPES = {
   '7ths':   { 'Maj7':[0,4,7,11],'Dom7':[0,4,7,10],'Min7':[0,3,7,10],'Dim7':[0,3,6,9],'m7♭5':[0,3,6,10],'mMaj7':[0,3,7,11] },
   'Other':  { '6':[0,4,7,9],'Min6':[0,3,7,9],'Aug7':[0,4,8,10] },
 };
+// Fretboard dot colours, NOT pedal chrome — and deliberately still literal.
+// ui/fretboard.js writes these straight into SVG fill=/stroke= attributes,
+// where a var() reference does not resolve; and they carry information the
+// accent cannot, because teal says "this is a scale" and pink says "this is
+// an arpeggio" on a neck that has no other way to tell you.
 const RUNNER_COLORS = {
   scales: { root:'#22ccaa', tone:'#18887a', rootStroke:'#44eedd', toneStroke:'#2aaa99' },
   arps:   { root:'#cc66aa', tone:'#884477', rootStroke:'#ee88cc', toneStroke:'#aa5588' },
 };
 
+// No `accent` field here any more. A tab is a VIEW of one pedal, not a pedal
+// of its own, so all five wear the enclosure's accent and are told apart by
+// the underline and the weight of the active segment instead.
 const TAB_META = {
-  positions: { label: 'POSITIONS', accent: '#22ccaa', blurb: 'Walk a scale or arpeggio box note-by-note so the shape lives under your fingers anywhere on the neck. Lock one position or cycle them all.' },
-  groove:    { label: 'GROOVE',    accent: '#bb66dd', blurb: 'Loop a strum or picking pattern over a chord so your picking hand locks to the beat. Pick one chord, a beat per step, or a random change each bar.' },
-  finger:    { label: 'FINGER',    accent: '#dd9944', blurb: 'Cycle a fingerpicking roll — the picking-hand finger (p·i·m·a) is named for every note. Travis, classical and named-song patterns.' },
-  technique: { label: 'TECHNIQUE', accent: '#ff7744', blurb: 'Drill the expressive moves that make a guitar sing: hammer-ons, pull-offs, slides, bends and vibrato — slow and in time, then faster.' },
+  positions: { label: 'POSITIONS', blurb: 'Walk a scale or arpeggio box note-by-note so the shape lives under your fingers anywhere on the neck. Lock one position or cycle them all.' },
+  groove:    { label: 'GROOVE',    blurb: 'Loop a strum or picking pattern over a chord so your picking hand locks to the beat. Pick one chord, a beat per step, or a random change each bar.' },
+  finger:    { label: 'FINGER',    blurb: 'Cycle a fingerpicking roll — the picking-hand finger (p·i·m·a) is named for every note. Travis, classical and named-song patterns.' },
+  technique: { label: 'TECHNIQUE', blurb: 'Drill the expressive moves that make a guitar sing: hammer-ons, pull-offs, slides, bends and vibrato — slow and in time, then faster.' },
+  voicings:  { label: '🧵 VOICINGS', blurb: 'Pick a string set (G·B·E, D·G·B…) and drill triad inversions, diatonic ladders, or voice-led progressions on just those strings.' },
 };
-const INITIAL_TAB = { runner: 'positions', rhythm: 'groove', finger: 'finger', technique: 'technique', workshop: 'positions' };
+const INITIAL_TAB = { runner: 'positions', rhythm: 'groove', finger: 'finger', technique: 'technique', workshop: 'positions', voicinglab: 'voicings' };
 
 const THEORY = {
   positions: {
@@ -48,6 +58,7 @@ const THEORY = {
   groove:    { kicker: 'RHYTHM', title: 'Groove — locking your picking hand to the beat', what: `Loop a strum or picking pattern over a chord so your picking hand locks to the pulse.`, why: `Rhythm is the foundation — a clean groove at a slow tempo beats a sloppy fast one.`, lessonId: 'reading-rhythm' },
   finger:    { kicker: 'TECHNIQUE', title: 'Fingerstyle — independent picking-hand rolls', what: `Cycle a fingerpicking roll, with the picking-hand finger named for every note.`, why: `Travis picking and classical rolls build the right-hand independence that frees your playing.`, lessonId: 'fingerstyle-basics' },
   technique: { kicker: 'TECHNIQUE', title: 'Articulation — the expressive moves', what: `Drill hammer-ons, pull-offs, slides, bends and vibrato — the moves that make a guitar sing.`, why: `Clean articulation in time is what separates notes-on-a-page from phrasing.`, lessonId: 'expressive-technique' },
+  voicings:  { kicker: 'HARMONY', title: 'Voicings — triads on a chosen string set', what: `Constrain practice to one 3-string set and drill a chord's inversions up the neck, the key's seven diatonic triads, or a voice-led progression where each chord takes the grip that moves least.`, why: `Knowing the triads on every string set is what turns chords from memorised grips into a connected map — and minimal-motion voice leading is how changes get smooth.`, lessonId: 'triads-across-the-neck' },
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -162,7 +173,7 @@ function createPositionsTab(p, refresh) {
       osc.frequency.value = beatType === 'alternate' ? 760 : accent || beatType === 'accent' ? 800 : beatType === 'ghost' ? 430 : 500;
       gain.gain.value = beatType === 'ghost' ? 0.06 : accent || beatType === 'accent' ? 0.2 : 0.1;
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.05);
+      osc.connect(gain); gain.connect(bus(ctx, 'click')); osc.start(); osc.stop(ctx.currentTime + 0.05);
     } catch (e) {}
   }
   function playGoodTone() {
@@ -171,7 +182,7 @@ function createPositionsTab(p, refresh) {
       const ctx = rCtx, osc = ctx.createOscillator(), gain = ctx.createGain();
       osc.type = 'sine'; osc.frequency.value = 1200; gain.gain.value = 0.15;
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-      osc.connect(gain); gain.connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.08);
+      osc.connect(gain); gain.connect(bus(ctx, 'notes')); osc.start(); osc.stop(ctx.currentTime + 0.08);
     } catch (e) {}
   }
   function highlightPosition() {
@@ -183,14 +194,26 @@ function createPositionsTab(p, refresh) {
     const trailNote = running && noteIdx > 0 ? posNotes[noteIdx - 1] : null;
     applyRunnerPreview(box, focusNote, nextNote, trailNote);
   }
+  // Locked / currently-playing / resting, separated by how much of the accent
+  // each one is allowed to hold rather than by three different colours. The
+  // markup and the per-beat repaint both call this, so a box cannot be built
+  // with one skin and repainted with another on the first tick.
+  const posSkin = (locked, cur) => ({
+    bg:     locked ? 'var(--rk-soft2)'  : cur ? 'var(--rk-soft)' : 'var(--rk-panel2)',
+    border: locked ? 'var(--rk-accent)' : cur ? 'var(--rk-line)' : 'var(--rk-edge-soft)',
+    ink:    locked || cur ? 'var(--rk-accent)' : 'var(--rk-ink-mute)',
+  });
   function updateBeatDisplay() {
     document.querySelectorAll(`#body-${p.id} .runner-pos`).forEach(card => {
       const bi = parseInt(card.dataset.li);
       const isLocked = lockedPos === bi;
       const curBoxIdx = posSequence.length && posIdx < posSequence.length ? posSequence[posIdx].idx : -1;
       const isCur = p._running && bi === curBoxIdx;
-      card.style.background  = isLocked ? 'rgba(34,204,170,.35)' : isCur ? 'rgba(34,204,170,.25)' : 'rgba(34,204,170,.06)';
-      card.style.borderColor = isLocked ? '#44eedd' : isCur ? '#22ccaa' : 'rgba(34,204,170,.15)';
+      const sk = posSkin(isLocked, isCur);
+      card.style.background  = sk.bg;
+      card.style.borderColor = sk.border;
+      const lab = card.querySelector('.mono');
+      if (lab) lab.style.color = sk.ink;
     });
   }
   function onAudioDetect() {
@@ -265,89 +288,99 @@ function createPositionsTab(p, refresh) {
     const intervals  = getIntervals();
     const boxes      = getSequenceBoxes();
     const useBpm     = metroClock.bpm || 100;
-    const accent     = mode === 'scales' ? '#22ccaa' : '#cc66aa';
     const previewBox = getPreviewBox(boxes);
     const types   = mode === 'scales' ? SCALE_TYPES : ARP_TYPES;
     const curName = mode === 'scales' ? scaleName : arpName;
     const curCat  = mode === 'scales' ? scaleCat : arpCat;
 
-    const A = accent;
-    const lbl = t => `<div class="mono" style="color:#5a6a6a;font-size:8px;letter-spacing:1px;margin:2px 0 1px">${t}</div>`;
+    // The enclosure's accent, inherited from the card. Scales and arpeggios
+    // used to be two different hues here; they are now told apart by which
+    // button is filled, which is the same information without the argument
+    // against the note spectrum.
+    const A = 'var(--rk-accent)';
+    const lbl = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1px;margin:2px 0 1px">${t}</div>`;
     const curNotes = intervals.map(i => NOTES[(NOTES.indexOf(root) + i) % 12]);
 
     let h = `<div style="display:flex;flex-direction:column;gap:7px">`;
 
     // SCALES / ARPEGGIOS
     h += `<div style="display:flex;gap:4px">
-      <button class="chord-btn run-mode" data-rm="scales" style="flex:1;font-size:9px;${mode === 'scales' ? 'background:rgba(34,204,170,.15);border-color:#22ccaa;color:#22ccaa' : ''}">🎼 SCALES</button>
-      <button class="chord-btn run-mode" data-rm="arps" style="flex:1;font-size:9px;${mode === 'arps' ? 'background:rgba(204,102,170,.15);border-color:#cc66aa;color:#cc66aa' : ''}">🎶 ARPEGGIOS</button></div>`;
+      <button class="chord-btn run-mode" data-rm="scales" style="flex:1;font-size:calc(9px*var(--ui));${mode === 'scales' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎼 SCALES</button>
+      <button class="chord-btn run-mode" data-rm="arps" style="flex:1;font-size:calc(9px*var(--ui));${mode === 'arps' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎶 ARPEGGIOS</button></div>`;
 
     // FINGERING — CAGED boxes vs notes-per-string runs (scales only; arpeggios always use CAGED)
     if (mode === 'scales') {
       const fingNote = { caged: 'The five CAGED shapes across the neck', '3nps': 'Three notes on every string — smooth legato runs', '4nps': 'Four notes per string — wide stretch runs up the neck' }[fingering];
       h += `<div>${lbl('FINGERING')}<div style="display:flex;gap:4px">`;
       [['caged', '⬚ CAGED'], ['3nps', '3 / STRING'], ['4nps', '4 / STRING']].forEach(([fm, label]) =>
-        h += `<button class="chord-btn run-fing" data-fm="${fm}" style="flex:1;font-size:8px;${fingering === fm ? `background:rgba(34,204,170,.16);border-color:${A};color:${A}` : ''}">${label}</button>`);
-      h += `</div><div class="mono" style="color:#566;font-size:7px;text-align:center;margin-top:2px">${fingNote}</div></div>`;
+        h += `<button class="chord-btn run-fing" data-fm="${fm}" style="flex:1;font-size:calc(8px*var(--ui));${fingering === fm ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
+      h += `</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-top:2px">${fingNote}</div></div>`;
     }
 
     // ROOT
     h += `<div>${lbl('ROOT')}<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
-    NOTES.forEach(n => { const a = n === root; h += `<button class="chord-btn run-root" data-r="${n}" style="min-width:24px;font-size:8px;padding:3px 5px;${a ? `background:rgba(34,204,170,.2);border-color:${A};color:${A}` : ''}">${n}</button>`; });
+    NOTES.forEach(n => { const a = n === root; h += `<button class="chord-btn run-root" data-r="${n}" style="min-width:24px;font-size:calc(8px*var(--ui));padding:3px 5px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${n}</button>`; });
     h += `</div></div>`;
 
     // TYPE — grouped by category for readability
     h += `<div>${lbl(mode === 'scales' ? 'SCALE TYPE' : 'ARPEGGIO TYPE')}`;
     Object.entries(types).forEach(([cat, items]) => {
-      h += `<div class="mono" style="color:#3f5450;font-size:7px;letter-spacing:.5px;margin:3px 0 1px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:2px">`;
-      Object.keys(items).forEach(name => { const a = name === curName && cat === curCat; h += `<button class="chord-btn run-type" data-tn="${name}" data-tc="${cat}" style="font-size:8px;padding:3px 6px;${a ? `background:rgba(34,204,170,.18);border-color:${A};color:${A};font-weight:700` : ''}">${name}</button>`; });
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:.5px;margin:3px 0 1px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:2px">`;
+      Object.keys(items).forEach(name => { const a = name === curName && cat === curCat; h += `<button class="chord-btn run-type" data-tn="${name}" data-tc="${cat}" style="font-size:calc(8px*var(--ui));padding:3px 6px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A};font-weight:700` : ''}">${name}</button>`; });
       h += `</div>`;
     });
-    h += `<div class="mono" style="color:#7a8a8a;font-size:8px;text-align:center;margin-top:4px">${getLabel()}: <span style="color:${A};font-weight:700">${curNotes.join('  ')}</span></div></div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center;margin-top:4px">${getLabel()}: <span style="color:${A};font-weight:700">${curNotes.join('  ')}</span></div></div>`;
 
     // DIRECTION
     h += `<div>${lbl('DIRECTION')}<div style="display:flex;gap:3px">`;
-    [['asc', '↑ Up'], ['desc', '↓ Down'], ['cycle', '↕ Up & Down']].forEach(([d, label]) => h += `<button class="chord-btn run-dir" data-dir="${d}" style="flex:1;font-size:8px;${direction === d ? `background:rgba(34,204,170,.16);border-color:${A};color:${A}` : ''}">${label}</button>`);
+    [['asc', '↑ Up'], ['desc', '↓ Down'], ['cycle', '↕ Up & Down']].forEach(([d, label]) => h += `<button class="chord-btn run-dir" data-dir="${d}" style="flex:1;font-size:calc(8px*var(--ui));${direction === d ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
 
     // SEQUENCE — straight vs broken intervals vs string-skip (classic technique drills)
     h += `<div>${lbl('SEQUENCE')}<div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    [['straight', 'Straight'], ['broken3', 'Broken 3rds'], ['broken4', 'Broken 4ths'], ['skip', 'String Skip']].forEach(([pp, label]) => h += `<button class="chord-btn run-pat" data-pat="${pp}" style="flex:1;min-width:62px;font-size:8px;${patternSeq === pp ? `background:rgba(34,204,170,.16);border-color:${A};color:${A}` : ''}">${label}</button>`);
+    [['straight', 'Straight'], ['broken3', 'Broken 3rds'], ['broken4', 'Broken 4ths'], ['skip', 'String Skip']].forEach(([pp, label]) => h += `<button class="chord-btn run-pat" data-pat="${pp}" style="flex:1;min-width:62px;font-size:calc(8px*var(--ui));${patternSeq === pp ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
 
     // POSITION — box / run selector (always shown; lock one shape or cycle ALL)
     {
       h += `<div>${lbl('POSITION')}`;
       if (boxes.length) {
-        h += `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;align-items:center;background:rgba(34,204,170,.04);border:1px solid rgba(34,204,170,.1);border-radius:6px;padding:5px">`;
-        h += `<button class="chord-btn run-lock-all" style="font-size:7px;padding:2px 6px;min-width:28px;${lockedPos === null ? `background:rgba(34,204,170,.2);border-color:${A};color:${A}` : 'border-color:#444;color:#666'}">ALL</button>`;
+        h += `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;align-items:center;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:5px">`;
+        h += `<button class="chord-btn run-lock-all" style="font-size:calc(7px*var(--ui));padding:2px 6px;min-width:28px;${lockedPos === null ? `background:var(--rk-soft2);border-color:${A};color:${A}` : 'border-color:var(--rk-edge-soft);color:var(--rk-ink-mute)'}">ALL</button>`;
         boxes.forEach((box, bi) => {
           const isLocked = lockedPos === bi, isCurrent = p._running && posSequence.length && posSequence[posIdx]?.idx === bi;
-          const bg = isLocked ? 'rgba(34,204,170,.35)' : isCurrent ? 'rgba(34,204,170,.25)' : 'rgba(34,204,170,.06)';
-          const border = isLocked ? '#44eedd' : isCurrent ? '#22ccaa' : 'rgba(34,204,170,.15)';
-          const color = isLocked || isCurrent ? '#44eedd' : '#22998a';
-          h += `<button class="chord-btn runner-pos run-lock" data-li="${bi}" style="background:${bg};border:1.5px solid ${border};border-radius:4px;padding:3px 6px;min-width:28px;cursor:pointer"><span class="mono" style="color:${color};font-size:9px;font-weight:700">${isLocked ? '🔒 ' : ''}${box.label}</span></button>`;
+          const sk = posSkin(isLocked, isCurrent);
+          h += `<button class="chord-btn runner-pos run-lock" data-li="${bi}" style="background:${sk.bg};border:1.5px solid ${sk.border};border-radius:4px;padding:3px 6px;min-width:28px;cursor:pointer"><span class="mono" style="color:${sk.ink};font-size:calc(9px*var(--ui));font-weight:700">${isLocked ? '🔒 ' : ''}${box.label}</span></button>`;
         });
         h += `</div>`;
-      } else h += `<div class="mono" style="color:#555;font-size:9px;text-align:center;padding:8px">No positions found</div>`;
+      } else h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:8px">No positions found</div>`;
       h += `</div>`;
     }
     h += `<div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap">`;
     if (advanceMode === 'tap') {
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:#888;font-size:7px">TEMPO</span><span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span></div>`;
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:#888;font-size:7px">BARS</span>`;
-      [1, 2, 4].forEach(b => h += `<button class="chord-btn run-bars" data-bars="${b}" style="font-size:7px;min-width:20px;padding:2px 4px;${barsPerPos === b ? `background:rgba(34,204,170,.12);border-color:${accent};color:${accent}` : ''}">${b}</button>`);
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span></div>`;
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BARS</span>`;
+      [1, 2, 4].forEach(b => h += `<button class="chord-btn run-bars" data-bars="${b}" style="font-size:calc(7px*var(--ui));min-width:20px;padding:2px 4px;${barsPerPos === b ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${b}</button>`);
       h += `</div>`;
     } else if (advanceMode === 'auto') {
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:#888;font-size:7px">NOTE TEMPO</span><span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span><span class="mono" style="color:#666;font-size:7px">BPM</span></div>`;
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
     }
-    h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:#888;font-size:7px">ADVANCE</span>`;
-    [['auto', 'Auto'], ['tap', 'Tap'], ['listen', '🎤 Listen']].forEach(([m, label]) => h += `<button class="chord-btn run-adv" data-adv="${m}" style="font-size:7px;padding:2px 5px;${advanceMode === m ? `background:rgba(34,204,170,.12);border-color:${accent};color:${accent}` : ''}">${label}</button>`);
+    h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">ADVANCE</span>`;
+    [['auto', 'Auto'], ['tap', 'Tap'], ['listen', '🎤 Listen']].forEach(([m, label]) => h += `<button class="chord-btn run-adv" data-adv="${m}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${advanceMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
-    if (advanceMode === 'listen') h += `<div class="mono" style="color:#555;font-size:7px;text-align:center">Enable 🎤 LIVE audio to use Listen mode${listenFeedback === 'correct' ? ' · <span style="color:#00ff88">✓</span>' : ''}</div>`;
+    // Listen mode is only as good as the mic behind it, so the line reports the
+    // mic itself rather than pointing at an app-wide switch: when it is shut it
+    // IS the connect control, which is also the retry if the prompt was declined.
+    if (advanceMode === 'listen') h += audio.connected
+      ? `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">🎤 listening — play the lit note${listenFeedback === 'correct' ? ' · <span style="color:var(--rk-ok)">✓</span>' : ''}</div>`
+      : `<button class="run-mic mono" style="background:none;border:none;padding:0;width:100%;cursor:pointer;color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">🎤 mic not connected — tap to connect</button>`;
     h += `<div style="display:flex;gap:4px">`;
-    h += `<button class="run-play mono" style="background:${p._running ? 'rgba(255,60,60,.2)' : 'rgba(34,204,170,.15)'};border:1px solid ${p._running ? '#ff4444' : '#22ccaa'};color:${p._running ? '#ff6666' : '#22ccaa'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;flex:1">${p._running ? '■ STOP' : '▶ RUN'}</button>`;
-    if (p._running && advanceMode === 'tap') h += `<button class="run-next mono" style="background:rgba(34,204,170,.15);border:1px solid #22ccaa;color:#22ccaa;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px">NEXT ▸</button>`;
+    // While it reads STOP this button is no longer the pedal's, it is the app's: stop
+    // is a reflex you hit mid-phrase without reading it, so all four tabs here wear the
+    // same --rk-stop as every other transport. The lamp argument still holds for LIVE
+    // (--rk-hot, above) — that says "running", not "press me to halt".
+    h += `<button class="run-play mono" style="background:${p._running ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._running ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._running ? 'var(--rk-stop)' : A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;flex:1">${p._running ? '■ STOP' : '▶ RUN'}</button>`;
+    if (p._running && advanceMode === 'tap') h += `<button class="run-next mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:${A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px">NEXT ▸</button>`;
     h += `</div></div>`;
     bodyEl.innerHTML = h;
 
@@ -361,7 +394,12 @@ function createPositionsTab(p, refresh) {
     const lockAll = bodyEl.querySelector('.run-lock-all');
     if (lockAll) lockAll.onclick = e => { e.stopPropagation(); lockedPos = null; if (p._running) { stopRunning(); startRunning(); } else { refresh(); const nb = getSequenceBoxes(); applyRunnerPreview(getPreviewBox(nb)); } };
     bodyEl.querySelectorAll('.run-bars').forEach(b => b.onclick = e => { e.stopPropagation(); barsPerPos = parseInt(b.dataset.bars); if (p._running) { stopRunning(); startRunning(); } else refresh(); });
-    bodyEl.querySelectorAll('.run-adv').forEach(b => b.onclick = e => { e.stopPropagation(); advanceMode = b.dataset.adv; if (p._running) { stopRunning(); startRunning(); } else refresh(); });
+    // Picking 🎤 Listen has to open the mic, because nothing else in the app will:
+    // this runner is the only thing that knows the user just asked to be heard.
+    const openMic = async () => { if (audio.connected) return; try { await audio.connect(audio.selectedDeviceId); } catch (e) { /* declined — the status line becomes the retry */ } };
+    bodyEl.querySelectorAll('.run-adv').forEach(b => b.onclick = async e => { e.stopPropagation(); advanceMode = b.dataset.adv; if (advanceMode === 'listen') await openMic(); if (!alive()) return; if (p._running) { stopRunning(); startRunning(); } else refresh(); });
+    const micBtn = bodyEl.querySelector('.run-mic');
+    if (micBtn) micBtn.onclick = async e => { e.stopPropagation(); await openMic(); if (alive()) refresh(); };
     const playBtn = bodyEl.querySelector('.run-play');
     if (playBtn) playBtn.onclick = e => { e.stopPropagation(); if (p._running) stopRunning(); else startRunning(); };
     const nextBtn = bodyEl.querySelector('.run-next');
@@ -375,7 +413,6 @@ function createPositionsTab(p, refresh) {
     renderBody, start: startRunning, stop: stopRunning,
     onAudio: onAudioDetect, onClock, onKey,
     isRunning: () => !!p._running,
-    getAccent: () => mode === 'scales' ? '#22ccaa' : '#cc66aa',
   };
 }
 
@@ -443,7 +480,7 @@ function createGrooveTab(p, refresh) {
       else if (type === 'g') { o.type='triangle'; o.frequency.value=150; g.gain.value=0.08; }
       else return;
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.06);
-      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.06);
+      o.connect(g); g.connect(bus(c, 'notes')); o.start(); o.stop(c.currentTime + 0.06);
     } catch (e) {}
   }
   function randomizeStepChords() {
@@ -451,11 +488,17 @@ function createGrooveTab(p, refresh) {
     const pool = ['C','Am','G','Em','D','Dm','A','E','F','Bm'];
     for (let b = 0; b < pat.beats; b++) stepChords[b * stepsPerBeat] = pool[Math.floor(Math.random() * pool.length)];
   }
+  // One skin for a step cell, used by the markup AND by the per-step repaint.
+  // The repaint used to clear the background to '' and hand a struck step back
+  // as a hole in the row; now it restores exactly what it was built with.
+  const stepBg = (isCur, st) => isCur ? 'var(--rk-soft2)' : st !== '·' ? 'var(--rk-panel2)' : 'var(--rk-panel)';
+  const stepBd = isCur => isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
   function updateRhythmDisplay() {
+    const steps = getPat().steps;
     document.querySelectorAll(`#body-${p.id} .rhythm-step`).forEach((c, i) => {
       const isCur = p._rhythmPlaying && i === stepIdx;
-      c.style.background = isCur ? 'rgba(187,102,221,.4)' : '';
-      c.style.borderColor = isCur ? '#bb66dd' : 'rgba(187,102,221,.15)';
+      c.style.background = stepBg(isCur, steps[i]);
+      c.style.borderColor = stepBd(isCur);
     });
   }
   function startRhythm() {
@@ -489,55 +532,59 @@ function createGrooveTab(p, refresh) {
   }
   function renderBody(bodyEl) {
     const pat = getPat(); ensureStepChords();
-    const useBpm = metroClock.bpm || 120, accent = '#bb66dd', stepsPerBeat = pat.steps.length / pat.beats;
+    // The pedal's accent, inherited from the card — the tab does not own one.
+    const useBpm = metroClock.bpm || 120, accent = 'var(--rk-accent)', stepsPerBeat = pat.steps.length / pat.beats;
     let h = `<div style="display:flex;flex-direction:column;gap:4px">`;
     h += `<div style="display:flex;gap:2px">`;
-    Object.keys(RHYTHM_PATTERNS).forEach(c => h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="flex:1;font-size:7px;${cat === c ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${c}</button>`);
+    Object.keys(RHYTHM_PATTERNS).forEach(c => h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="flex:1;font-size:calc(7px*var(--ui));${cat === c ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${c}</button>`);
     h += `</div>`;
     const pats = RHYTHM_PATTERNS[cat] || {};
     h += `<div style="display:flex;flex-wrap:wrap;gap:2px">`;
-    Object.keys(pats).forEach(pn => h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="font-size:6px;padding:2px 4px;${patName === pn ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${pn}</button>`);
+    Object.keys(pats).forEach(pn => h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="font-size:calc(6px*var(--ui));padding:2px 4px;${patName === pn ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${pn}</button>`);
     h += `</div>`;
-    h += `<div class="mono" style="color:#888;font-size:7px;text-align:center">${pat.desc}</div>`;
-    h += `<div style="display:flex;gap:2px;align-items:center"><span class="mono" style="color:#555;font-size:7px">CHORDS</span>`;
-    [['uniform','Same'],['per-step','Per Beat'],['random','🎲']].forEach(([m, label]) => h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="flex:1;font-size:7px;${chordMode === m ? `background:rgba(187,102,221,.12);border-color:${accent};color:${accent}` : ''}">${label}</button>`);
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));text-align:center">${pat.desc}</div>`;
+    h += `<div style="display:flex;gap:2px;align-items:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">CHORDS</span>`;
+    [['uniform','Same'],['per-step','Per Beat'],['random','🎲']].forEach(([m, label]) => h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${chordMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${label}</button>`);
     h += `</div>`;
     if (chordMode === 'uniform') {
       h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="font-size:6px;padding:1px 3px;${uniformChord === ch ? `background:rgba(187,102,221,.12);border-color:${accent};color:${accent}` : ''}">${ch}</button>`);
+      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${uniformChord === ch ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
       h += `</div>`;
     }
-    h += `<div style="background:rgba(187,102,221,.04);border:1px solid rgba(187,102,221,.1);border-radius:6px;padding:5px;overflow-x:auto">`;
+    h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:5px;overflow-x:auto">`;
     h += `<div style="display:flex;gap:1px;margin-bottom:2px">`;
-    for (let b = 0; b < pat.beats; b++) h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:#555;font-size:7px">${b + 1}</span></div>`;
+    for (let b = 0; b < pat.beats; b++) h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${b + 1}</span></div>`;
     h += `</div><div style="display:flex;gap:1px">`;
     pat.steps.forEach((st, si) => {
       const isCur = p._rhythmPlaying && si === stepIdx, isDownbeat = si % stepsPerBeat === 0;
-      const colors = { 'D':'#bb66dd','U':'#9944bb','↓':'#bb66dd','↑':'#9944bb','A':'#ff6688','x':'#666','g':'#555','·':'transparent' };
-      const bg = isCur ? 'rgba(187,102,221,.4)' : st !== '·' ? 'rgba(187,102,221,.1)' : 'rgba(255,255,255,.02)';
-      h += `<div class="rhythm-step" style="flex:1;min-width:16px;height:22px;background:${bg};border:1px solid ${isCur ? '#bb66dd' : 'rgba(187,102,221,.15)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center"><span class="mono" style="color:${colors[st] || '#444'};font-size:${st === '·' ? 7 : 9}px;font-weight:700">${st}</span></div>`;
+      // Down / up / accent / muted as a VALUE ladder on the one accent: the
+      // down-stroke is the full-strength one, the up-stroke the quiet answer,
+      // an accent is lit. Four hues here would read as four different pedals
+      // sitting inside one bar of rhythm.
+      const glyph = { 'D':accent,'U':'var(--rk-dim)','↓':accent,'↑':'var(--rk-dim)','A':'var(--rk-hot)','x':'var(--rk-ink-mute)','g':'var(--rk-ink-mute)','·':'transparent' };
+      h += `<div class="rhythm-step" style="flex:1;min-width:16px;height:22px;background:${stepBg(isCur, st)};border:1px solid ${stepBd(isCur)};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center"><span class="mono" style="color:${glyph[st] || 'var(--rk-ink-mute)'};font-size:${st === '·' ? 7 : 9}px;font-weight:700">${st}</span></div>`;
     });
     h += `</div>`;
     if (chordMode === 'per-step' || chordMode === 'random') {
       h += `<div style="display:flex;gap:1px;margin-top:1px">`;
       pat.steps.forEach((st, si) => {
         const ch = stepChords[si], isEdit = editStep === si, isDownbeat = si % stepsPerBeat === 0;
-        const bg = isEdit ? 'rgba(187,102,221,.25)' : ch ? 'rgba(187,102,221,.1)' : 'rgba(255,255,255,.02)';
-        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? '#bb66dd' : 'rgba(187,102,221,.08)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="mono" style="color:${ch ? '#bb88dd' : '#444'};font-size:6px;font-weight:${ch ? 700 : 400}">${ch || ''}</span></div>`;
+        const bg = isEdit ? 'var(--rk-soft2)' : ch ? 'var(--rk-soft)' : 'var(--rk-panel)';
+        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? 'var(--rk-accent)' : 'var(--rk-edge-soft)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="mono" style="color:${ch ? accent : 'var(--rk-ink-mute)'};font-size:calc(6px*var(--ui));font-weight:${ch ? 700 : 400}">${ch || ''}</span></div>`;
       });
       h += `</div>`;
     }
     h += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;justify-content:center">`;
     const legendItems = cat === 'Picking' ? [['↓','Down'],['↑','Up'],['·','Rest']] : cat === 'Rhythm Feel' ? [['A','Accent'],['g','Ghost'],['·','Rest']] : [['D','Down'],['U','Up'],['x','Mute'],['·','Rest']];
-    legendItems.forEach(([sym, label]) => h += `<span class="mono" style="color:#666;font-size:6px"><span style="color:${accent}">${sym}</span> ${label}</span>`);
+    legendItems.forEach(([sym, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))"><span style="color:${accent}">${sym}</span> ${label}</span>`);
     h += `</div></div>`;
     if (editStep !== null && (chordMode === 'per-step' || chordMode === 'random')) {
-      h += `<div style="background:rgba(187,102,221,.06);border:1px solid rgba(187,102,221,.15);border-radius:5px;padding:5px"><div class="mono" style="color:#888;font-size:7px;margin-bottom:3px">Step ${editStep + 1} chord:</div><div style="display:flex;gap:2px;flex-wrap:wrap">`;
-      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="font-size:6px;padding:1px 3px;${stepChords[editStep] === ch ? `background:rgba(187,102,221,.15);border-color:${accent};color:${accent}` : ''}">${ch}</button>`);
-      h += `</div><div style="display:flex;gap:3px;margin-top:3px"><button class="chord-btn rhy-pick-clear" style="font-size:7px;color:#888;flex:1">Clear (inherit)</button><button class="chord-btn rhy-pick-done" style="font-size:7px;flex:1">Done</button></div></div>`;
+      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));margin-bottom:3px">Step ${editStep + 1} chord:</div><div style="display:flex;gap:2px;flex-wrap:wrap">`;
+      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${stepChords[editStep] === ch ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
+      h += `</div><div style="display:flex;gap:3px;margin-top:3px"><button class="chord-btn rhy-pick-clear" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-dim);flex:1">Clear (inherit)</button><button class="chord-btn rhy-pick-done" style="font-size:calc(7px*var(--ui));flex:1">Done</button></div></div>`;
     }
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:#888;font-size:7px">TEMPO</span><span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span><span class="mono" style="color:#666;font-size:7px">${pat.sub}</span></div>`;
-    h += `<button class="rhy-play mono" style="background:${p._rhythmPlaying ? 'rgba(255,60,60,.2)' : 'rgba(187,102,221,.15)'};border:1px solid ${p._rhythmPlaying ? '#ff4444' : '#bb66dd'};color:${p._rhythmPlaying ? '#ff6666' : '#bb66dd'};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${pat.sub}</span></div>`;
+    h += `<button class="rhy-play mono" style="background:${p._rhythmPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._rhythmPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._rhythmPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
 
@@ -552,7 +599,7 @@ function createGrooveTab(p, refresh) {
     bodyEl.querySelector('.rhy-play').onclick = e => { e.stopPropagation(); if (p._rhythmPlaying) stopRhythm(); else startRhythm(); };
     Object.assign(s, { rhythmCat: cat, rhythmPat: patName, rhyChordMode: chordMode, rhyUniform: uniformChord, rhyStepChords: stepChords });
   }
-  return { renderBody, start: startRhythm, stop: stopRhythm, onAudio() {}, onClock, onKey, isRunning: () => !!p._rhythmPlaying, getAccent: () => '#bb66dd' };
+  return { renderBody, start: startRhythm, stop: stopRhythm, onAudio() {}, onClock, onKey, isRunning: () => !!p._rhythmPlaying };
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -633,26 +680,30 @@ function createFingerTab(p, refresh) {
           const o = c.createOscillator(), g = c.createGain();
           o.type = 'triangle'; o.frequency.value = freq; g.gain.value = accent ? 0.25 : 0.18;
           g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
-          o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.25); return;
+          o.connect(g); g.connect(bus(c, 'notes')); o.start(); o.stop(c.currentTime + 0.25); return;
         }
       }
       const o = c.createOscillator(), g = c.createGain();
       o.type = 'triangle'; o.frequency.value = accent ? 700 : 500; g.gain.value = accent ? 0.2 : 0.12;
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.05);
-      o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime + 0.05);
+      o.connect(g); g.connect(bus(c, 'click')); o.start(); o.stop(c.currentTime + 0.05);
     } catch (e) {}
   }
+  // Built once with the markup, then again on every step — so both come from
+  // here and a lit cell always falls back to the fill it started with.
+  const fStepBg = isCur => isCur ? 'var(--rk-soft2)'  : 'var(--rk-panel2)';
+  const fStepBd = isCur => isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
+  const fingerReadout = info => `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
   function updateFingerDisplay() {
     const pat = getPat();
     document.querySelectorAll(`#body-${p.id} .finger-step`).forEach((c, i) => {
       const isCur = p._fingerPlaying && i === stepIdx;
-      c.style.background = isCur ? 'rgba(221,153,68,.4)' : '';
-      c.style.borderColor = isCur ? '#dd9944' : 'rgba(221,153,68,.15)';
+      c.style.background = fStepBg(isCur);
+      c.style.borderColor = fStepBd(isCur);
     });
     const fi2 = document.getElementById(`finger-ind-${p.id}`);
     if (fi2 && p._fingerPlaying && stepIdx < pat.steps.length) {
-      const info = getStepNoteInfo(pat.steps[stepIdx]);
-      fi2.innerHTML = `<span class="mono" style="color:#ffbb66;font-size:18px;font-weight:900">${info.finger}</span><span class="mono" style="color:#888;font-size:9px">${info.desc}</span>`;
+      fi2.innerHTML = fingerReadout(getStepNoteInfo(pat.steps[stepIdx]));
     }
   }
   function startFinger() {
@@ -684,45 +735,45 @@ function createFingerTab(p, refresh) {
     const pat = getPat(), useBpm = metroClock.bpm || 100, ipData = FINGER_PATTERNS[instMode];
     let h = `<div style="display:flex;flex-direction:column;gap:6px">`;
     h += `<div style="display:flex;gap:3px">`;
-    Object.entries(FINGER_PATTERNS).forEach(([k, v]) => h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:7px;${instMode === k ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${v.label}</button>`);
+    Object.entries(FINGER_PATTERNS).forEach(([k, v]) => h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:calc(7px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent);font-weight:800' : ''}">${v.label}</button>`);
     h += `</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    Object.keys(ipData.patterns).forEach(pn => h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:7px;padding:2px 5px;${patName === pn ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${pn}</button>`);
-    h += `</div><div class="mono" style="color:#888;font-size:8px;text-align:center">${pat.desc}</div>`;
+    Object.keys(ipData.patterns).forEach(pn => h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`);
+    h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${pat.desc}</div>`;
     if (instMode !== 'piano') {
-      h += `<div style="background:rgba(221,153,68,.04);border:1px solid rgba(221,153,68,.08);border-radius:5px;padding:5px"><div class="mono" style="color:#888;font-size:7px;margin-bottom:3px">CHORD SHAPE</div><div style="display:flex;gap:2px;margin-bottom:3px">`;
-      [['chord','Chord'],['open','Open'],['random','🎲 Random']].forEach(([m, label]) => h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:7px;${fChordMode === m ? 'background:rgba(221,153,68,.12);border-color:#dd9944;color:#dd9944' : ''}">${label}</button>`);
+      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-bottom:3px">CHORD SHAPE</div><div style="display:flex;gap:2px;margin-bottom:3px">`;
+      [['chord','Chord'],['open','Open'],['random','🎲 Random']].forEach(([m, label]) => h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`);
       h += `</div>`;
       if (fChordMode === 'chord') {
         const commonChords = ['C','Am','G','Em','D','Dm','A','Am','E','Em','F','Fm','B','Bm','A7','D7','E7','G7','Am7','Dm7','Em7','Cmaj7','Fmaj7'];
         h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-        commonChords.forEach(ch => h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:6px;padding:1px 4px;${fChordRoot === ch ? 'background:rgba(221,153,68,.12);border-color:#dd9944;color:#dd9944' : ''}">${ch}</button>`);
+        commonChords.forEach(ch => h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`);
         h += `</div>`;
       }
       h += `</div>`;
     }
     if (instMode === 'piano') {
       h += `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
-      NOTES.forEach(n => h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:7px;min-width:22px;padding:2px 4px;${root === n ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${n}</button>`);
+      NOTES.forEach(n => h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`);
       h += `</div>`;
     }
     h += `<div id="finger-ind-${p.id}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:28px">`;
-    if (p._fingerPlaying && stepIdx < pat.steps.length) { const info = getStepNoteInfo(pat.steps[stepIdx]); h += `<span class="mono" style="color:#ffbb66;font-size:18px;font-weight:900">${info.finger}</span><span class="mono" style="color:#888;font-size:9px">${info.desc}</span>`; }
+    if (p._fingerPlaying && stepIdx < pat.steps.length) h += fingerReadout(getStepNoteInfo(pat.steps[stepIdx]));
     h += `</div>`;
-    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:rgba(221,153,68,.04);border:1px solid rgba(221,153,68,.1);border-radius:6px;padding:6px">`;
+    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px">`;
     pat.steps.forEach((st, si) => {
       const isCur = p._fingerPlaying && si === stepIdx, info = getStepNoteInfo(st);
-      h += `<div class="finger-step" style="background:${isCur ? 'rgba(221,153,68,.4)' : 'rgba(221,153,68,.08)'};border:1.5px solid ${isCur ? '#dd9944' : 'rgba(221,153,68,.15)'};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:#ffbb66;font-size:12px;font-weight:800">${info.finger}</div>`;
-      if (instMode !== 'piano') h += `<div class="mono" style="color:#aaa;font-size:7px;font-weight:600">${info.note || ''}</div><div class="mono" style="color:#555;font-size:6px">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
-      else h += `<div class="mono" style="color:#aaa;font-size:7px">${info.note}</div>`;
+      h += `<div class="finger-step" style="background:${fStepBg(isCur)};border:1.5px solid ${fStepBd(isCur)};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${info.finger}</div>`;
+      if (instMode !== 'piano') h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${info.note || ''}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
+      else h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui))">${info.note}</div>`;
       h += `</div>`;
     });
     h += `</div>`;
     h += `<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">`;
     const legend = instMode === 'guitar' ? [['p','Thumb'],['i','Index'],['m','Middle'],['a','Ring']] : instMode === 'banjo' ? [['T','Thumb'],['I','Index'],['M','Middle']] : [['1','Thumb'],['2','Index'],['3','Middle'],['4','Ring'],['5','Pinky']];
-    legend.forEach(([f, label]) => h += `<span class="mono" style="color:#666;font-size:7px"><span style="color:#dd9944;font-weight:700">${f}</span> ${label}</span>`);
+    legend.forEach(([f, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`);
     h += `</div>`;
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:#888;font-size:7px">NOTE TEMPO</span><span class="mono" style="color:#dd8844;font-size:12px;font-weight:700">${useBpm}</span><span class="mono" style="color:#666;font-size:7px">BPM</span></div>`;
-    h += `<button class="fin-play mono" style="background:${p._fingerPlaying ? 'rgba(255,60,60,.2)' : 'rgba(221,153,68,.15)'};border:1px solid ${p._fingerPlaying ? '#ff4444' : '#dd9944'};color:${p._fingerPlaying ? '#ff6666' : '#dd9944'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
+    h += `<button class="fin-play mono" style="background:${p._fingerPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._fingerPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._fingerPlaying ? 'var(--rk-stop)' : 'var(--rk-accent)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
 
@@ -734,7 +785,7 @@ function createFingerTab(p, refresh) {
     bodyEl.querySelector('.fin-play').onclick = e => { e.stopPropagation(); if (p._fingerPlaying) stopFinger(); else startFinger(); };
     Object.assign(s, { fingerInst: instMode, fingerPat: patName, fingerRoot: root, fChordRoot, fChordMode });
   }
-  return { renderBody, start: startFinger, stop: stopFinger, onAudio() {}, onClock, onKey, isRunning: () => !!p._fingerPlaying, getAccent: () => '#dd9944' };
+  return { renderBody, start: startFinger, stop: stopFinger, onAudio() {}, onClock, onKey, isRunning: () => !!p._fingerPlaying };
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -779,7 +830,7 @@ function createTechniqueTab(p, refresh) {
       const oct = customTuning[si].octave + Math.floor((NOTES.indexOf(customTuning[si].note) + fret) / 12);
       const freq = 440 * Math.pow(2, (NOTES.indexOf(note) - 9) / 12 + (oct - 4));
       const o = ctx.createOscillator(), g = ctx.createGain();
-      const connectAndPlay = () => { o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.5); };
+      const connectAndPlay = () => { o.connect(g); g.connect(bus(ctx, 'notes')); o.start(t); o.stop(t + 0.5); };
       if (action === 'pick') { o.type='triangle'; g.gain.setValueAtTime(0.25, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); }
       else if (action === 'H') { o.type='triangle'; g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25); }
       else if (action === 'P') { o.type='triangle'; g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2); }
@@ -807,11 +858,15 @@ function createTechniqueTab(p, refresh) {
       o.frequency.value = freq; connectAndPlay();
     } catch (e) {}
   }
+  // Shared by the markup and the per-step repaint so a struck step returns to
+  // the fill it was built with rather than to nothing.
+  const tStepBg = isCur => isCur ? 'var(--rk-soft2)'  : 'var(--rk-panel2)';
+  const tStepBd = isCur => isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
   function updateTechDisplay() {
     document.querySelectorAll(`#body-${p.id} .tech-step`).forEach((c, i) => {
       const isCur = p._techPlaying && i === stepIdx;
-      c.style.background = isCur ? 'rgba(255,119,68,.4)' : '';
-      c.style.borderColor = isCur ? '#ff7744' : 'rgba(255,119,68,.12)';
+      c.style.background = tStepBg(isCur);
+      c.style.borderColor = tStepBd(isCur);
     });
   }
   function startTech() {
@@ -839,28 +894,31 @@ function createTechniqueTab(p, refresh) {
     if (p._techPlaying) { stopTech(); startTech(); } else refresh();
   }
   function renderBody(bodyEl) {
-    const ex = getEx(), accent = '#ff7744', useBpm = metroClock.bpm || 80;
+    // The pedal's accent, inherited from the card — the tab does not own one.
+    const ex = getEx(), accent = 'var(--rk-accent)', useBpm = metroClock.bpm || 80;
     let h = `<div style="display:flex;flex-direction:column;gap:5px">`;
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-    Object.keys(TECHNIQUE_EXERCISES).forEach(tc => h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:7px;${techCat === tc ? `background:rgba(255,119,68,.15);border-color:${accent};color:${accent}` : ''}">${TECHNIQUE_EXERCISES[tc].symbol} ${tc}</button>`);
-    h += `</div><div class="mono" style="color:#888;font-size:7px;text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
+    Object.keys(TECHNIQUE_EXERCISES).forEach(tc => h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:calc(7px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${TECHNIQUE_EXERCISES[tc].symbol} ${tc}</button>`);
+    h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
     const exs = TECHNIQUE_EXERCISES[techCat]?.exercises || [];
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-    exs.forEach(e => h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:7px;padding:2px 5px;${exName === e.name ? `background:rgba(255,119,68,.15);border-color:${accent};color:${accent}` : ''}">${e.name}</button>`);
-    h += `</div><div class="mono" style="color:#999;font-size:8px;text-align:center">${ex.desc}</div>`;
-    h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center"><span class="mono" style="color:#555;font-size:7px">START STRING</span>`;
-    customTuning.forEach((_, i) => h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:7px;min-width:18px;${stringOffset === i ? `background:rgba(255,119,68,.12);border-color:${accent};color:${accent}` : ''}">${i + 1}</button>`);
+    exs.forEach(e => h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`);
+    h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${ex.desc}</div>`;
+    h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">START STRING</span>`;
+    customTuning.forEach((_, i) => h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:calc(7px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`);
     h += `</div>`;
-    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:rgba(255,119,68,.04);border:1px solid rgba(255,119,68,.1);border-radius:6px;padding:6px">`;
+    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px">`;
     ex.steps.forEach((step, si) => {
       const adj = getAdjustedStep(step), { note } = getNoteAtFret(customTuning[adj[0]].note, customTuning[adj[0]].octave, adj[1]);
       const isCur = p._techPlaying && si === stepIdx;
       const actionLabel = { pick:'♩', H:'H', P:'P', '/':'/', '\\':'\\', 'b½':'b½', b1:'b1', r:'rel', pb:'pre', '~':'~', '~s':'~s', '~f':'~f' }[step[2]] || step[2];
-      h += `<div class="tech-step" style="background:${isCur ? 'rgba(255,119,68,.4)' : 'rgba(255,119,68,.08)'};border:1.5px solid ${isCur ? '#ff7744' : 'rgba(255,119,68,.12)'};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:${step[2] === 'pick' ? '#ffbb66' : '#ff9966'};font-size:11px;font-weight:800">${actionLabel}</div><div class="mono" style="color:#aaa;font-size:7px;font-weight:600">${note}</div><div class="mono" style="color:#555;font-size:6px">s${adj[0] + 1} f${adj[1]}</div></div>`;
+      // A picked note is the full accent; an articulation (H·P·slide·bend) is
+      // the quiet one — the difference is attack, so it reads as value.
+      h += `<div class="tech-step" style="background:${tStepBg(isCur)};border:1.5px solid ${tStepBd(isCur)};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:${step[2] === 'pick' ? accent : 'var(--rk-dim)'};font-size:calc(11px*var(--ui));font-weight:800">${actionLabel}</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${note}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div></div>`;
     });
     h += `</div>`;
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:#888;font-size:7px">TEMPO</span><span class="mono" style="color:#dd8844;font-size:11px;font-weight:700">${useBpm}</span><span class="mono" style="color:#666;font-size:7px">BPM</span></div>`;
-    h += `<button class="tech-play mono" style="background:${p._techPlaying ? 'rgba(255,60,60,.2)' : 'rgba(255,119,68,.15)'};border:1px solid ${p._techPlaying ? '#ff4444' : accent};color:${p._techPlaying ? '#ff6666' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
+    h += `<button class="tech-play mono" style="background:${p._techPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._techPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._techPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
     bodyEl.querySelectorAll('.tech-cat').forEach(b => b.onclick = e => { e.stopPropagation(); techCat = b.dataset.tc; exName = TECHNIQUE_EXERCISES[techCat]?.exercises?.[0]?.name || ''; if (p._techPlaying) { stopTech(); startTech(); } else refresh(); });
@@ -869,17 +927,17 @@ function createTechniqueTab(p, refresh) {
     bodyEl.querySelector('.tech-play').onclick = e => { e.stopPropagation(); if (p._techPlaying) stopTech(); else startTech(); };
     Object.assign(s, { techCat, techEx: exName, techString: stringOffset });
   }
-  return { renderBody, start: startTech, stop: stopTech, onAudio() {}, onClock, onKey() {}, isRunning: () => !!p._techPlaying, getAccent: () => '#ff7744' };
+  return { renderBody, start: startTech, stop: stopTech, onAudio() {}, onClock, onKey() {}, isRunning: () => !!p._techPlaying };
 }
 
 // ── Placeholder tab (until ported) ───────────────────────────────────
 function createPlaceholderTab(label) {
   return {
     renderBody(bodyEl) {
-      bodyEl.innerHTML = `<div class="mono" style="color:#666;font-size:10px;text-align:center;padding:28px 12px;line-height:1.7">🚧 <b style="color:#999">${label}</b><br><span style="font-size:8px;color:#555">Porting into the Workshop in the next build pass.<br>The standalone pedal still works in the meantime.</span></div>`;
+      bodyEl.innerHTML = `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));text-align:center;padding:28px 12px;line-height:1.7">🚧 <b style="color:var(--rk-ink)">${label}</b><br><span style="font-size:calc(8px*var(--ui));color:var(--rk-ink-mute)">Porting into the Workshop in the next build pass.<br>The standalone pedal still works in the meantime.</span></div>`;
     },
     start() {}, stop() {}, onAudio() {}, onClock() {}, onKey() {},
-    isRunning: () => false, getAccent: () => null,
+    isRunning: () => false,
   };
 }
 
@@ -898,6 +956,10 @@ export function buildWorkshopContent(p) {
     groove:    createGrooveTab(p, () => render()),
     finger:    createFingerTab(p, () => render()),
     technique: createTechniqueTab(p, () => render()),
+    // the Voicing Lab embeds as a tab: its own module renders into our tab body,
+    // with settings namespaced under p.settings.vlab (its playback self-stops when
+    // the mount detaches on tab switch)
+    voicings:  { renderBody: bodyEl => buildVoicingLabContent(p, bodyEl) },
   };
 
   // ONE dispatch object kept current each build; the once-bound subscriptions read it.
@@ -927,18 +989,24 @@ export function buildWorkshopContent(p) {
 
   function render() {
     const meta   = TAB_META[activeTab];
-    const accent = tabs[activeTab].getAccent?.() || meta.accent;
     const useBpm = metroClock.bpm || 100;
-    let h = `<div class="rk rk-workshop" style="--rk-accent:${accent}">`;
+    // No --rk-accent override here, deliberately: the wrapper inherits the
+    // card's accent so all five tabs are one pedal seen five ways. Each tab
+    // used to declare its own hue, which is why switching tabs felt like
+    // switching products.
+    let h = `<div class="rk rk-workshop">`;
     h += `<div class="rk-seg" style="gap:4px">`;
     Object.entries(TAB_META).forEach(([k, m]) => {
-      h += `<button class="rk-seg-btn ws-tab${k === activeTab ? ' is-active' : ''}" data-tab="${k}" style="flex:1;font-size:8.5px;padding:6px 2px">${m.label}</button>`;
+      // Which tab you are on is now carried by an underline and heavier type
+      // — the job the five different accents used to do.
+      const lit = k === activeTab ? ';font-weight:800;box-shadow:inset 0 -2px 0 var(--rk-accent)' : '';
+      h += `<button class="rk-seg-btn ws-tab${k === activeTab ? ' is-active' : ''}" data-tab="${k}" style="flex:1;font-size:calc(8.5px*var(--ui));padding:6px 2px${lit}">${m.label}</button>`;
     });
     h += `</div>`;
-    h += `<div style="font-size:9.5px;line-height:1.45;color:#c8c8c8;background:${accent}1e;border-left:2px solid ${accent};padding:6px 8px;border-radius:4px">${meta.blurb}</div>`;
+    h += `<div style="font-size:calc(9.5px*var(--ui));line-height:1.45;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:6px 8px;border-radius:4px">${meta.blurb}</div>`;
     h += `<div class="rk-readoutrow" style="gap:10px">
         <div class="rk-readout">
-          <div class="rk-readout-num" style="font-size:15px">${meta.label}${tabs[activeTab].isRunning?.() ? ' <span style="color:#ff6666;font-size:9px">● LIVE</span>' : ''}</div>
+          <div class="rk-readout-num" style="font-size:calc(15px*var(--ui))">${meta.label}${tabs[activeTab].isRunning?.() ? ' <span style="color:var(--rk-hot);font-size:calc(9px*var(--ui))">● LIVE</span>' : ''}</div>
           <div class="rk-readout-sub">${useBpm} BPM · from metronome</div>
         </div>
       </div>`;

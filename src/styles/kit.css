@@ -1,41 +1,157 @@
 /* ════════════════════════════════════════════════════════════════════
-   Resonote Kit — "Option A" refined dark instrument component system.
-   Every redesigned pedal opts in with class="rk" and sets --rk-accent.
-   Components derive their soft fills / borders / glows from that one
-   accent via color-mix, so a pedal only declares its colour once.
+   Resonote Kit — the dark instrument component system.
+
+   ONE accent per pedal drives everything. The shell (ui/pedal-system.js)
+   reads the pedal's `accent` out of the CATALOG and hands it to the card as
+   --rk-pedal-accent; every token below is a color-mix over that, so a pedal
+   never names a colour twice and two tabs of the same pedal cannot drift
+   apart. A pedal file that writes a hex is a bug, not a style choice.
+
+   ── WHY THESE COLOURS AND NOT NICER ONES ──────────────────────────────
+   core/colors.js owns the app's teaching code: 12 pitch classes on a
+   fifths-ordered wheel at hsl(hue, 78%, 58%) — C=0°, G=30°, D=60° … F=330°.
+   Every note therefore sits on a 30° mark at 78% saturation. If a pedal's
+   chrome wore a saturated hue it would start arguing with the lesson: a green
+   button next to a green note means two different things at once.
+
+   So the chrome is kept out of the note code by two rules, both provable:
+     1. HUE  — every pedal hue is an ODD multiple of 15° (15, 75, 135, 195,
+        255, 315). Notes live on the even multiples, so each family lands
+        exactly halfway between two adjacent fifths: 15° away, which is the
+        largest gap a 30°-spaced wheel allows. It is not "far from a note"
+        by luck — it is as far as geometry permits.
+     2. SATURATION — nothing here exceeds 46%, a full 32 points below the
+        note spectrum's 78%. Chassis colours sit at 18%. That gap is what
+        makes a pedal read as an ENCLOSURE (painted metal) rather than as a
+        pitch. Saturation, not hue, is the channel doing the real work.
+
+   Two independent channels carry meaning:
+     HUE    = what the pedal is FOR (Utility / Reference / Study / Drill /
+              Create / Record), with a light→dark step per pedal inside the
+              family so board position reads as progression.
+     FINISH = which tier it belongs to (see the tier blocks at the bottom).
+              Value and edge treatment only — never hue — so a free pedal and
+              a studio pedal in the same family stay obviously related.
    ════════════════════════════════════════════════════════════════════ */
 
+:root {
+  /* ── UI SCALE ───────────────────────────────────────────────────────
+     This app is not read at a desk. It is read from two or three feet away
+     by someone holding a guitar, glancing up mid-phrase — and it was built
+     full of 7px and 8px labels, which at that distance are grey smudges.
+     Every inline font-size in the app is written as
+         font-size: calc(<n>px * var(--ui))
+     so ONE number moves all 961 of them together. 1 is the original size;
+     the density control sets it. Scaling type rather than transform-scaling
+     the whole layer matters: a transform magnifies the empty space too, so
+     you get bigger pedals rather than more readable ones. */
+  --ui: 1;
+
+  /* Fallback only. Kit components used OUTSIDE a pedal card (the TAB page,
+     the studio) have no card to inherit from, so they land on this neutral
+     steel instead of borrowing some other pedal's identity. */
+  --rk-pedal-accent: #8fa8b4;
+
+  /* Judgement colours: right / wrong, shared by every drill in the app.
+     A third register — hue 105° and 345° are odd-15° like everything else
+     (so still 15° off every note) but they are NOT family hues, which is how
+     "you got it" stays distinguishable from "this is the Study pedal". */
+  --rk-ok:  #8ac775;   /* hsl(105, 42%, 62%) */
+  --rk-bad: #d793a4;   /* hsl(345, 46%, 71%) */
+
+  /* STOP. Every transport in the app stops in the same colour, because stop is a
+     reflex — you reach for it without reading it, often mid-phrase with a guitar
+     in your hands, and a control you have to identify is a control you hesitate
+     over. Hunting for the one red thing on screen has to work.
+
+     The recolour had removed red from transports on the grounds that a saturated
+     red at hue 0 IS what C looks like in the note code. That reasoning is right
+     about CHROME and wrong about this: an enclosure sits on screen for an hour
+     and can quietly argue with the lesson, but a stop button is a moment. So the
+     convention is kept and the collision is still avoided — hue 345, which is
+     15° off C and 15° off F, the same odd-15 rule every other colour here obeys,
+     at a saturation and lightness that read unmistakably RED rather than as the
+     pink of --rk-bad. */
+  --rk-stop:      #e63360;                                              /* hsl(345, 78%, 55%) */
+  --rk-stop-soft: color-mix(in srgb, var(--rk-stop) 16%, transparent);
+  --rk-stop-edge: color-mix(in srgb, var(--rk-stop) 62%, #201014);
+}
+
+/* The ladder is published by the CARD as well as by .rk, because not everything
+   painted in a pedal's colours lives in the body. The tier badge and the
+   master-link chips sit in .pedal-header — a SIBLING of .pedal-body, outside
+   every .rk in the app. Declared on .rk alone, their var()s resolve to nothing,
+   `border: 1px solid var(--rk-edge-soft)` drops out as a whole shorthand, and a
+   linked chip ends up looking exactly like an unlinked one. */
+.pedal-card, .rk {
+  /* Handed down by the card. The indirection matters: a pedal can still
+     override --rk-accent inline on a sub-element (the transport does exactly
+     that while playing) without the rest of the pedal losing its identity. */
+  --rk-accent:    var(--rk-pedal-accent);
+
+  /* Washes — the accent laid over whatever is behind it. Held at 10/16%
+     because these are the surfaces accent-coloured TEXT sits on, and a
+     heavier wash eats the contrast that text needs. */
+  --rk-soft:      color-mix(in srgb, var(--rk-accent) 10%, transparent);
+  --rk-soft2:     color-mix(in srgb, var(--rk-accent) 16%, transparent);
+
+  /* Lines and light */
+  --rk-line:      color-mix(in srgb, var(--rk-accent) 50%, #2c2c2c);
+  --rk-glow:      color-mix(in srgb, var(--rk-accent) 42%, transparent);
+  --rk-edge:      color-mix(in srgb, var(--rk-accent) 30%, #1e1e1e);
+  --rk-edge-soft: color-mix(in srgb, var(--rk-accent) 14%, #232323);
+
+  /* Text ladder. All three are the accent tinted into a neutral, so body copy
+     picks up the pedal's temperature without ever competing with the accent
+     itself. Every one clears 4.5:1 on every surface below. */
+  --rk-ink:       color-mix(in srgb, var(--rk-accent) 12%, #e9e9ea);  /* primary   */
+  --rk-ink-dim:   color-mix(in srgb, var(--rk-accent) 18%, #b6b6ba);  /* secondary */
+  --rk-ink-mute:  color-mix(in srgb, var(--rk-accent) 20%, #a6a6ab);  /* micro-labels */
+  /* One step quieter than mute, and the step is taken in the NEUTRAL, not in
+     the alpha. Fading a label toward transparent looks like the same idea but
+     is not: it hands the chassis a vote in the final colour, and on the darker
+     chassis that costs ~2.7 points of contrast — enough to drop 7px text under
+     4.5:1 on all 19 pedals. Mixing into a darker grey keeps the step visible
+     and keeps the floor at 5.2:1. */
+  --rk-ink-faint: color-mix(in srgb, var(--rk-accent) 20%, #949499);  /* hints, scales */
+  --rk-dim:       color-mix(in srgb, var(--rk-accent) 55%, #9a9a9e);  /* quiet accent */
+
+  /* Surfaces, darkest first */
+  --rk-panel:     color-mix(in srgb, var(--rk-accent)  8%, #0c0c0e);  /* inset  */
+  --rk-panel2:    color-mix(in srgb, var(--rk-accent) 13%, #131316);  /* raised */
+
+  /* Lit state. Deliberately NOT a red: a saturated red at hue 0 is literally
+     what C looks like in the note code. A pedal that is running lights its
+     own lamp brighter instead — which is also what real hardware does. */
+  --rk-hot:       color-mix(in srgb, var(--rk-accent) 55%, #fff6ea);
+}
+
+/* Layout belongs to .rk alone — the card is not a stack of kit sections. */
 .rk {
-  --rk-accent: #dd8844;
-  --rk-soft:   color-mix(in srgb, var(--rk-accent) 14%, transparent);
-  --rk-soft2:  color-mix(in srgb, var(--rk-accent) 22%, transparent);
-  --rk-line:   color-mix(in srgb, var(--rk-accent) 50%, #2c2c2c);
-  --rk-glow:   color-mix(in srgb, var(--rk-accent) 42%, transparent);
-  --rk-dim:    color-mix(in srgb, var(--rk-accent) 55%, #555);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  color: #c8c8c8;
+  color: var(--rk-ink-dim);
 }
 
 /* ── Section + label ──────────────────────────────────────────────── */
 .rk-section { display: flex; flex-direction: column; gap: 7px; }
 .rk-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
+  font-size:calc(8px*var(--ui));
   font-weight: 700;
   letter-spacing: 1.6px;
   text-transform: uppercase;
-  color: #5c5c5c;
+  color: var(--rk-ink-mute);
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.rk-label .rk-label-hint { color: #444; font-weight: 500; letter-spacing: .5px; text-transform: none; }
+.rk-label .rk-label-hint { color: var(--rk-ink-faint); font-weight: 500; letter-spacing: .5px; text-transform: none; }
 
 /* ── Smart Theory panel ───────────────────────────────────────────── */
 .rk-theory {
-  border: 1px solid color-mix(in srgb, var(--rk-accent) 26%, #242424);
+  border: 1px solid var(--rk-edge);
   border-radius: 10px;
   background:
     linear-gradient(180deg, var(--rk-soft), color-mix(in srgb, var(--rk-accent) 6%, transparent)),
@@ -50,10 +166,10 @@
   cursor: pointer;
   user-select: none;
 }
-.rk-theory-bulb { font-size: 11px; filter: saturate(1.2); flex-shrink: 0; }
+.rk-theory-bulb { font-size:calc(11px*var(--ui)); filter: saturate(1.2); flex-shrink: 0; }
 .rk-theory-kicker {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 7.5px;
+  font-size:calc(7.5px*var(--ui));
   font-weight: 800;
   letter-spacing: 1.4px;
   color: var(--rk-dim);
@@ -61,16 +177,16 @@
 }
 .rk-theory-title {
   flex: 1;
-  font-size: 10.5px;
+  font-size:calc(10.5px*var(--ui));
   font-weight: 600;
-  color: #d8d8d8;
+  color: var(--rk-ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .rk-theory-chev {
-  font-size: 9px;
-  color: #777;
+  font-size:calc(9px*var(--ui));
+  color: var(--rk-ink-mute);
   transition: transform .22s ease;
   flex-shrink: 0;
 }
@@ -83,8 +199,8 @@
 .rk-theory.is-open .rk-theory-body { grid-template-rows: 1fr; }
 .rk-theory-body > div { overflow: hidden; min-height: 0; }
 .rk-theory-inner { padding: 0 11px 10px; display: flex; flex-direction: column; gap: 6px; }
-.rk-theory-what { font-size: 11px; line-height: 1.5; color: #bdbdbd; }
-.rk-theory-why  { font-size: 11px; line-height: 1.5; color: #9a9a9a; }
+.rk-theory-what { font-size:calc(11px*var(--ui)); line-height: 1.5; color: var(--rk-ink-dim); }
+.rk-theory-why  { font-size:calc(11px*var(--ui)); line-height: 1.5; color: var(--rk-ink-mute); }
 .rk-theory-what b, .rk-theory-why b { color: var(--rk-dim); font-weight: 700; }
 .rk-theory-link {
   align-self: flex-start;
@@ -95,7 +211,7 @@
   border-radius: 6px;
   padding: 4px 9px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8.5px;
+  font-size:calc(8.5px*var(--ui));
   font-weight: 700;
   letter-spacing: .5px;
   cursor: pointer;
@@ -106,9 +222,22 @@
 /* ── Big numeric readout + transport row ──────────────────────────── */
 .rk-readoutrow { display: flex; align-items: center; gap: 12px; }
 .rk-readout { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; flex: 1; }
+/* the big number is click-to-type everywhere now, so it should look like it */
+.bpm-click { cursor: pointer; }
+.bpm-click:hover { opacity: .82; }
+
+/* Compact tempo block: the same control, sized to sit in a pedal's inline row
+   next to Play/Loop buttons instead of towering over them. */
+.tc-sm .rk-readout-num { font-size:calc(19px*var(--ui)); letter-spacing: 0; }
+.tc-sm .rk-readout-num .rk-edit { font-size:calc(17px*var(--ui)); width: 3.2em; }
+.tc-sm .rk-readout-sub { font-size:calc(7.5px*var(--ui)); }
+.tc-sm .rk-readoutrow { gap: 7px; }
+.tc-sm .rk-play { width: 32px; height: 32px; font-size:calc(13px*var(--ui)); }
+.tc-sm .rk-nudge button { padding: 0 6px; font-size:calc(11px*var(--ui)); line-height: 1.25; }
+
 .rk-readout-num {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 38px;
+  font-size:calc(38px*var(--ui));
   font-weight: 800;
   color: var(--rk-accent);
   letter-spacing: -1px;
@@ -121,8 +250,8 @@
 }
 .rk-readout-sub {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8.5px; font-weight: 700; letter-spacing: 1.5px;
-  color: #6a6a6a; margin-top: 5px;
+  font-size:calc(8.5px*var(--ui)); font-weight: 700; letter-spacing: 1.5px;
+  color: var(--rk-ink-mute); margin-top: 5px;
 }
 .rk-readout-sub b { color: var(--rk-dim); font-weight: 800; }
 
@@ -131,7 +260,7 @@
   flex-shrink: 0;
   width: 54px; height: 54px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px; cursor: pointer;
+  font-size:calc(18px*var(--ui)); cursor: pointer;
   background: radial-gradient(circle at 35% 30%, var(--rk-soft2), rgba(0,0,0,.35));
   border: 1.5px solid var(--rk-line);
   color: var(--rk-accent);
@@ -139,20 +268,27 @@
   box-shadow: 0 2px 12px rgba(0,0,0,.4);
 }
 .rk-play:hover { box-shadow: 0 0 16px var(--rk-glow), 0 2px 12px rgba(0,0,0,.4); }
+/* Running = the pedal's own lamp turned up, not a red light borrowed from
+   the note spectrum. --rk-hot is a bright tint of this pedal's accent, so a
+   metronome running looks like a metronome running and not like a C. */
 .rk-play.is-playing {
-  --rk-accent: #ff5a5a;
-  background: radial-gradient(circle at 35% 30%, rgba(255,90,90,.28), rgba(0,0,0,.35));
+  color: var(--rk-hot);
+  border-color: var(--rk-hot);
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--rk-hot) 26%, transparent), rgba(0,0,0,.35));
   animation: rkPulse 1.4s ease-in-out infinite;
 }
-@keyframes rkPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,90,90,.0); } 50% { box-shadow: 0 0 16px 2px rgba(255,90,90,.35); } }
+@keyframes rkPulse {
+  0%,100% { box-shadow: 0 0 0 0 transparent; }
+  50%     { box-shadow: 0 0 16px 2px color-mix(in srgb, var(--rk-hot) 34%, transparent); }
+}
 
 /* ── Nudge stepper ────────────────────────────────────────────────── */
 .rk-nudge { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
 .rk-nudge button {
   width: 26px; height: 23px; border-radius: 6px; cursor: pointer;
   background: rgba(255,255,255,.04);
-  border: 1px solid #3a3a3a; color: #999;
-  font-size: 13px; font-weight: 700; line-height: 1;
+  border: 1px solid var(--rk-edge-soft); color: var(--rk-ink-mute);
+  font-size:calc(13px*var(--ui)); font-weight: 700; line-height: 1;
   display: flex; align-items: center; justify-content: center;
   transition: all .14s;
 }
@@ -187,25 +323,48 @@
 }
 .rk-scale {
   display: flex; justify-content: space-between;
-  font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #444; margin-top: -3px; padding: 0 2px;
+  /* 8px, not 7: these are the numbers that tell you what the slider spans, and
+     a size the eye skips is a size that may as well not be drawn. */
+  font-family: 'JetBrains Mono', monospace; font-size:calc(8px*var(--ui)); color: var(--rk-ink-faint); margin-top: -3px; padding: 0 2px;
+}
+
+/* A scale of VALUES, not of labels. Even spacing is right for a caption triple
+   ("at rest / 4 / max pull") and wrong for numbers on a track: the Metronome
+   printed 20-120-300 across a 20-300 slider, which put 120 at the halfway mark
+   when it belongs at 35.7% — about forty pixels from where the thumb stops. A
+   scale you cannot aim with is worse than none, because you trust it.
+   So these are placed at their own value by scaleRowHTML, each with a hairline
+   tick: a number alone still leaves you guessing which pixel it means. */
+.rk-scale-v {
+  display: block; position: relative; height: calc(13px*var(--ui));
+  margin-top: -1px; padding: 0;
+}
+.rk-scale-v .rk-tick {
+  position: absolute; top: 0; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  white-space: nowrap; line-height: 1;
+}
+.rk-scale-v .rk-tick i {
+  width: 1px; height: 3px;
+  background: color-mix(in srgb, var(--rk-ink-faint) 70%, transparent);
 }
 
 /* ── Segmented control (time sig, subdivision …) ──────────────────── */
 .rk-seg { display: flex; gap: 5px; flex-wrap: wrap; }
 .rk-seg-btn {
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(255,255,255,.035);
-  border: 1px solid #333;
-  color: #888;
+  background: var(--rk-panel2);
+  border: 1px solid var(--rk-edge-soft);
+  color: var(--rk-ink-mute);
   border-radius: 7px;
   padding: 6px 10px;
   cursor: pointer;
-  font-size: 9px;
+  font-size:calc(9px*var(--ui));
   font-weight: 700;
   transition: all .14s;
   display: flex; flex-direction: column; align-items: center; gap: 3px;
 }
-.rk-seg-btn:hover { border-color: #4a4a4a; color: #bbb; }
+.rk-seg-btn:hover { border-color: var(--rk-edge); color: var(--rk-ink-dim); }
 .rk-seg-btn.is-active {
   background: var(--rk-soft);
   border-color: var(--rk-line);
@@ -216,12 +375,12 @@
 /* ── Small chip ───────────────────────────────────────────────────── */
 .rk-chip {
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(255,255,255,.04);
-  border: 1px solid #383838; color: #999;
+  background: var(--rk-panel2);
+  border: 1px solid var(--rk-edge-soft); color: var(--rk-ink-mute);
   border-radius: 6px; padding: 5px 9px; cursor: pointer;
-  font-size: 8.5px; font-weight: 700; letter-spacing: .5px; transition: all .14s;
+  font-size:calc(8.5px*var(--ui)); font-weight: 700; letter-spacing: .5px; transition: all .14s;
 }
-.rk-chip:hover { border-color: #4a4a4a; color: #ccc; }
+.rk-chip:hover { border-color: var(--rk-edge); color: var(--rk-ink-dim); }
 .rk-chip.is-active { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }
 
 /* ── Beat row ─────────────────────────────────────────────────────── */
@@ -229,9 +388,9 @@
 .rk-beat {
   width: 34px; height: 34px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
-  font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 800;
+  font-family: 'JetBrains Mono', monospace; font-size:calc(9px*var(--ui)); font-weight: 800;
   cursor: pointer; transition: transform .07s, box-shadow .1s, background .1s, border-color .1s;
-  background: rgba(255,255,255,.03); border: 2px solid #3a3a3a;
+  background: var(--rk-panel); border: 2px solid var(--rk-edge-soft);
 }
 .rk-beat:hover { transform: translateY(-1px); }
 .rk-beat.is-on { transform: scale(1.06); }
@@ -239,24 +398,159 @@
 /* ── Preset strip ─────────────────────────────────────────────────── */
 .rk-presets {
   display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
-  padding: 6px; border: 1px solid #262626; border-radius: 9px; background: rgba(255,255,255,.02);
+  padding: 6px; border: 1px solid var(--rk-edge-soft); border-radius: 9px; background: var(--rk-panel);
 }
 .rk-preset {
   font-family: 'JetBrains Mono', monospace;
   height: 26px; min-width: 30px; border-radius: 6px; cursor: pointer;
-  font-size: 8.5px; font-weight: 800;
-  background: rgba(255,255,255,.04); border: 1px solid #3a3a3a; color: #888;
+  font-size:calc(8.5px*var(--ui)); font-weight: 800;
+  background: var(--rk-panel2); border: 1px solid var(--rk-edge-soft); color: var(--rk-ink-mute);
   transition: all .14s;
 }
-.rk-preset:hover { border-color: #555; color: #bbb; }
+.rk-preset:hover { border-color: var(--rk-edge); color: var(--rk-ink-dim); }
 .rk-preset.is-hot { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }
 
 /* ── Generic kit button (transport-width actions etc.) ────────────── */
 .rk-btn {
   font-family: 'JetBrains Mono', monospace;
-  background: rgba(255,255,255,.04); border: 1px solid #3a3a3a; color: #aaa;
+  background: var(--rk-panel2); border: 1px solid var(--rk-edge-soft); color: var(--rk-ink-dim);
   border-radius: 8px; padding: 8px 14px; cursor: pointer;
-  font-size: 10px; font-weight: 700; letter-spacing: 1px; transition: all .14s;
+  font-size:calc(10px*var(--ui)); font-weight: 700; letter-spacing: 1px; transition: all .14s;
 }
 .rk-btn:hover { border-color: var(--rk-line); color: var(--rk-accent); }
 .rk-btn.is-active { background: var(--rk-soft); border-color: var(--rk-line); color: var(--rk-accent); }
+
+/* ════════════════════════════════════════════════════════════════════
+   THE ENCLOSURE — chassis + tier finish
+   ════════════════════════════════════════════════════════════════════
+   The card is painted here, not inline in the shell, so the tier class can
+   actually win. ui/pedal-system.js sets three custom properties on the card
+   (--rk-pedal-accent, --rk-chassis, and the tier class) and then gets out of
+   the way.
+
+   The tier is the SECOND channel, and it must not be mistakable for the
+   first. So it never touches hue. It is FINISH — how much light the box
+   catches — expressed as one countable thing: the number of lit edges.
+
+     free   · matte painted steel   0 lit edges  — flat, one quiet border
+     pro    · satin powder-coat     1 lit edge   — a rim highlight along the top
+     studio · anodized & machined   2 lit edges  — rim highlight PLUS an outer
+                                                   ring, over a brushed texture
+
+   Count the highlights and you know the tier, at any size, in any family,
+   with or without the PRO / STUDIO badge in the header. And because the ring
+   and rim are white-light rather than coloured, a studio pedal in the Utility
+   family still reads as Utility first.                                       */
+
+.pedal-card {
+  --rk-pedal-accent: #8fa8b4;
+  --rk-chassis:      #141414;
+  background: linear-gradient(145deg,
+                var(--rk-chassis),
+                color-mix(in srgb, var(--rk-chassis) 62%, #000));
+  border: 1px solid color-mix(in srgb, var(--rk-pedal-accent) 30%, #1e1e1e);
+  box-shadow: 0 6px 30px rgba(0,0,0,.5);
+}
+
+/* ── free — matte ─────────────────────────────────────────────────────
+   No highlight at all. A painted box under flat light. It should look
+   perfectly finished and completely unlit, so that pro reads as an upgrade
+   rather than free reading as broken. */
+.pedal-card.tier-free {
+  border-width: 1px;
+}
+
+/* ── pro — satin, one lit edge ───────────────────────────────────────── */
+.pedal-card.tier-pro {
+  border-width: 1.5px;
+  border-color: color-mix(in srgb, var(--rk-pedal-accent) 42%, #202020);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),                                    /* the rim */
+    0 0 18px color-mix(in srgb, var(--rk-pedal-accent) 15%, transparent),
+    0 6px 30px rgba(0,0,0,.5);
+}
+.pedal-card.tier-pro .pedal-header {
+  background: linear-gradient(180deg, rgba(255,255,255,.05), transparent);
+}
+
+/* ── studio — anodized, two lit edges + brushed grain ─────────────────
+   The grain is 1px vertical striation at ~3% white: invisible as texture at a
+   glance, but it kills the flatness the other two tiers have, which is what
+   makes "this one is machined" land before you have read a single word.
+
+   The light stop of the chassis gradient only carries 3% white, not the 12% it
+   is tempting to reach for. Lifting the whole face is the one finish move that
+   lands UNDER the text: at 12% the card is roughly twice as bright and the
+   8.5–9px accent-on-wash chips fall to 3.3–3.6:1 on the darkest studio
+   chassis. The rim, the ring and the grain all sit on edges and in 1px stripes
+   where nothing is trying to be read, so they carry the tier for free. */
+.pedal-card.tier-studio {
+  border-width: 1.5px;
+  border-color: color-mix(in srgb, var(--rk-pedal-accent) 58%, #262626);
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.030) 0 1px,
+      transparent 1px 3px),
+    linear-gradient(145deg,
+      color-mix(in srgb, var(--rk-chassis) 97%, #fff),
+      color-mix(in srgb, var(--rk-chassis) 58%, #000));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.16),                                    /* the rim  */
+    0 0 0 1px rgba(255,255,255,.07),                                        /* the ring */
+    0 0 22px color-mix(in srgb, var(--rk-pedal-accent) 20%, transparent),
+    0 8px 34px rgba(0,0,0,.55);
+}
+.pedal-card.tier-studio .pedal-header {
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, rgba(255,255,255,.07), transparent);
+}
+
+/* Minimized cards keep their finish — the tier should still be readable when
+   a pedal is parked as a title bar. */
+.pedal-card.minimized { box-shadow: 0 4px 18px rgba(0,0,0,.45); }
+.pedal-card.minimized.tier-pro    { box-shadow: inset 0 1px 0 rgba(255,255,255,.10), 0 4px 18px rgba(0,0,0,.45); }
+.pedal-card.minimized.tier-studio { box-shadow: inset 0 1px 0 rgba(255,255,255,.16), 0 0 0 1px rgba(255,255,255,.07), 0 4px 18px rgba(0,0,0,.45); }
+
+/* Header + title read from the same accent as the body, so the card cannot
+   end up with a header in one colour and controls in another. */
+.pedal-card .pedal-header { border-bottom: 1px solid color-mix(in srgb, var(--rk-pedal-accent) 22%, #1e1e1e); }
+.pedal-card .pedal-title  { color: var(--rk-pedal-accent); }
+
+/* ── Header furniture ─────────────────────────────────────────────────
+   The tier badge and the master-link chips sit in the pedal's header, so they
+   must obey both channels too. The badge is the FINISH channel in text form —
+   neutral white light, one ring for pro, two for studio, matching the edges of
+   the enclosure it is printed on. It must never be blue-for-studio; a blue
+   badge at hue 210 is C♯ in the note code, and it would make the tier look
+   like a seventh family. */
+.pedal-card .tier-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size:calc(8px*var(--ui)); font-weight: 700; letter-spacing: 1px;
+  border-radius: 4px; padding: 1px 5px;
+  color: var(--rk-ink-dim);
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.14);
+}
+.pedal-card.tier-studio .tier-badge {
+  color: var(--rk-ink);
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.20);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.07);
+}
+
+.pedal-card .link-chip {
+  border-radius: 4px; padding: 0 4px; height: 16px;
+  font-size:calc(9px*var(--ui)); line-height: 14px; cursor: pointer; opacity: .65;
+  background: var(--rk-panel2);
+  border: 1px solid var(--rk-edge-soft);
+  color: var(--rk-ink-mute);
+  transition: all .14s;
+}
+.pedal-card .link-chip:hover { opacity: 1; border-color: var(--rk-edge); }
+.pedal-card .link-chip.is-linked {
+  opacity: 1;
+  background: var(--rk-soft2);
+  border-color: var(--rk-line);
+  color: var(--rk-accent);
+}

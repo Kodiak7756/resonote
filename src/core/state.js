@@ -1,5 +1,6 @@
 import { toSharp, intervalLabel } from './music-theory.js';
 import { INSTRUMENTS } from './tuning.js';
+import { saveBoard, loadBoard, snapshotBoardNow } from './store.js';
 
 // ── Display toggles ──────────────────────────────────────────────────
 export let showIntervals    = false;
@@ -199,6 +200,19 @@ export function clearChordHighlight() {
   };
 }
 
+// ── Concept info (objective facts strip under the fretboard) ─────────
+// Pedals set this alongside a highlight so the theory FACTS of what's on the neck —
+// name, notes, degrees, structure, resolution — are reinforced right below the strings.
+// { title, rows: [{ label, value }] } | null
+export let conceptInfo = null;
+export function setConceptInfo(info) { conceptInfo = info || null; }
+
+// Now/next banner shown ABOVE the neck during workouts/drills:
+// { now: {text, color}, next: {text} } — next is tinted by the fretboard itself
+// with the active theme's ghost color, so it always matches the ghost dots.
+export let nowBanner = null;
+export function setNowBanner(b) { nowBanner = b || null; }
+
 // ── Ghost highlight (upcoming note preview — dimmed/outlined dots) ────
 export let ghostHighlight = { active: false, positions: null, colors: null };
 
@@ -268,19 +282,25 @@ export function saveState(pedals, display) {
       })),
       display
     };
-    localStorage.setItem('resonote-state', JSON.stringify(state));
+    // Through the store, which snapshots the previous board whenever its SHAPE
+    // changes — a pedal added, removed, or migrated to a type that no longer
+    // exists. Autosave fires constantly (every drag, every resize), so an
+    // autosave landing at the wrong moment used to be unrecoverable: it silently
+    // replaced the only copy. Now it leaves the old one behind.
+    saveBoard(state);
   } catch(e) {}
 }
 
-export function loadState() {
-  try {
-    const raw = localStorage.getItem('resonote-state');
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch(e) { return null; }
-}
+export function loadState() { return loadBoard(); }
+
+// What can be rolled back to, and how. Reachable from the console as
+// `resonote.history()` / `resonote.undoBoard()` — see the binding in main.js.
+export { boardHistory, restoreBoard } from './store.js';
 
 export function resetState() {
+  // Snapshot BEFORE the wipe, not after. A reset is the single most destructive
+  // thing the app can do to a board, and it is one mis-click away.
+  try { snapshotBoardNow('reset'); } catch(e) {}
   try {
     localStorage.removeItem('resonote-state');
     localStorage.removeItem('resonote-seen');

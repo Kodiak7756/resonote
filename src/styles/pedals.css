@@ -1,6 +1,7 @@
 /* ── Pedal Card Shell ─────────────────────────────────────────────── */
 .pedal-card {
   position: absolute;
+  pointer-events: auto;   /* the layer above is click-through; cards are not */
   background: linear-gradient(180deg, #141414, #0e0e0e);
   border: 1px solid #2a2a2a;
   border-radius: 12px;
@@ -29,7 +30,7 @@
 
 .pedal-title {
   color: #888;
-  font-size: 9px;
+  font-size:calc(9px*var(--ui));
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
@@ -50,7 +51,7 @@
   border: none;
   color: #555;
   cursor: pointer;
-  font-size: 11px;
+  font-size:calc(11px*var(--ui));
   width: 20px;
   height: 20px;
   border-radius: 4px;
@@ -72,6 +73,12 @@
 
 /* ── Minimized state ──────────────────────────────────────────────── */
 .pedal-card.minimized .pedal-body { display: none; }
+
+/* Locked: parked on purpose. The header stops offering a grab cursor and the
+   resize corner steps back, so nothing invites a nudge. */
+.pedal-card.locked .pedal-header { cursor: default; }
+.pedal-card.locked .pedal-resize { opacity: .15; cursor: default; }
+.pedal-card.locked .lock-btn     { color: #ffc832; }
 .pedal-card.minimized { min-height: 0; }
 
 /* ── Resize handle ────────────────────────────────────────────────── */
@@ -101,7 +108,7 @@
   color: #ffc832;
   border-radius: 4px;
   padding: 1px 5px;
-  font-size: 8px;
+  font-size:calc(8px*var(--ui));
   font-weight: 700;
   letter-spacing: 1px;
   font-family: 'JetBrains Mono', monospace;
@@ -125,13 +132,13 @@
 .catalog-item-info { flex: 1; }
 .catalog-item-name {
   color: #ccc;
-  font-size: 11px;
+  font-size:calc(11px*var(--ui));
   font-weight: 600;
   margin-bottom: 2px;
 }
 .catalog-item-desc {
   color: #555;
-  font-size: 9px;
+  font-size:calc(9px*var(--ui));
   font-family: 'JetBrains Mono', monospace;
 }
 .catalog-add-btn {
@@ -141,7 +148,7 @@
   border-radius: 6px;
   padding: 4px 10px;
   cursor: pointer;
-  font-size: 9px;
+  font-size:calc(9px*var(--ui));
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;

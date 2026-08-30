@@ -15,8 +15,15 @@ import {
   setGhostHighlight, clearGhostHighlight,
 } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
+import { masterTempoBlock, wireMasterTempo } from '../ui/tempo-control.js';
 
 // ─── Tab colours ──────────────────────────────────────────────────────────────
+//
+// BOARD colours, not pedal chrome. These are handed to setChordHighlight /
+// setGhostHighlight, which paint the MAIN fretboard — a surface outside this
+// pedal's card that cannot inherit --rk-accent and that takes plain colour
+// strings, not CSS. Blue-for-next is the app's shared board language, so it
+// stays literal. Everything the pedal draws inside its own card is tokenised.
 
 const TAB_COLORS = {
   root:       '#44aaff',
@@ -179,14 +186,14 @@ function renderTabStrip(systems, columns, curIdx) {
 
     // Section divider for multi-system tabs
     if (systems.length > 1) {
-      html += `<div class="mono" style="color:#1e2a2a;font-size:7px;padding:6px 0 2px;letter-spacing:2px;user-select:none">── ${sysIdx + 1} ──</div>`;
+      html += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));padding:6px 0 2px;letter-spacing:2px;user-select:none">── ${sysIdx + 1} ──</div>`;
     }
 
-    html += `<div class="tab-system" data-sysidx="${sysIdx}" style="font-family:'JetBrains Mono',monospace;font-size:11px;white-space:pre;line-height:1.65">`;
+    html += `<div class="tab-system" data-sysidx="${sysIdx}" style="font-family:'JetBrains Mono',monospace;font-size:calc(11px*var(--ui));white-space:pre;line-height:1.65">`;
 
     strings.forEach(({ label, content }, si) => {
       // Label prefix (e, B, G, D, A, E)
-      let row = `<span style="color:#2a4040;user-select:none">${escHtml(label)}|</span>`;
+      let row = `<span style="color:var(--rk-ink-mute);user-select:none">${escHtml(label)}|</span>`;
 
       let i = 0;
       while (i < maxLen) {
@@ -203,26 +210,28 @@ function renderTabStrip(systems, columns, curIdx) {
           const isNext = gIdx === curIdx + 1;
           const isPast = gIdx < curIdx;
 
-          let color = isPast  ? '#1a2020'
-                    : isNext  ? '#2a5566'
-                    :           '#1e3a3a';  // upcoming (not yet reached)
+          // Played / coming / gone, told in VALUE off one accent rather than in
+          // three unrelated hues: the playhead is the brightest thing on the strip.
+          let color = isPast  ? 'var(--rk-edge)'
+                    : isNext  ? 'var(--rk-dim)'
+                    :           'var(--rk-ink-mute)';  // upcoming (not yet reached)
           let bg    = 'transparent';
           let extra = '';
 
           if (isCur) {
-            color = '#44ddff';
-            bg    = 'rgba(68,221,255,0.13)';
+            color = 'var(--rk-hot)';
+            bg    = 'var(--rk-soft2)';
             // Only mark the very first string so we get one element to scroll to
             if (si === 0) extra = ' data-cur="1"';
           } else if (isNext && fret !== undefined) {
-            color = '#3a8899';
+            color = 'var(--rk-accent)';
           }
 
           row += `<span${extra} style="color:${color};background:${bg}">${escHtml(chars)}</span>`;
           i   += col.width;
         } else {
           const ch = i < content.length ? content[i] : '-';
-          row += `<span style="color:#182424">${escHtml(ch)}</span>`;
+          row += `<span style="color:var(--rk-edge-soft)">${escHtml(ch)}</span>`;
           i++;
         }
       }
@@ -239,11 +248,11 @@ function renderTabStrip(systems, columns, curIdx) {
 // ─── Note info card (NOW / NEXT) ──────────────────────────────────────────────
 
 function renderColCard(col, label, accent, bg) {
-  const dim = 'color:#111;font-size:10px;font-family:"JetBrains Mono",monospace';
+  const dim = 'color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));font-family:"JetBrains Mono",monospace';
 
   if (!col) {
-    return `<div style="background:${bg};border:1px solid #0d1a1a;border-radius:5px;padding:6px 8px;min-height:44px">
-      <div class="mono" style="color:${accent};font-size:7px;letter-spacing:1.5px;margin-bottom:3px">${label}</div>
+    return `<div style="background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:6px 8px;min-height:44px">
+      <div class="mono" style="color:${accent};font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
       <div style="${dim}">—</div>
     </div>`;
   }
@@ -254,14 +263,32 @@ function renderColCard(col, label, accent, bg) {
     if (si >= ns) return null;
     const info = getNoteAtFret(customTuning[si].note, customTuning[si].octave, fret);
     return `<span class="mono" style="color:${accent};font-weight:700">${info.note}</span>` +
-           `<span class="mono" style="color:#1e3a3a;font-size:7px">${fret}</span>`;
+           `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${fret}</span>`;
   }).filter(Boolean);
 
-  return `<div style="background:${bg};border:1px solid #0d1a1a;border-radius:5px;padding:6px 8px">
-    <div class="mono" style="color:${accent};font-size:7px;letter-spacing:1.5px;margin-bottom:3px">${label}</div>
+  return `<div style="background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:6px 8px">
+    <div class="mono" style="color:${accent};font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:baseline">${noteItems.join('')}</div>
   </div>`;
 }
+
+// ─── Transport skin ───────────────────────────────────────────────────────────
+//
+// While the watch pass is running this button is the only thing that halts it, so
+// in that state it drops the pedal accent for the app-wide stop red. Stop is a
+// control you hit mid-phrase with both hands on the guitar — that only works as a
+// reflex if it is the same red in every pedal. The strip's playhead keeps --rk-hot:
+// that one only reports the tab is live, which is a different claim.
+//
+// Both render() and updatePlayBtn() paint from here, because the label flips
+// without a re-render — otherwise the first press leaves a halt control wearing
+// the accent, which is the one thing the red is supposed to prevent.
+
+const playBtnCSS = halting =>
+  `background:${halting ? 'var(--rk-stop-soft)' : 'var(--rk-soft2)'};` +
+  `border:1px solid ${halting ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};border-radius:3px;` +
+  `color:${halting ? 'var(--rk-stop)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;` +
+  `font-size:calc(9px*var(--ui));padding:3px 8px;cursor:pointer`;
 
 // ─── Exported pedal builder ───────────────────────────────────────────────────
 
@@ -390,13 +417,15 @@ export function buildTabContent(p) {
     const nn = document.getElementById(`nownext-${p.id}`);
     if (!nn || !columns.length) return;
     nn.innerHTML =
-      renderColCard(columns[curIdx],     'NOW',  '#44aaff', '#060f14') +
-      renderColCard(columns[curIdx + 1], 'NEXT', '#2a6677', '#04090c');
+      renderColCard(columns[curIdx],     'NOW',  'var(--rk-accent)', 'var(--rk-panel2)') +
+      renderColCard(columns[curIdx + 1], 'NEXT', 'var(--rk-dim)',    'var(--rk-panel)');
   }
 
   function updatePlayBtn() {
     const btn = document.getElementById(`play-${p.id}`);
-    if (btn) btn.textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+    if (!btn) return;
+    btn.textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+    btn.style.cssText = playBtnCSS(playing);
   }
 
   // ── Play / pause ──
@@ -444,25 +473,27 @@ export function buildTabContent(p) {
   function render() {
     const hasTab = columns.length > 0;
 
-    let h = `<div style="display:flex;flex-direction:column;gap:7px">`;
+    // class="rk" is the token scope — the card hands down --rk-pedal-accent and
+    // every surface, ink and edge below is derived from it.
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:7px">`;
 
     // ── Import panel ──
     if (!hasTab) {
-      h += `<div style="border:1px solid #0d1e1e;border-radius:6px;padding:8px">`;
-      h += `<div class="mono" style="color:#2a4040;font-size:7px;letter-spacing:1.5px;margin-bottom:5px">PASTE ASCII TAB</div>`;
+      h += `<div style="border:1px solid var(--rk-edge-soft);border-radius:6px;padding:8px">`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:5px">PASTE ASCII TAB</div>`;
       h += `<textarea id="ta-${p.id}" rows="7"
           placeholder="e|---0---3---5---|\nB|---1---3---5---|\nG|---0---0---5---|\nD|---2---0---5---|\nA|---3-------5---|\nE|---0-------3---|"
-          style="width:100%;background:#060f0f;color:#3a7070;border:1px solid #0d1e1e;border-radius:4px;
-                 font-family:'JetBrains Mono',monospace;font-size:9px;padding:5px;resize:vertical;
+          style="width:100%;background:var(--rk-panel);color:var(--rk-ink);border:1px solid var(--rk-edge-soft);border-radius:4px;
+                 font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:5px;resize:vertical;
                  box-sizing:border-box;outline:none;line-height:1.6"></textarea>`;
-      h += `<div id="err-${p.id}" style="display:none;color:#ff5555;font-family:'JetBrains Mono',monospace;font-size:8px;padding:3px 0"></div>`;
+      h += `<div id="err-${p.id}" style="display:none;color:var(--rk-bad);font-family:'JetBrains Mono',monospace;font-size:calc(8px*var(--ui));padding:3px 0"></div>`;
       h += `<button id="import-${p.id}"
-          style="margin-top:5px;width:100%;background:rgba(68,170,255,0.12);border:1px solid #1a4466;
-                 border-radius:4px;color:#44aaff;font-family:'JetBrains Mono',monospace;font-size:9px;
+          style="margin-top:5px;width:100%;background:var(--rk-soft);border:1px solid var(--rk-line);
+                 border-radius:4px;color:var(--rk-accent);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));
                  padding:6px;cursor:pointer;letter-spacing:1px">↓ IMPORT TAB</button>`;
       h += `</div>`;
 
-      h += `<div class="mono" style="color:#162020;font-size:8px;text-align:center;padding:4px">
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;padding:4px">
         Supports standard 6-string, bass, or any instrument tab.<br>
         Multi-section tabs (multiple groups of lines) are supported.
       </div>`;
@@ -470,62 +501,61 @@ export function buildTabContent(p) {
       // ── Controls bar ──
       h += `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">`;
 
-      // BPM control
-      h += `<div style="display:flex;align-items:center;gap:1px;background:#040c0c;border:1px solid #0d1e1e;border-radius:4px;padding:1px 4px">`;
-      h += `<span class="mono" style="color:#2a4040;font-size:7px">BPM</span>`;
-      h += `<button id="bdn-${p.id}" style="background:none;border:none;color:#2a5050;cursor:pointer;font-size:13px;padding:0 3px;line-height:1">−</button>`;
-      h += `<span id="bpm-${p.id}" class="mono" style="color:#44aaff;font-size:10px;min-width:26px;text-align:center">${bpm}</span>`;
-      h += `<button id="bup-${p.id}" style="background:none;border:none;color:#2a5050;cursor:pointer;font-size:13px;padding:0 3px;line-height:1">+</button>`;
+      // Tempo — the shared master control (watch mode reads this clock)
+      h += `<div class="rk" style="min-width:132px">`;
+      h += masterTempoBlock(`tab-${p.id}`, { min: 30, max: 280, compact: true });
       h += `</div>`;
 
       // Mode toggle
       const isWatch = mode === 'watch';
       h += `<button id="mode-${p.id}"
-          style="background:${isWatch ? 'rgba(68,170,255,0.1)' : 'rgba(68,170,255,0.2)'};
-                 border:1px solid ${isWatch ? '#1a4466' : '#44aaff'};border-radius:4px;
-                 color:${isWatch ? '#3a7788' : '#44aaff'};font-family:'JetBrains Mono',monospace;
-                 font-size:8px;padding:3px 7px;cursor:pointer;letter-spacing:1px">
+          style="background:${isWatch ? 'var(--rk-soft)' : 'var(--rk-soft2)'};
+                 border:1px solid ${isWatch ? 'var(--rk-edge)' : 'var(--rk-line)'};border-radius:4px;
+                 color:${isWatch ? 'var(--rk-ink-dim)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;
+                 font-size:calc(8px*var(--ui));padding:3px 7px;cursor:pointer;letter-spacing:1px">
           ${isWatch ? '👁 WATCH' : '🎸 PRACTICE'}</button>`;
 
       // Prev / Play / Next
       h += `<div style="display:flex;gap:3px;margin-left:auto">`;
-      h += `<button id="prev-${p.id}" style="background:#040c0c;border:1px solid #0d1e1e;border-radius:3px;color:#2a5050;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;cursor:pointer">◄</button>`;
+      h += `<button id="prev-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:3px 7px;cursor:pointer">◄</button>`;
       if (isWatch) {
-        h += `<button id="play-${p.id}" style="background:rgba(68,170,255,0.15);border:1px solid #1a5566;border-radius:3px;color:#44aaff;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;cursor:pointer">${playing ? '⏸ PAUSE' : '▶ PLAY'}</button>`;
+        h += `<button id="play-${p.id}" style="${playBtnCSS(playing)}">${playing ? '⏸ PAUSE' : '▶ PLAY'}</button>`;
       }
-      h += `<button id="next-${p.id}" style="background:#040c0c;border:1px solid #0d1e1e;border-radius:3px;color:#2a5050;font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;cursor:pointer">►</button>`;
+      h += `<button id="next-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:3px 7px;cursor:pointer">►</button>`;
       h += `</div>`;
       h += `</div>`;
 
       // Column counter + load-new link
       h += `<div style="display:flex;align-items:center;justify-content:space-between">`;
-      h += `<span id="ctr-${p.id}" class="mono" style="color:#1a3a3a;font-size:8px">${curIdx + 1} / ${columns.length}</span>`;
-      h += `<button id="new-${p.id}" style="background:none;border:none;color:#162020;font-family:'JetBrains Mono',monospace;font-size:7px;cursor:pointer;letter-spacing:1px;text-decoration:underline">load new tab</button>`;
+      h += `<span id="ctr-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${curIdx + 1} / ${columns.length}</span>`;
+      h += `<button id="new-${p.id}" style="background:none;border:none;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(7px*var(--ui));cursor:pointer;letter-spacing:1px;text-decoration:underline">load new tab</button>`;
       h += `</div>`;
 
       // ── Tab strip ──
       h += `<div id="strip-${p.id}"
-          style="overflow:auto;background:#040c0c;border:1px solid #0d1e1e;border-radius:5px;
+          style="overflow:auto;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;
                  padding:7px 10px;max-height:160px;scroll-behavior:smooth">`;
       h += renderTabStrip(systems, columns, curIdx);
       h += `</div>`;
 
       // ── Now / Next cards ──
+      // Same skin the refreshStrip path passes to renderColCard — if these two ever
+      // disagree the cards flip colour on the first advance.
       h += `<div id="nownext-${p.id}" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">`;
-      h += renderColCard(columns[curIdx],     'NOW',  '#44aaff', '#060f14');
-      h += renderColCard(columns[curIdx + 1], 'NEXT', '#2a6677', '#04090c');
+      h += renderColCard(columns[curIdx],     'NOW',  'var(--rk-accent)', 'var(--rk-panel2)');
+      h += renderColCard(columns[curIdx + 1], 'NEXT', 'var(--rk-dim)',    'var(--rk-panel)');
       h += `</div>`;
 
       // Practice mode hint
       if (!isWatch) {
-        h += `<div class="mono" style="color:#1a3a3a;font-size:8px;text-align:center;padding:1px">
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;padding:1px">
           ► button · arrow keys · spacebar to advance</div>`;
       }
 
       // Progress bar
       const pct = columns.length > 1 ? (curIdx / (columns.length - 1)) * 100 : 0;
-      h += `<div style="background:#040c0c;border:1px solid #0d1e1e;border-radius:3px;height:4px;cursor:pointer" id="prog-${p.id}">`;
-      h += `<div style="background:#1a4466;width:${pct.toFixed(1)}%;height:100%;border-radius:3px;transition:width .1s"></div>`;
+      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;height:4px;cursor:pointer" id="prog-${p.id}">`;
+      h += `<div style="background:var(--rk-accent);width:${pct.toFixed(1)}%;height:100%;border-radius:3px;transition:width .1s"></div>`;
       h += `</div>`;
     }
 
@@ -562,15 +592,13 @@ export function buildTabContent(p) {
         scrollStrip();
       });
 
-      document.getElementById(`bdn-${p.id}`)?.addEventListener('click', () => {
-        bpm = Math.max(20, bpm - 5); s.bpm = bpm;
-        document.getElementById(`bpm-${p.id}`).textContent = bpm;
-        if (playing) startTimer();
-      });
-      document.getElementById(`bup-${p.id}`)?.addEventListener('click', () => {
-        bpm = Math.min(300, bpm + 5); s.bpm = bpm;
-        document.getElementById(`bpm-${p.id}`).textContent = bpm;
-        if (playing) startTimer();
+      // Tempo follows the master clock in both directions: nudging here moves the
+      // clock, and moving it anywhere else re-times a running watch pass.
+      wireMasterTempo(`tab-${p.id}`, {
+        mirror: v => {
+          bpm = v; s.bpm = v;
+          if (playing) startTimer();
+        },
       });
 
       // Click progress bar to jump

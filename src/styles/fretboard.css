@@ -12,7 +12,7 @@
   border: 1px solid #333;
   border-radius: 5px;
   padding: 3px 6px;
-  font-size: 9px;
+  font-size:calc(9px*var(--ui));
   cursor: pointer;
   font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
@@ -98,7 +98,7 @@
 }
 
 .vocal-note-label {
-  font-size: 8px;
+  font-size:calc(8px*var(--ui));
   font-family: 'JetBrains Mono', monospace;
   color: #444;
   letter-spacing: .5px;

@@ -45,6 +45,10 @@ export const ARP_TYPES = {
   },
 };
 
+// The NOTE DOTS, not pedal chrome. Magenta for an arpeggio against the Scale
+// pedal's cyan is the one saturated colour that earns its keep in here: it says
+// "these are chord tones", identically on the big neck and on the little cards.
+// Everything framing them reads from the kit tokens instead.
 export const ARP_COLORS = {
   root:       '#cc66aa',
   tone:       '#884477',
@@ -213,12 +217,15 @@ export function findScaleBoxes(root, intervals, opts = {}) {
 export const getDisplayPositionsForBox = coreGetDisplayPositionsForBox;
 
 // ─── Keyboard box diagram renderer ────────────────────────────────────────────
+// Draws a PIANO: the ivory, the key outline and the unlit black keys stay literal
+// for the same reason the fretboard's wood does — they are a picture of an
+// instrument, not chrome. The card frame around it is tokenised.
 
 function renderKeyboardBoxDiagram(box, root, isActive, theme) {
   const colorRoot = theme.root;
   const colorTone = theme.tone;
-  const border    = isActive ? theme.border    : '#444';
-  const bg        = isActive ? theme.bgActive  : 'rgba(255,255,255,.03)';
+  const border    = isActive ? theme.border    : 'var(--rk-edge-soft)';
+  const bg        = isActive ? theme.bgActive  : 'var(--rk-panel2)';
 
   const keys = [];
   for (let o = box.lo; o <= box.hi; o++) {
@@ -232,7 +239,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 
   let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="cursor:pointer">`;
   s += `<rect x="0" y="0" width="${w}" height="${h}" rx="4" fill="${bg}" stroke="${border}" stroke-width="1"/>`;
-  s += `<text x="${w / 2}" y="${h - 3}" text-anchor="middle" font-size="6" font-family="'JetBrains Mono',monospace" fill="#555">${box.label}</text>`;
+  s += `<text x="${w / 2}" y="${h - 3}" text-anchor="middle" font-size="6" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${box.label}</text>`;
 
   // White keys
   keys.forEach((k, i) => {
@@ -277,10 +284,10 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 export function renderArpBoxDiagram(box, root, isActive) {
   if (getInst().renderer === 'keyboard') {
     return renderKeyboardBoxDiagram(box, root, isActive, {
-      root:     '#cc66aa',
-      tone:     '#884477',
-      border:   '#cc66aa',
-      bgActive: 'rgba(204,102,170,.1)',
+      root:     ARP_COLORS.root,
+      tone:     ARP_COLORS.tone,
+      border:   'var(--rk-accent)',
+      bgActive: 'var(--rk-soft)',
     });
   }
 
@@ -295,28 +302,30 @@ export function renderArpBoxDiagram(box, root, isActive) {
   const sy        = 18;
   const sw        = (ns - 1) * strW;
   const fh        = (h - sy - 10) / numFrets;
-  const bdr       = isActive ? '#cc66aa' : '#444';
-  const bg        = isActive ? 'rgba(204,102,170,.1)' : 'rgba(255,255,255,.03)';
+  // Frame = chrome (the pedal's accent when the card is selected); dots = the
+  // arpeggio's own magenta, below.
+  const bdr       = isActive ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
+  const bg        = isActive ? 'var(--rk-soft)' : 'var(--rk-panel2)';
 
   let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="cursor:pointer">`;
   s += `<rect x="0" y="0" width="${w}" height="${h}" rx="4" fill="${bg}" stroke="${bdr}" stroke-width="1"/>`;
-  s += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="#555">${box.label}</text>`;
+  s += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${box.label}</text>`;
 
   // Nut or fret number
   if (startFret === 0) {
-    s += `<rect x="${sx - 2}" y="${sy - 2}" width="${sw + 4}" height="3" rx="1" fill="#ccc"/>`;
+    s += `<rect x="${sx - 2}" y="${sy - 2}" width="${sw + 4}" height="3" rx="1" fill="var(--rk-ink)"/>`;
   } else {
-    s += `<text x="4" y="${sy + fh / 2 + 3}" font-size="6" font-family="'JetBrains Mono',monospace" fill="#888">${startFret}fr</text>`;
+    s += `<text x="4" y="${sy + fh / 2 + 3}" font-size="6" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${startFret}fr</text>`;
   }
 
   // Fret lines
   for (let f = 0; f <= numFrets; f++) {
-    s += `<line x1="${sx}" y1="${sy + f * fh}" x2="${sx + sw}" y2="${sy + f * fh}" stroke="#555" stroke-width="${f === 0 ? 1.5 : 0.6}"/>`;
+    s += `<line x1="${sx}" y1="${sy + f * fh}" x2="${sx + sw}" y2="${sy + f * fh}" stroke="var(--rk-edge)" stroke-width="${f === 0 ? 1.5 : 0.6}"/>`;
   }
 
   // String lines
   for (let i = 0; i < ns; i++) {
-    s += `<line x1="${sx + i * strW}" y1="${sy}" x2="${sx + i * strW}" y2="${sy + numFrets * fh}" stroke="#777" stroke-width="${0.4 + (ns - 1 - i) * 0.12}"/>`;
+    s += `<line x1="${sx + i * strW}" y1="${sy}" x2="${sx + i * strW}" y2="${sy + numFrets * fh}" stroke="var(--rk-ink-mute)" stroke-width="${0.4 + (ns - 1 - i) * 0.12}"/>`;
   }
 
   // Note dots
@@ -325,8 +334,8 @@ export function renderArpBoxDiagram(box, root, isActive) {
     const fy   = sy + (p.fret - startFret) * fh + fh / 2;
     const isR  = p.isRoot;
     const dl   = isR ? 'R' : displayLabel(p.note, root);
-    s += `<circle cx="${x}" cy="${fy}" r="4.5" fill="${isR ? '#cc66aa' : '#884477'}"/>`;
-    s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
+    s += `<circle cx="${x}" cy="${fy}" r="4.5" fill="${isR ? ARP_COLORS.root : ARP_COLORS.tone}"/>`;
+    s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="var(--rk-ink)">${dl}</text>`;
   });
 
   s += '</svg>';

@@ -3,6 +3,7 @@ import { INSTRUMENTS, currentInstrument, customTuning, getInst } from '../core/t
 import { metroClock, pedalBus, setChordHighlight, clearChordHighlight } from '../core/state.js';
 import { getNoteAtFret } from '../core/tuning.js';
 import { makeKnob } from '../ui/pedal-system.js';
+import { bus } from '../core/mixer.js';
 
 // Guitar/banjo: p=thumb, i=index, m=middle, a=ring. String assignments.
 // Piano: 1-5 fingering on scale degrees.
@@ -146,6 +147,10 @@ export function buildFingerContent(p) {
     return { root: ch.root, notes: ch.notes, positions, label: fChordRoot };
   }
 
+  // The four-colour objects handed to setChordHighlight below are the NECK's
+  // language — root vs chord tone, fill vs stroke — shared with every other
+  // pedal that lights the fretboard. They are deliberately not tokens: the
+  // panel wears this pedal's accent, the neck keeps saying the same thing.
   function highlightStep() {
     const pat = getPat();
     if (!pat.steps.length || stepIdx >= pat.steps.length) return;
@@ -163,6 +168,7 @@ export function buildFingerContent(p) {
           chPos.root, chPos.notes,
           `${chPos.label} \u2014 ${info.finger}: str ${si + 1} fret ${fret}`,
           chPos.positions,
+          // Fretboard overlay palette (see the note at the top of highlightStep)
           { root: '#dd9944', tone: '#664411', rootStroke: '#ffbb66', toneStroke: '#886633' },
           focusPos
         );
@@ -174,6 +180,7 @@ export function buildFingerContent(p) {
           root, allNotes,
           `${patName} \u2014 ${info.finger}: str ${si + 1}`,
           positions,
+          // Fretboard overlay palette (see the note at the top of highlightStep)
           { root: '#dd9944', tone: '#664411', rootStroke: '#ffbb66', toneStroke: '#886633' },
           focusPos
         );
@@ -190,6 +197,7 @@ export function buildFingerContent(p) {
         root, scaleNotes,
         `${patName} \u2014 finger ${step.f}: ${targetNote}`,
         null,
+        // Fretboard overlay palette (see the note at the top of highlightStep)
         { root: '#dd9944', tone: '#664411', rootStroke: '#ffbb66', toneStroke: '#886633' }
       );
     }
@@ -216,7 +224,7 @@ export function buildFingerContent(p) {
           g.gain.value = accent ? 0.25 : 0.18;
           g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.25);
           o.connect(g);
-          g.connect(c.destination);
+          g.connect(bus(c, 'notes'));
           o.start();
           o.stop(c.currentTime + 0.25);
           return;
@@ -230,7 +238,7 @@ export function buildFingerContent(p) {
       g.gain.value = accent ? 0.2 : 0.12;
       g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.05);
       o.connect(g);
-      g.connect(c.destination);
+      g.connect(bus(c, 'click'));
       o.start();
       o.stop(c.currentTime + 0.05);
     } catch (e) {}
@@ -275,14 +283,16 @@ export function buildFingerContent(p) {
     const cells = document.querySelectorAll(`#body-${p.id} .finger-step`);
     cells.forEach((c, i) => {
       const isCur = p._fingerPlaying && i === stepIdx;
-      c.style.background = isCur ? 'rgba(221,153,68,.4)' : '';
-      c.style.borderColor = isCur ? '#dd9944' : 'rgba(221,153,68,.15)';
+      // Identical to the values render() builds the cells with — repaint with
+      // anything else and the resting cells change the first time you hit play.
+      c.style.background = isCur ? 'var(--rk-soft2)' : 'var(--rk-soft)';
+      c.style.borderColor = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
     });
     const fi2 = document.getElementById(`finger-ind-${p.id}`);
     if (fi2 && p._fingerPlaying && stepIdx < pat.steps.length) {
       const info = getStepNoteInfo(pat.steps[stepIdx]);
-      fi2.innerHTML = `<span class="mono" style="color:#ffbb66;font-size:18px;font-weight:900">${info.finger}</span>`
-        + `<span class="mono" style="color:#888;font-size:9px">${info.desc}</span>`;
+      fi2.innerHTML = `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span>`
+        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
     }
   }
 
@@ -290,39 +300,39 @@ export function buildFingerContent(p) {
     const pat = getPat();
     const useBpm = metroClock.bpm || 100;
     const ipData = FINGER_PATTERNS[instMode];
-    let h = `<div style="display:flex;flex-direction:column;gap:6px">`;
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:6px">`;
 
     // Instrument mode tabs
     h += `<div style="display:flex;gap:3px">`;
     Object.entries(FINGER_PATTERNS).forEach(([k, v]) => {
-      h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:7px;${instMode === k ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${v.label}</button>`;
+      h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:calc(7px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${v.label}</button>`;
     });
     h += `</div>`;
 
     // Pattern selector
     h += `<div style="display:flex;flex-wrap:wrap;gap:3px">`;
     Object.keys(ipData.patterns).forEach(pn => {
-      h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:7px;padding:2px 5px;${patName === pn ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${pn}</button>`;
+      h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`;
     });
     h += `</div>`;
 
     // Description
-    h += `<div class="mono" style="color:#888;font-size:8px;text-align:center">${pat.desc}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${pat.desc}</div>`;
 
     // Chord context (for guitar/banjo)
     if (instMode !== 'piano') {
-      h += `<div style="background:rgba(221,153,68,.04);border:1px solid rgba(221,153,68,.08);border-radius:5px;padding:5px">`;
-      h += `<div class="mono" style="color:#888;font-size:7px;margin-bottom:3px">CHORD SHAPE</div>`;
+      h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px">`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-bottom:3px">CHORD SHAPE</div>`;
       h += `<div style="display:flex;gap:2px;margin-bottom:3px">`;
       [['chord', 'Chord'], ['open', 'Open'], ['random', '🎲 Random']].forEach(([m, label]) => {
-        h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:7px;${fChordMode === m ? 'background:rgba(221,153,68,.12);border-color:#dd9944;color:#dd9944' : ''}">${label}</button>`;
+        h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`;
       });
       h += `</div>`;
       if (fChordMode === 'chord') {
         const commonChords = ['C', 'Am', 'G', 'Em', 'D', 'Dm', 'A', 'Am', 'E', 'Em', 'F', 'Fm', 'B', 'Bm', 'A7', 'D7', 'E7', 'G7', 'Am7', 'Dm7', 'Em7', 'Cmaj7', 'Fmaj7'];
         h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
         commonChords.forEach(ch => {
-          h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:6px;padding:1px 4px;${fChordRoot === ch ? 'background:rgba(221,153,68,.12);border-color:#dd9944;color:#dd9944' : ''}">${ch}</button>`;
+          h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`;
         });
         h += `</div>`;
       }
@@ -333,7 +343,7 @@ export function buildFingerContent(p) {
     if (instMode === 'piano') {
       h += `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
       NOTES.forEach(n => {
-        h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:7px;min-width:22px;padding:2px 4px;${root === n ? 'background:rgba(221,153,68,.15);border-color:#dd9944;color:#dd9944' : ''}">${n}</button>`;
+        h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`;
       });
       h += `</div>`;
     }
@@ -342,25 +352,25 @@ export function buildFingerContent(p) {
     h += `<div id="finger-ind-${p.id}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:28px">`;
     if (p._fingerPlaying && stepIdx < pat.steps.length) {
       const info = getStepNoteInfo(pat.steps[stepIdx]);
-      h += `<span class="mono" style="color:#ffbb66;font-size:18px;font-weight:900">${info.finger}</span>`
-        + `<span class="mono" style="color:#888;font-size:9px">${info.desc}</span>`;
+      h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span>`
+        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
     }
     h += `</div>`;
 
     // Pattern grid
-    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:rgba(221,153,68,.04);border:1px solid rgba(221,153,68,.1);border-radius:6px;padding:6px">`;
+    h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px">`;
     pat.steps.forEach((st, si) => {
       const isCur = p._fingerPlaying && si === stepIdx;
       const info = getStepNoteInfo(st);
-      const bg = isCur ? 'rgba(221,153,68,.4)' : 'rgba(221,153,68,.08)';
-      const bc = isCur ? '#dd9944' : 'rgba(221,153,68,.15)';
+      const bg = isCur ? 'var(--rk-soft2)' : 'var(--rk-soft)';
+      const bc = isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
       h += `<div class="finger-step" style="background:${bg};border:1.5px solid ${bc};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px;transition:all .1s">`;
-      h += `<div class="mono" style="color:#ffbb66;font-size:12px;font-weight:800">${info.finger}</div>`;
+      h += `<div class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${info.finger}</div>`;
       if (instMode !== 'piano') {
-        h += `<div class="mono" style="color:#aaa;font-size:7px;font-weight:600">${info.note || ''}</div>`;
-        h += `<div class="mono" style="color:#555;font-size:6px">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${info.note || ''}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
       } else {
-        h += `<div class="mono" style="color:#aaa;font-size:7px">${info.note}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui))">${info.note}</div>`;
       }
       h += `</div>`;
     });
@@ -370,31 +380,34 @@ export function buildFingerContent(p) {
     h += `<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">`;
     if (instMode === 'guitar') {
       [['p', 'Thumb'], ['i', 'Index'], ['m', 'Middle'], ['a', 'Ring']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:#666;font-size:7px"><span style="color:#dd9944;font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     } else if (instMode === 'banjo') {
       [['T', 'Thumb'], ['I', 'Index'], ['M', 'Middle']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:#666;font-size:7px"><span style="color:#dd9944;font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     } else {
       [['1', 'Thumb'], ['2', 'Index'], ['3', 'Middle'], ['4', 'Ring'], ['5', 'Pinky']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:#666;font-size:7px"><span style="color:#dd9944;font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     }
     h += `</div>`;
 
     // Tempo
     h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px">`;
-    h += `<span class="mono" style="color:#888;font-size:7px">NOTE TEMPO</span>`;
-    h += `<span class="mono" style="color:#dd8844;font-size:12px;font-weight:700">${useBpm}</span>`;
-    h += `<span class="mono" style="color:#666;font-size:7px">BPM</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span>`;
     h += `</div>`;
 
-    // Play/Stop
-    const pc = p._fingerPlaying ? 'rgba(255,60,60,.2)' : 'rgba(221,153,68,.15)';
-    const pb = p._fingerPlaying ? '#ff4444' : '#dd9944';
-    const pt = p._fingerPlaying ? '#ff6666' : '#dd9944';
-    h += `<button class="fin-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    // Play/Stop. One button, two jobs — and the moment it is showing STOP it stops
+    // being this pedal's control and becomes the app's, so it drops the accent for
+    // --rk-stop. Stop is a reflex you reach for mid-phrase without reading it, which
+    // only works if it is the same red in every pedal. (Hue 345, so it still isn't C.)
+    const pc = p._fingerPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
+    const pb = p._fingerPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
+    const pt = p._fingerPlaying ? 'var(--rk-stop)' : 'var(--rk-accent)';
+    h += `<button class="fin-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     el.innerHTML = h;
 

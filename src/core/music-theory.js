@@ -19,7 +19,7 @@ export function displayNoteName(n) { return n; }
 export const CHORD_TYPES = {
   'Triads': {
     'Major':[0,4,7], 'Minor':[0,3,7], 'Dim':[0,3,6], 'Aug':[0,4,8],
-    'Sus2':[0,2,7], 'Sus4':[0,5,7]
+    'Sus2':[0,2,7], 'Sus4':[0,5,7], '5':[0,7]
   },
   '7ths': {
     'Maj7':[0,4,7,11], '7 (Dom)':[0,4,7,10], 'Min7':[0,3,7,10],

@@ -27,6 +27,11 @@ const ENHARMONIC = {
   Cb: 'B', 'E#': 'F', 'B#': 'C'
 };
 
+// The NOTE DOTS on the neck and on these cards, not pedal chrome. Cyan for a
+// scale against the Arpeggio pedal's magenta is the one place a saturated colour
+// earns its keep here — it says "this is a scale", and it says it identically on
+// the big fretboard and on the little cards. The card FRAME around them is chrome
+// and reads from the kit tokens.
 export const SCALE_COLORS = {
   root: '#44bbcc',
   tone: '#2a7a8a',
@@ -66,11 +71,14 @@ export const findScaleBoxes = coreFindScaleBoxes;
 export const getDisplayPositionsForBox = coreGetDisplayPositionsForBox;
 
 // ── Keyboard box diagram ──────────────────────────────────────────────
+// This one draws a PIANO, so its ivory, its key outline and its unlit black keys
+// stay literal for the same reason the fretboard's wood does: they are a picture
+// of an instrument, not chrome. The card frame around it is tokenised.
 function renderKeyboardBoxDiagram(box, root, isActive, theme) {
   const colorRoot = theme.root;
   const colorTone = theme.tone;
-  const border = isActive ? theme.border : '#444';
-  const bg = isActive ? theme.bgActive : 'rgba(255,255,255,.03)';
+  const border = isActive ? theme.border : 'var(--rk-edge-soft)';
+  const bg = isActive ? theme.bgActive : 'var(--rk-panel2)';
   const keys = [];
   for (let o = box.lo; o <= box.hi; o++) {
     ['C', 'D', 'E', 'F', 'G', 'A', 'B'].forEach(n => keys.push({ note: n, octave: o, isBlack: false }));
@@ -81,7 +89,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
   const h = 64;
   let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="cursor:pointer">`;
   s += `<rect x="0" y="0" width="${w}" height="${h}" rx="4" fill="${bg}" stroke="${border}" stroke-width="1"/>`;
-  s += `<text x="${w / 2}" y="${h - 3}" text-anchor="middle" font-size="6" font-family="'JetBrains Mono',monospace" fill="#555">${box.label}</text>`;
+  s += `<text x="${w / 2}" y="${h - 3}" text-anchor="middle" font-size="6" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${box.label}</text>`;
   keys.forEach((k, i) => {
     s += `<rect x="${xForWhite(i)}" y="10" width="8" height="36" rx="1.5" fill="#f4f4f4" stroke="#666" stroke-width="0.7"/>`;
   });
@@ -120,10 +128,10 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 export function renderScaleBoxDiagram(box, root, isActive) {
   if (getInst().renderer === 'keyboard') {
     return renderKeyboardBoxDiagram(box, root, isActive, {
-      root: '#44bbcc',
-      tone: '#2a7a8a',
-      border: '#44bbcc',
-      bgActive: 'rgba(68,187,204,.1)'
+      root: SCALE_COLORS.root,
+      tone: SCALE_COLORS.tone,
+      border: 'var(--rk-accent)',
+      bgActive: 'var(--rk-soft)'
     });
   }
   const ns = customTuning.length;
@@ -146,38 +154,40 @@ export function renderScaleBoxDiagram(box, root, isActive) {
   const sy = topPad;
   const sw = (ns - 1) * strW;
   const fh = fretH;
-  const bdr = isActive ? '#44bbcc' : '#444';
-  const bg = isActive ? 'rgba(68,187,204,.1)' : 'rgba(255,255,255,.03)';
+  // Frame = chrome (the pedal's accent when the card is selected); dots = the
+  // scale's own cyan, below.
+  const bdr = isActive ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
+  const bg = isActive ? 'var(--rk-soft)' : 'var(--rk-panel2)';
   let s = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="cursor:pointer">`;
   s += `<rect x="0.5" y="0.5" width="${w - 1}" height="${h - 1}" rx="6" fill="${bg}" stroke="${bdr}" stroke-width="1"/>`;
   if (extended) {
-    s += `<text x="${w / 2}" y="10" text-anchor="middle" font-size="${isBass ? 7 : 6}" font-family="'JetBrains Mono',monospace" fill="#88a">${box.label}</text>`;
-    s += `<text x="${w / 2}" y="18" text-anchor="middle" font-size="${isBass ? 6 : 5}" font-family="'JetBrains Mono',monospace" fill="#666">Frets ${startFret}–${hiFret}</text>`;
+    s += `<text x="${w / 2}" y="10" text-anchor="middle" font-size="${isBass ? 7 : 6}" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-dim)">${box.label}</text>`;
+    s += `<text x="${w / 2}" y="18" text-anchor="middle" font-size="${isBass ? 6 : 5}" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">Frets ${startFret}–${hiFret}</text>`;
     if (isBass) {
-      s += `<text x="${w / 2}" y="24" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="#557">Root-to-root bass view</text>`;
+      s += `<text x="${w / 2}" y="24" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">Root-to-root bass view</text>`;
     }
   } else {
-    s += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="#555">${box.label}</text>`;
+    s += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${box.label}</text>`;
   }
   if (startFret === 0) {
-    s += `<rect x="${sx - 2}" y="${sy - 2}" width="${sw + 4}" height="3" rx="1" fill="#ccc"/>`;
+    s += `<rect x="${sx - 2}" y="${sy - 2}" width="${sw + 4}" height="3" rx="1" fill="var(--rk-ink)"/>`;
   } else {
-    s += `<text x="4" y="${sy + fh / 2 + 3}" font-size="6" font-family="'JetBrains Mono',monospace" fill="#888">${startFret}fr</text>`;
+    s += `<text x="4" y="${sy + fh / 2 + 3}" font-size="6" font-family="'JetBrains Mono',monospace" fill="var(--rk-ink-mute)">${startFret}fr</text>`;
   }
   for (let f = 0; f <= numFrets; f++) {
-    s += `<line x1="${sx}" y1="${sy + f * fh}" x2="${sx + sw}" y2="${sy + f * fh}" stroke="#555" stroke-width="${f === 0 ? 1.5 : 0.6}"/>`;
+    s += `<line x1="${sx}" y1="${sy + f * fh}" x2="${sx + sw}" y2="${sy + f * fh}" stroke="var(--rk-edge)" stroke-width="${f === 0 ? 1.5 : 0.6}"/>`;
   }
   for (let i = 0; i < ns; i++) {
     const x = sx + i * strW;
-    s += `<line x1="${x}" y1="${sy}" x2="${x}" y2="${sy + numFrets * fh}" stroke="#777" stroke-width="${extended ? (isBass ? 1.2 : 1) : 0.4 + (ns - 1 - i) * 0.12}"/>`;
+    s += `<line x1="${x}" y1="${sy}" x2="${x}" y2="${sy + numFrets * fh}" stroke="var(--rk-ink-mute)" stroke-width="${extended ? (isBass ? 1.2 : 1) : 0.4 + (ns - 1 - i) * 0.12}"/>`;
   }
   cardPositions.forEach(p => {
     const x = sx + (ns - 1 - p.si) * strW;
     const fy = sy + (p.fret - startFret) * fh + fh / 2;
     const isR = p.isRoot;
     const dl = isR ? 'R' : displayLabel(p.note, root);
-    s += `<circle cx="${x}" cy="${fy}" r="${extended ? (isBass ? 5.4 : 5) : 4.5}" fill="${isR ? '#44bbcc' : '#2a7a8a'}"/>`;
-    s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="${extended ? (isBass ? 5.8 : 5.5) : 5}" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
+    s += `<circle cx="${x}" cy="${fy}" r="${extended ? (isBass ? 5.4 : 5) : 4.5}" fill="${isR ? SCALE_COLORS.root : SCALE_COLORS.tone}"/>`;
+    s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="${extended ? (isBass ? 5.8 : 5.5) : 5}" font-family="'JetBrains Mono',monospace" font-weight="700" fill="var(--rk-ink)">${dl}</text>`;
   });
   s += '</svg>';
   return s;

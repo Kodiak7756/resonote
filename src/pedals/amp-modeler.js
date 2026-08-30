@@ -70,12 +70,12 @@ export function buildAmpContent(p) {
   }
 
   function render() {
-    const accent = '#ee7744';
-    let h = `<div style="display:flex;flex-direction:column;gap:6px">`;
+    const accent = 'var(--rk-accent)';
+    let h = `<div class="rk" style="display:flex;flex-direction:column;gap:6px">`;
     h += `<div style="display:flex;flex-wrap:wrap;gap:2px">`;
     Object.keys(AMP_PRESETS).forEach(name => {
       const sel = presetName === name;
-      h += `<button class="chord-btn amp-pr" data-ap="${name}" style="font-size:7px;padding:2px 5px;${sel ? `background:rgba(238,119,68,.15);border-color:${accent};color:${accent}` : ''}">${name}</button>`;
+      h += `<button class="chord-btn amp-pr" data-ap="${name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${sel ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${name}</button>`;
     });
     h += `</div>`;
 
@@ -84,18 +84,24 @@ export function buildAmpContent(p) {
       ['TREBLE', treble, 'ampTreble'], ['PRESENCE', presence, 'ampPres'], ['REVERB', reverb, 'ampRev']
     ];
     knobs.forEach(([label, val, cls]) => {
-      const barCol = cls === 'ampGain' ? `hsl(${120 - val * 1.2},70%,50%)` : accent;
+      // Gain used to ramp green→red, which is exactly the hue range the note
+      // spectrum owns. It now ramps along this pedal's OWN lamp instead: cold
+      // accent at zero, --rk-hot when it's driven hard. Same "this is getting
+      // hot" reading, no argument with what green means on the neck.
+      const barCol = cls === 'ampGain'
+        ? `color-mix(in srgb, var(--rk-hot) ${val}%, var(--rk-accent))`
+        : accent;
       h += `<div style="display:flex;align-items:center;gap:6px">`;
-      h += `<span class="mono" style="color:#888;font-size:7px;min-width:48px;text-align:right">${label}</span>`;
-      h += `<div style="flex:1;height:6px;background:#222;border-radius:3px;position:relative;cursor:pointer" class="amp-slider" data-ak="${cls}">`;
+      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));min-width:48px;text-align:right">${label}</span>`;
+      h += `<div style="flex:1;height:6px;background:var(--rk-panel);border-radius:3px;position:relative;cursor:pointer" class="amp-slider" data-ak="${cls}">`;
       h += `<div style="width:${val}%;height:100%;background:${barCol};border-radius:3px"></div>`;
       h += `</div>`;
-      h += `<span class="mono" style="color:${accent};font-size:8px;font-weight:700;min-width:22px">${val}</span>`;
+      h += `<span class="mono" style="color:${accent};font-size:calc(8px*var(--ui));font-weight:700;min-width:22px">${val}</span>`;
       h += `</div>`;
     });
 
-    h += `<button class="amp-toggle mono" style="background:${active ? 'rgba(238,119,68,.2)' : 'rgba(255,255,255,.04)'};border:1px solid ${active ? accent : '#444'};color:${active ? accent : '#666'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;width:100%">${active ? '🔴 AMP ON' : '⚪ AMP OFF'}</button>`;
-    h += `<div class="mono" style="color:#555;font-size:7px;text-align:center">Connect Audio Input to route through amp</div>`;
+    h += `<button class="amp-toggle mono" style="background:${active ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${active ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${active ? 'var(--rk-hot)' : 'var(--rk-ink-mute)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${active ? '🔴 AMP ON' : '⚪ AMP OFF'}</button>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">Connect Audio Input to route through amp</div>`;
     h += `</div>`;
     el.innerHTML = h;
 

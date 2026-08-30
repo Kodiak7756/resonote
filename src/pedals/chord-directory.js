@@ -4,7 +4,6 @@ import { findVoicings, renderMiniDiagram, getKeyPositionZones } from '../core/vo
 import { updateOverlays } from '../ui/fretboard.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
 
-const CD_ACCENT = '#8877dd';
 const CD_BLURB = {
   chord: `Pick any chord and see <b>every playable shape</b> for it on the neck. Tap a shape to light it up on the fretboard — the labels show each note's <b>degree</b> (R · 3 · 5 · 7) so you learn what you're fretting, not just where.`,
   key:   `Pick a key and get the <b>chords that belong to it</b> (its diatonic family) with their Nashville numbers. Browse them by neck <b>position</b> so you can comp a whole song without leaving one area of the fretboard.`,
@@ -122,13 +121,14 @@ export function buildChordContent(p) {
   function render() {
     const intervals = CHORD_TYPES[chordCat]?.[chordType] || [0,4,7];
     const notes = getChordNotes(root, intervals);
-    let h = `<div class="rk rk-chorddir" style="--rk-accent:${CD_ACCENT};gap:8px">`;
+    // No accent of its own — the card hands one down from the catalog.
+    let h = `<div class="rk rk-chorddir" style="gap:8px">`;
 
     h += `<div class="rk-seg" style="gap:5px">`;
-    h += `<button class="rk-seg-btn ${mode==='chord'?'is-active':''}" data-mode="chord" style="flex:1;font-size:10px;padding:6px 0">🎵 CHORD</button>`;
-    h += `<button class="rk-seg-btn ${mode==='key'?'is-active':''}" data-mode="key" style="flex:1;font-size:10px;padding:6px 0">🔑 KEY</button>`;
+    h += `<button class="rk-seg-btn ${mode==='chord'?'is-active':''}" data-mode="chord" style="flex:1;font-size:calc(10px*var(--ui));padding:6px 0">🎵 CHORD</button>`;
+    h += `<button class="rk-seg-btn ${mode==='key'?'is-active':''}" data-mode="key" style="flex:1;font-size:calc(10px*var(--ui));padding:6px 0">🔑 KEY</button>`;
     h += `</div>`;
-    h += `<div style="font-size:10px;line-height:1.5;color:#cfcfcf;background:${CD_ACCENT}14;border-left:2px solid ${CD_ACCENT};padding:7px 9px;border-radius:4px">${CD_BLURB[mode]}</div>`;
+    h += `<div style="font-size:calc(10px*var(--ui));line-height:1.5;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:7px 9px;border-radius:4px">${CD_BLURB[mode]}</div>`;
 
     h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">`;
     NOTES.forEach(n => { h += `<button class="chord-btn root-btn ${n===root?'active':''}" data-root="${n}" style="min-width:28px">${n}</button>`; });
@@ -136,21 +136,21 @@ export function buildChordContent(p) {
 
     if (mode === 'chord') {
       Object.entries(CHORD_TYPES).forEach(([cat, types]) => {
-        h += `<div><div class="mono" style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
+        h += `<div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1px;margin-bottom:3px;text-transform:uppercase">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
         Object.keys(types).forEach(t => {
           h += `<button class="chord-btn type-btn ${chordType===t&&chordCat===cat?'active':''}" data-type="${t}" data-cat="${cat}">${t}</button>`;
         });
         h += `</div></div>`;
       });
 
-      h += `<div style="background:rgba(136,119,221,.08);border:1px solid rgba(136,119,221,.2);border-radius:6px;padding:6px 8px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">`;
-      h += `<span class="mono" style="color:#8877dd;font-size:12px;font-weight:800">${root} ${chordType}</span><span class="mono" style="color:#555;font-size:9px">│</span>`;
-      notes.forEach((n, i) => { h += `<span class="mono" style="color:${i===0?'#8877dd':'#2a8a5a'};font-size:10px;font-weight:700">${n}</span>`; });
+      h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:6px;padding:6px 8px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">`;
+      h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${root} ${chordType}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">│</span>`;
+      notes.forEach((n, i) => { h += `<span class="mono" style="color:${i===0?'var(--rk-accent)':'var(--rk-dim)'};font-size:calc(10px*var(--ui));font-weight:700">${n}</span>`; });
       h += `</div>`;
 
       h += `<div style="display:flex;gap:4px">`;
-      h += `<button class="chord-btn ${view==='positions'?'active':''}" data-view="positions" style="flex:1;font-size:8px">⬚ POSITIONS</button>`;
-      h += `<button class="chord-btn ${view==='all'?'active':''}" data-view="all" style="flex:1;font-size:8px">◈ ALL NOTES</button>`;
+      h += `<button class="chord-btn ${view==='positions'?'active':''}" data-view="positions" style="flex:1;font-size:calc(8px*var(--ui))">⬚ POSITIONS</button>`;
+      h += `<button class="chord-btn ${view==='all'?'active':''}" data-view="all" style="flex:1;font-size:calc(8px*var(--ui))">◈ ALL NOTES</button>`;
       h += `</div>`;
 
       if (view === 'positions' && voicings.length > 0) {
@@ -165,34 +165,39 @@ export function buildChordContent(p) {
           const fretted  = played.filter(x => x.fret > 0);
           const lo = fretted.length ? Math.min(...fretted.map(x => x.fret)) : 0;
           const hi = fretted.length ? Math.max(...fretted.map(x => x.fret)) : 0;
-          h += `<div class="mono" style="color:#888;font-size:8px;text-align:center">Frets ${lo||'open'}–${hi||'open'} · ${played.length} strings</div>`;
+          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">Frets ${lo||'open'}–${hi||'open'} · ${played.length} strings</div>`;
         }
       } else if (view === 'positions') {
-        h += `<div class="mono" style="color:#555;font-size:9px;text-align:center;padding:12px 0">No standard voicings found for this chord in current tuning</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px 0">No standard voicings found for this chord in current tuning</div>`;
       }
 
     } else {
       // KEY mode
-      h += `<div><div class="mono" style="color:#555;font-size:7px;letter-spacing:1px;margin-bottom:3px">SCALE TYPE</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
+      h += `<div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1px;margin-bottom:3px">SCALE TYPE</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
       Object.keys(KEY_PATTERNS).forEach(k => {
         h += `<button class="chord-btn key-type-btn ${keyMode===k?'active':''}" data-km="${k}">${k}</button>`;
       });
       h += `</div></div>`;
 
       const chords = getKeyChords(root, keyMode);
-      h += `<div class="mono" style="color:#777;font-size:8px;letter-spacing:1px;margin-top:2px">CHORDS IN ${root} ${keyMode.toUpperCase()}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));letter-spacing:1px;margin-top:2px">CHORDS IN ${root} ${keyMode.toUpperCase()}</div>`;
       h += `<div style="display:grid;grid-template-columns:repeat(${chords.length},1fr);gap:3px">`;
       chords.forEach((ch, i) => {
         const act = selKeyChord === i;
         const ql  = ch.quality === 'Major' ? '' : ch.quality === 'Minor' ? 'm' : ch.quality === 'Dim' ? '°' : ch.quality === 'Aug' ? '+' : ch.quality;
-        h += `<button class="key-chord-btn ${act?'active':''}" data-kci="${i}"><div style="font-size:9px;font-weight:700">${ch.numeral}</div><div style="font-size:7px;opacity:.7">${ch.root}${ql}</div></button>`;
+        // The key's chords are the control the eye lands on first, so they wear
+        // the pedal's own accent (rk-chip) — the old violet .active read as a
+        // note colour, and violet means nothing in the key of C. The root name
+        // gets its own ink rather than opacity, which at this size just made it
+        // unreadable.
+        h += `<button class="rk-chip key-chord-btn${act?' is-active':''}" data-kci="${i}" style="padding:4px 3px;letter-spacing:0"><div style="font-size:calc(9px*var(--ui));font-weight:700">${ch.numeral}</div><div style="font-size:calc(8px*var(--ui));color:var(--rk-ink-mute)">${ch.root}${ql}</div></button>`;
       });
       h += `</div>`;
 
       h += `<div style="display:flex;gap:4px">`;
-      h += `<button class="chord-btn ${keyView==='positions'?'active':''}" data-kv="positions" style="flex:1;font-size:8px">⬚ POSITIONS</button>`;
-      h += `<button class="chord-btn ${keyView==='chords'?'active':''}" data-kv="chords" style="flex:1;font-size:8px">🎵 VOICINGS</button>`;
-      h += `<button class="chord-btn ${keyView==='all'?'active':''}" data-kv="all" style="flex:1;font-size:8px">◈ ALL</button>`;
+      h += `<button class="chord-btn ${keyView==='positions'?'active':''}" data-kv="positions" style="flex:1;font-size:calc(8px*var(--ui))">⬚ POSITIONS</button>`;
+      h += `<button class="chord-btn ${keyView==='chords'?'active':''}" data-kv="chords" style="flex:1;font-size:calc(8px*var(--ui))">🎵 VOICINGS</button>`;
+      h += `<button class="chord-btn ${keyView==='all'?'active':''}" data-kv="all" style="flex:1;font-size:calc(8px*var(--ui))">◈ ALL</button>`;
       h += `</div>`;
 
       if (keyView === 'positions') {
@@ -205,15 +210,15 @@ export function buildChordContent(p) {
         zones.forEach((zone, zi) => {
           if (!zone.chords.length) return;
           const zAct = selKeyZone === zi;
-          h += `<div class="key-zone" data-kz="${zi}" style="border:1px solid ${zAct?'#8877dd':'#333'};border-radius:8px;padding:6px 8px;background:${zAct?'rgba(136,119,221,.08)':'rgba(255,255,255,.02)'};cursor:pointer">`;
+          h += `<div class="key-zone" data-kz="${zi}" style="border:1px solid ${zAct?'var(--rk-accent)':'var(--rk-edge-soft)'};border-radius:8px;padding:6px 8px;background:${zAct?'var(--rk-soft)':'var(--rk-panel)'};cursor:pointer">`;
           h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">`;
-          h += `<span class="mono" style="color:${zAct?'#8877dd':'#888'};font-size:9px;font-weight:700">${zone.label}</span>`;
-          h += `<span class="mono" style="color:#555;font-size:7px">Frets ${zone.lo}–${zone.hi}</span>`;
+          h += `<span class="mono" style="color:${zAct?'var(--rk-accent)':'var(--rk-ink-mute)'};font-size:calc(9px*var(--ui));font-weight:700">${zone.label}</span>`;
+          h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">Frets ${zone.lo}–${zone.hi}</span>`;
           h += `</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
           zone.chords.forEach((zc, zci) => {
             const act2 = zAct && selZoneChord === zci;
-            h += `<button class="zone-chord-btn" data-kz="${zi}" data-zci="${zci}" style="background:${act2?'rgba(136,119,221,.2)':'rgba(255,255,255,.04)'};border:1px solid ${act2?'#8877dd':'#444'};color:${act2?'#8877dd':'#aaa'};border-radius:4px;padding:2px 6px;cursor:pointer;font-size:8px;font-family:'JetBrains Mono',monospace;font-weight:600">`;
-            h += `${zc.numeral} <span style="opacity:.6;font-size:7px">${zc.name||''}</span></button>`;
+            h += `<button class="zone-chord-btn" data-kz="${zi}" data-zci="${zci}" style="background:${act2?'var(--rk-soft2)':'var(--rk-panel2)'};border:1px solid ${act2?'var(--rk-accent)':'var(--rk-edge-soft)'};color:${act2?'var(--rk-accent)':'var(--rk-ink-dim)'};border-radius:4px;padding:2px 6px;cursor:pointer;font-size:calc(8px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">`;
+            h += `${zc.numeral} <span style="opacity:.6;font-size:calc(7px*var(--ui))">${zc.name||''}</span></button>`;
           });
           h += `</div>`;
           if (zAct) {
@@ -231,9 +236,9 @@ export function buildChordContent(p) {
         if (selKeyChord !== null && chords[selKeyChord]) {
           const ch = chords[selKeyChord];
           const chVoicings = findVoicings(ch.root, ch.notes, ch.quality);
-          h += `<div style="background:rgba(136,119,221,.06);border:1px solid rgba(136,119,221,.15);border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">`;
-          h += `<span class="mono" style="color:#8877dd;font-size:11px;font-weight:800">${ch.numeral} — ${ch.root} ${ch.quality}</span>`;
-          ch.notes.forEach((n, i) => { h += `<span class="mono" style="color:${i===0?'#8877dd':'#2a8a5a'};font-size:9px;font-weight:700">${n}</span>`; });
+          h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:6px;padding:5px 8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center">`;
+          h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:800">${ch.numeral} — ${ch.root} ${ch.quality}</span>`;
+          ch.notes.forEach((n, i) => { h += `<span class="mono" style="color:${i===0?'var(--rk-accent)':'var(--rk-dim)'};font-size:calc(9px*var(--ui));font-weight:700">${n}</span>`; });
           h += `</div>`;
           if (chVoicings.length > 0) {
             h += `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:180px;overflow-y:auto;padding:4px 0">`;
@@ -242,13 +247,13 @@ export function buildChordContent(p) {
             });
             h += `</div>`;
           } else {
-            h += `<div class="mono" style="color:#555;font-size:9px;text-align:center;padding:8px 0">No voicings found</div>`;
+            h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:8px 0">No voicings found</div>`;
           }
         } else {
-          h += `<div class="mono" style="color:#555;font-size:9px;text-align:center;padding:12px 0">Select a chord above to see voicings</div>`;
+          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px 0">Select a chord above to see voicings</div>`;
         }
       } else {
-        h += `<div class="mono" style="color:#555;font-size:9px;text-align:center;padding:8px 0">All notes of ${root} ${keyMode} shown on fretboard</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:8px 0">All notes of ${root} ${keyMode} shown on fretboard</div>`;
       }
     }
     h += theoryPanelHTML('chorddir', CD_THEORY);

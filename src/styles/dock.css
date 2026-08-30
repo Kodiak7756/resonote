@@ -1,0 +1,145 @@
+/* ─── The dock ────────────────────────────────────────────────────────
+   Minimizing used to collapse a pedal to its header and leave it sitting
+   exactly where it was — so a board of nine pedals minimized to a board of
+   nine title bars, still covering the neck, still to be dragged around.
+   Minimize now means GET OUT OF THE WAY: the card leaves the board entirely
+   and becomes a chip on a rail across the top of the pedal space. Click the
+   chip and the card comes back to the size and place it had.
+
+   The rail sits directly under the neck, which is where your eye already is
+   while playing, and it never covers the fretboard — the one thing that must
+   stay visible is the thing you are looking at. */
+
+#pedal-dock {
+  position: fixed;
+  left: 0; right: 0;
+  z-index: 60;                       /* over the board backdrop, under a live card */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  background: linear-gradient(180deg, rgba(10,10,12,.94), rgba(10,10,12,.72));
+  border-bottom: 1px solid #24242a;
+  backdrop-filter: blur(6px);
+}
+#pedal-dock:empty { display: none; }  /* no chips, no bar, no wasted band */
+
+#pedal-dock .dock-label {
+  flex: 0 0 auto;
+  font-size:calc(8px*var(--ui)); letter-spacing: 1.4px; font-weight: 700;
+  color: #55555e; text-transform: uppercase;
+  padding-right: 2px;
+}
+
+/* A chip carries its pedal's own accent, so the rail reads as the same colour
+   language as the board rather than a row of grey buttons. */
+.dock-chip {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: 5px;
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--chip-edge, #2c2c33);
+  background: var(--chip-bg, #15151a);
+  color: var(--chip-ink, #c8c8cf);
+  font-size:calc(11px*var(--ui)); font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition: transform .09s ease, border-color .12s ease, background .12s ease;
+}
+.dock-chip:hover  { transform: translateY(-1px); border-color: var(--chip-accent, #6a6a75); }
+.dock-chip:active { transform: translateY(0); }
+.dock-chip .dock-icon { font-size:calc(13px*var(--ui)); line-height: 1; }
+.dock-chip .dock-name { max-width: 15ch; overflow: hidden; text-overflow: ellipsis; }
+
+/* A pedal that is still RUNNING while docked gets a lit pip — otherwise you can
+   stop a drill, dock it, and have no idea the click is still going. */
+.dock-chip .dock-live {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--chip-accent, #8fa8b4);
+  box-shadow: 0 0 6px var(--chip-accent, #8fa8b4);
+}
+
+/* ─── The pan rail ────────────────────────────────────────────────────
+   The pedal layer is click-through so the neck underneath stays playable, which
+   means it can never carry a scrollbar of its own — a scrollbar you cannot
+   grab is worse than none. This is that scrollbar, as its own strip down the
+   right edge, drawn only when the board actually runs past the bottom of the
+   screen (see panRange in main.js). It is the sole cue that there is more
+   below, so it is a real rail with a real thumb rather than a hint.
+
+   z-index 190 puts it under the catalog drawer (200) and the help overlay
+   (500) — neither should end up with a stripe down its edge — while staying
+   over the pedal cards, which start at 20. */
+#pedal-pan-rail {
+  position: fixed;
+  top: 0; bottom: 0; right: 0;
+  width: 11px;
+  z-index: 190;
+  display: none;
+  background: linear-gradient(90deg, transparent, rgba(10,10,12,.6));
+  border-left: 1px solid #1c1c22;
+}
+
+#pedal-pan-thumb {
+  position: absolute;
+  left: 2px; right: 2px;
+  border-radius: 4px;
+  background: #3b3b45;
+  border: 1px solid #4b4b58;
+  cursor: grab;
+  transition: background .12s ease, border-color .12s ease;
+}
+#pedal-pan-rail:hover #pedal-pan-thumb { background: #50505e; border-color: #62626f; }
+/* Grey, not gold: the rail says WHERE you are looking, and gold in this app
+   always means "the thing happening right now". */
+#pedal-pan-thumb:active { background: #63636f; cursor: grabbing; }
+
+/* ── Focus mode ──────────────────────────────────────────────────────
+   Everything docks, the neck takes the room. Not a separate layout — the
+   layout the app can already make, reached in one press. */
+/* FOCUS sits in its own strip directly above the DOCKED rail, wearing the same
+   chip look as the docked pedals — because it is the same kind of object: one
+   click, and how much room the board gets changes. It is the control that FILLS
+   that rail, so it belongs at the head of it. Its own strip rather than a chip
+   inside the rail, because the rail hides itself when empty (#pedal-dock:empty)
+   and FOCUS has to stay reachable when nothing is docked. */
+#focus-bar {
+  position: fixed; left: 0; right: 0; z-index: 61;
+  display: flex; align-items: center;
+  padding: 4px 10px 2px;
+  pointer-events: none;              /* the strip is a spacer; only the button takes clicks */
+}
+#focus-bar > * { pointer-events: auto; }
+
+#btn-focus {
+  letter-spacing: 1.2px; font-weight: 700;
+  font-size: calc(9px*var(--ui));
+  padding: 4px 10px;
+  --chip-accent: #ffce6a;
+  --chip-edge: #4a412a;
+  --chip-bg: rgba(14,12,8,.72);
+  --chip-ink: #c9b784;
+}
+#btn-focus:hover { --chip-ink: #ffce6a; }
+
+#btn-focus.is-on {
+  --chip-edge: #ffce6a;
+  --chip-ink: #ffce6a;
+  --chip-bg: rgba(255,206,106,.16);
+  box-shadow: 0 0 12px rgba(255,206,106,.28);
+}
+
+body.focus-mode #board-bg { opacity: .25; }
+body.focus-mode #pedal-dock {
+  border-bottom-color: #3a3a44;
+  background: linear-gradient(180deg, rgba(8,8,10,.97), rgba(8,8,10,.85));
+}
+/* A card opened DURING focus mode is the one thing you are working with, so it
+   gets a rim — it should be obvious which pedal is driving the exercise. */
+body.focus-mode .pedal-card:not(.minimized) {
+  box-shadow: 0 0 0 1px rgba(255,206,106,.28), 0 14px 40px rgba(0,0,0,.6);
+}
