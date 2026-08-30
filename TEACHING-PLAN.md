@@ -6,6 +6,10 @@ pedals; the Chord-Family-Lab "hear→see→play→resolve + why" loop as the hou
 a function-colour (tonic=red / subdominant=green / dominant=blue) + tendency-arrow
 "why" layer shared by lessons and pedals.
 
+> **See also `LEARNING-DESIGN.md`** — how the teaching works (function-colour as a
+> taught code, predict-before-reveal, generation, spacing). It promotes
+> "consistent function-colouring" from UX upgrade #4 to a hard build requirement.
+
 ## Lean pedal set — 23 → 12, in 5 categories
 
 - **LEARN:** Theory Path ★, Chord-Family Lab ★
