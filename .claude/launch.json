@@ -2,10 +2,15 @@
   "version": "0.0.1",
   "configurations": [
     {
+      "name": "resonote",
+      "url": "http://localhost:5173"
+    },
+    {
       "name": "resonote-dev",
       "runtimeExecutable": "/c/Program Files/nodejs/node",
       "runtimeArgs": ["node_modules/vite/bin/vite.js", "--host"],
-      "port": 5173
+      "port": 5173,
+      "autoPort": true
     }
   ]
 }
