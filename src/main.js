@@ -276,7 +276,8 @@ function boardTop() {
   // which is what "is it taking up space" actually means here.
   const h = el => (el && getComputedStyle(el).display !== 'none') ? el.getBoundingClientRect().height : 0;
   const dock = document.getElementById('pedal-dock');
-  const railH = dock && dock.children.length ? h(dock) : 0;
+  // A rail along the bottom takes nothing off the top.
+  const railH = dock && dock.children.length && !dock.classList.contains('dock-bottom') ? h(dock) : 0;
   return Math.round(base + h(document.getElementById('focus-bar')) + railH);
 }
 // Because the layer is pinned to the screen, a pedal's HEADER must always stay
@@ -340,13 +341,12 @@ function layoutPedals(retry = 0) {
   // there the pedals collapse to the dock — present and one click from full size,
   // without sitting on top of the thing being read.
   if (pageMode !== 'practice') {
-    const perRow = Math.max(1, Math.floor((vw - pad) / (DOCK_W + pad)));
-    const rows = Math.ceil(free.length / perRow);
-    free.forEach((p, i) => {
-      p.minimized = true; p.w = DOCK_W;
-      p.x = pad + (i % perRow) * (DOCK_W + pad);
-      p.y = vh - (rows - Math.floor(i / perRow)) * DOCK_H - pad;
-    });
+    // Dock everything, and touch NOTHING else. This used to rewrite every pedal to
+    // 260px wide and park it along the bottom - a leftover from when docking meant
+    // "collapse to a title bar down there". Under the dock rail a minimized card is
+    // hidden and its x/y/w/h are the promise that it comes back where you left it;
+    // rewriting them on every visit to TAB broke that promise silently.
+    free.forEach(p => { p.minimized = true; });
     applyLayoutToDom(); save();
     return;
   }
@@ -616,17 +616,52 @@ function positionDock() {
   // two is lower. Re-measured on scroll, because that is when this changes.
   const head = document.getElementById('header');
   const headBottom = head ? Math.round(head.getBoundingClientRect().bottom) : 0;
+  // On LEARN the neck is sticky. It pins under the header if the header itself
+  // stays on screen, otherwise at the very top - and the header's height moves
+  // with the density slider, so this is measured every time, never hard-coded.
+  if (pageMode === 'learn' && head) {
+    const pos = getComputedStyle(head).position;
+    const stays = pos === 'sticky' || pos === 'fixed';
+    document.documentElement.style.setProperty('--learn-neck-top', (stays ? Math.max(0, headBottom) : 0) + 'px');
+  }
   // FOCUS sits in its own strip directly ABOVE the dock rail: it is the control
   // that fills that rail, so it belongs at the head of it rather than out on the
   // neck. The strip is measured, not assumed — the density slider scales its type,
   // so its height changes and a hard-coded offset would drift.
   const bar = document.getElementById('focus-bar');
+  // TAB and STUDIO do not lead with the neck: on STUDIO it is hidden outright, so
+  // "the neck's bottom edge" collapsed to just under the header and the rail
+  // landed on the studio's own top controls; on TAB the page sits above the neck
+  // and the rail ended up somewhere it could not be seen. Pedals are secondary on
+  // those pages but still needed (pull in a chord, a beat), so the rail becomes a
+  // fixed bar along the BOTTOM there - a stable place that is never over anything
+  // the page puts at the top. PRACTICE keeps it under the neck, where the eye is.
+  // LEARN joins them: a lesson is a reading page, but the metronome, tuner and
+  // circle are worth a click away while you read, and the Practice Manager is
+  // how an exercise you like becomes part of a routine.
+  const bottomMode = pageMode === 'tab' || pageMode === 'studio' || pageMode === 'learn';
+  dock.classList.toggle('dock-bottom', bottomMode);
+  // The SIZE control is also pinned to the bottom edge; when the rail is down
+  // there it rides up above it instead of sitting on the chips.
+  const zoom = document.getElementById('board-zoom-ctrl');
+  if (zoom) zoom.style.bottom = bottomMode && dock.children.length ? (Math.round(dock.getBoundingClientRect().height) + 8) + 'px' : '';
+  if (bottomMode) {
+    dock.style.top = '';
+    if (bar) bar.style.top = '';
+    return;
+  }
   let y = Math.max(0, headBottom, top);
   if (bar) {
     bar.style.top = y + 'px';
     y += Math.round(bar.getBoundingClientRect().height);
   }
   dock.style.top = y + 'px';
+}
+// How tall the bottom rail is, for anything that must stay clear of it.
+function bottomRailH() {
+  const dock = document.getElementById('pedal-dock');
+  if (!dock || !dock.classList.contains('dock-bottom') || !dock.children.length) return 0;
+  return Math.round(dock.getBoundingClientRect().height);
 }
 
 function renderDock() {
@@ -683,6 +718,16 @@ function undock(id) {
   // A chip puts a card back at the position it was docked from, which may be
   // above wherever you had panned to — so come back to the top and see it land.
   boardPan = 0;
+  // On TAB and STUDIO the card floats over the page, and the rail is along the
+  // bottom: keep the card's header inside the window and above the rail, so it can
+  // always be grabbed. Its practice-page position is left alone in the saved state.
+  if (pageMode === 'tab' || pageMode === 'studio' || pageMode === 'learn') {
+    const head = document.getElementById('header');
+    const minY = (head ? Math.round(head.getBoundingClientRect().bottom) : 0) + 12;
+    const maxY = window.innerHeight - bottomRailH() - 60;
+    p.y = Math.max(minY, Math.min(p.y || minY, maxY));
+    p.x = Math.max(12, Math.min(p.x || 12, window.innerWidth - (p.w || 280) - 12));
+  }
   const el = document.getElementById('pedal-' + p.id);
   if (el) { el.classList.remove('minimized'); el.style.display = ''; }
   applyLayoutToDom();
@@ -1141,6 +1186,7 @@ function switchMode(mode) {
   // sit on the lesson text as it scrolls, and neither means anything on a page
   // with no board. TAB and STUDIO keep them - they still work with pedals.
   document.body.classList.toggle('page-learn', mode === 'learn');
+  document.body.classList.toggle('page-noboard', mode === 'tab' || mode === 'studio' || mode === 'learn');
 
   if (mode === 'learn') {
     // The lesson page: neck on top, the board out of the way, the Theory Path
@@ -1175,12 +1221,29 @@ function switchMode(mode) {
     if (tabEl) tabEl.style.display = 'none';
     setActive(btnP);
   }
-  // Landing on a page gives a fresh arrangement rather than wherever the pedals
-  // were left — each page has different content under the floating layer, so the
-  // tidy positions differ. Locked pedals are exempt (that is what locking means).
+  // Leaving PRACTICE remembers which pedals were open; coming back puts exactly
+  // that set back, at exactly the size and place each had. This used to run ⌗ TIDY
+  // on every landing, which re-derived every width from the row plan - so a trip
+  // to TAB and back quietly resized your board, and no arrangement could ever be
+  // kept. The other pages dock everything (their own content owns the screen) and
+  // never touch geometry; TIDY is now only ever something you press.
+  const from = pageMode;
   pageMode = mode === 'studio' ? 'studio' : mode === 'tab' ? 'tab' : mode === 'learn' ? 'learn' : 'practice';
-  layoutPedals();
+  if (from === 'practice' && pageMode !== 'practice' && !focusMode) {
+    pagePrev = pedals.map(p => ({ id: p.id, minimized: !!p.minimized }));
+  }
+  if (pageMode === 'practice') {
+    if (pagePrev && !focusMode) {
+      const was = new Map(pagePrev.map(x => [x.id, x.minimized]));
+      pedals.forEach(p => { if (was.has(p.id)) p.minimized = was.get(p.id); });
+      pagePrev = null;
+    }
+    applyLayoutToDom(); save();
+  } else {
+    layoutPedals();          // on TAB / STUDIO / LEARN this only docks - see the non-practice branch
+  }
 }
+let pagePrev = null;         // which pedals were open when PRACTICE was last left
 
 // ── The LEARN page ────────────────────────────────────────────────────
 // Progress is the Theory Path PEDAL's settings object when one is on the board,

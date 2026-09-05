@@ -149,5 +149,20 @@ body.focus-mode .pedal-card:not(.minimized) {
 
 /* No rail and no FOCUS on the LEARN page: positioned correctly they sit on the
    lesson as it scrolls, and neither means anything on a page with no board. */
-body.page-learn #pedal-dock,
-body.page-learn #focus-bar { display: none; }
+body.page-learn #focus-bar { display: none; }   /* the rail itself now rides along the bottom on LEARN */
+
+/* ── The rail along the bottom (TAB and STUDIO) ───────────────────────
+   Those pages do not lead with the neck, so a rail hung off the neck's edge
+   either vanished or sat on the page's own top controls. Pedals are secondary
+   there but still needed - pull in a chord, a beat - so the rail is a fixed bar
+   along the bottom: stable, never over anything the page puts up top, and one
+   click from any pedal. PRACTICE keeps it under the neck. */
+#pedal-dock.dock-bottom {
+  top: auto; bottom: 0;
+  border-bottom: 0;
+  border-top: 1px solid #24242a;
+  background: linear-gradient(0deg, rgba(10,10,12,.96), rgba(10,10,12,.80));
+  padding: 6px 10px 7px;
+}
+/* No FOCUS on pages with no board: there is nothing for it to give the room to. */
+body.page-noboard #focus-bar { display: none; }
