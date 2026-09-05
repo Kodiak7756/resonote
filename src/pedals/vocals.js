@@ -27,7 +27,7 @@ let _trace = null;          // one live trace at a time — a re-render replaces
 
 const BTN = (on) => `background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};` +
   `color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};border-radius:5px;font-family:'JetBrains Mono',monospace;` +
-  `font-size:calc(9px*var(--ui));font-weight:700;letter-spacing:.5px;padding:4px 9px;cursor:pointer`;
+  `font-size:calc(10px*var(--ui));font-weight:700;letter-spacing:.5px;min-height:calc(28px*var(--ui));padding:4px 9px;cursor:pointer`;
 
 export function renderVocalsDisplay() {
   const el = document.getElementById('vocals-display');
@@ -56,7 +56,7 @@ export function renderVocalsDisplay() {
         <button class="voc-toggle" id="voc-t-notation" data-opt="notation" style="${BTN(view.notation)}">𝄞 Notation</button>
       </div>
       <span style="width:1px;height:16px;background:var(--rk-edge-soft)"></span>
-      <select id="voc-seconds" class="mono" style="background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink-dim);border-radius:5px;font-size:calc(9px*var(--ui));font-weight:700;padding:4px 6px;cursor:pointer;outline:none">
+      <select id="voc-seconds" class="mono" style="background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink-dim);border-radius:5px;font-size:calc(10px*var(--ui));font-weight:700;padding:4px 6px;cursor:pointer;outline:none">
         ${SECONDS_CHOICES.map(s => `<option value="${s}" ${s === view.seconds ? 'selected' : ''}>${s}s window</option>`).join('')}
       </select>
       <span class="mono" id="voc-legend" style="margin-left:auto;font-size:calc(8px*var(--ui));color:var(--rk-ink-mute);letter-spacing:.4px">

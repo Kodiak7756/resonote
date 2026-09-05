@@ -71,15 +71,15 @@ export function buildLooperContent(p) {
         const bg  = t.muted ? 'var(--rk-panel)' : 'var(--rk-soft)';
         const col = t.muted ? 'var(--rk-ink-mute)' : accent;
         h += `<div style="display:flex;align-items:center;gap:4px;background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:4px 6px">`;
-        h += `<span class="mono" style="color:${col};font-size:calc(9px*var(--ui));font-weight:700;flex:1">${t.name}</span>`;
-        h += `<button class="chord-btn loop-mute" data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;${t.muted ? 'color:var(--rk-bad)' : 'color:var(--rk-ink-mute)'}">M</button>`;
-        h += `<button class="chord-btn loop-solo" data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;${t.solo ? 'color:var(--rk-accent);border-color:var(--rk-line)' : 'color:var(--rk-ink-mute)'}">S</button>`;
-        h += `<button class="chord-btn loop-del"  data-li="${i}" style="font-size:calc(7px*var(--ui));padding:1px 5px;color:var(--rk-bad)">✕</button>`;
+        h += `<span class="mono" style="color:${col};font-size:calc(10px*var(--ui));font-weight:700;flex:1">${t.name}</span>`;
+        h += `<button class="chord-btn loop-mute" data-li="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 5px;${t.muted ? 'color:var(--rk-bad)' : 'color:var(--rk-ink-mute)'}">M</button>`;
+        h += `<button class="chord-btn loop-solo" data-li="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 5px;${t.solo ? 'color:var(--rk-accent);border-color:var(--rk-line)' : 'color:var(--rk-ink-mute)'}">S</button>`;
+        h += `<button class="chord-btn loop-del"  data-li="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 5px;color:var(--rk-bad)">✕</button>`;
         h += `</div>`;
       });
       h += `</div>`;
     } else {
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px">No tracks yet. Hit record to start.</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:12px">No tracks yet. Hit record to start.</div>`;
     }
 
     // Armed and rolling is this pedal's lamp turned up (--rk-hot), not a red
@@ -99,17 +99,17 @@ export function buildLooperContent(p) {
     // reading, which of them the button in front of you is about to end.
     h += `<div style="display:flex;gap:4px">`;
     if (!recording) {
-      h += `<button class="loop-rec mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:var(--rk-accent);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">● REC</button>`;
+      h += `<button class="loop-rec mono" style="min-height:calc(28px*var(--ui));background:var(--rk-soft);border:1px solid var(--rk-line);color:var(--rk-accent);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">● REC</button>`;
     } else {
-      h += `<button class="loop-stoprec mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP REC</button>`;
+      h += `<button class="loop-stoprec mono" style="min-height:calc(28px*var(--ui));background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP REC</button>`;
     }
     if (!playing) {
-      h += `<button class="loop-play mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:${accent};border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">▶ PLAY</button>`;
+      h += `<button class="loop-play mono" style="min-height:calc(28px*var(--ui));background:var(--rk-soft);border:1px solid var(--rk-line);color:${accent};border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">▶ PLAY</button>`;
     } else {
-      h += `<button class="loop-stop mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP</button>`;
+      h += `<button class="loop-stop mono" style="min-height:calc(28px*var(--ui));background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:7px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700;flex:1">■ STOP</button>`;
     }
     h += `</div>`;
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${tracks.length} track${tracks.length !== 1 ? 's' : ''} · Mute (M) Solo (S) per track · Loops on playback</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${tracks.length} track${tracks.length !== 1 ? 's' : ''} · Mute (M) Solo (S) per track · Loops on playback</div>`;
     h += `</div>`;
     el.innerHTML = h;
 

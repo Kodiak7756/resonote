@@ -1,17 +1,12 @@
 @echo off
-title Resonote
-cd /d D:\Guitar\APP\resonote-v2
+REM Resonote — start the dev server from wherever this file lives, on any machine.
+cd /d "%~dp0"
+if not exist node_modules (
+  echo Installing dependencies ^(first run only^)...
+  call npm install
+)
 echo.
-echo  ============================================
-echo   RESONOTE - starting the dev server...
-echo   Your browser opens in a few seconds.
+echo Resonote is starting. Open http://localhost:5173 in your browser.
+echo The mic works on localhost or https only.
 echo.
-echo   KEEP THIS BLACK WINDOW OPEN while you play.
-echo   Closing it stops the app.
-echo  ============================================
-echo.
-start "" cmd /c "timeout /t 3 >nul && start http://localhost:5173"
-npm run dev
-echo.
-echo  Server stopped. Press any key to close.
-pause >nul
+call npm run dev -- --host --port 5173 --strictPort

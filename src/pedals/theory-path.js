@@ -151,6 +151,18 @@ export function buildTheoryContent(p) {
   function persist() { Object.assign(s, { view, curId }); }
   function resetEx() { answered = false; lastCorrect = false; chosenIdx = -1; buildSel = new Set(); playWatch.on = false; }
 
+  // ── The pedal is the LAUNCHER; reading happens on the LEARN page ─────
+  // The same builder renders in two places: on the board (a compact progress
+  // card + launcher) and mounted full-width on the LEARN page under the derived
+  // handle id 'learn'. The "read it as a page" controls exist so a lesson opened
+  // from the cramped pedal has somewhere to breathe — on the page itself they
+  // would only point at where you already are, so they are hidden there.
+  const onPage = p.id === 'learn';
+  function openOnPage(lessonId) {
+    stopSeq();   // the page builds its own instance; two players over one neck is noise
+    window.dispatchEvent(new CustomEvent('resonote:open-lesson', { detail: { lessonId: lessonId || null } }));
+  }
+
   // ── Audio listener for "play it" exercises (inert once pedal is gone) ─
   audio.on(() => {
     if (!document.getElementById(`body-${p.id}`)) return;
@@ -276,6 +288,10 @@ export function buildTheoryContent(p) {
     const total = ALL.length, done = ALL.filter(l => isComplete(prog, l.id)).length;
     const recd = recommendNext(prog, ALL);
     let h = `<div class="tp-wrap rk">`;
+    // Prominent on purpose: for a friend on day one this is the way IN to the
+    // course. It carries the lesson you were last in, so "read on the page"
+    // resumes rather than restarts.
+    if (!onPage) h += `<button class="rk-btn is-active tp-readpage" data-act="readpage" title="Open the Theory Path full-width on the LEARN page">📖 Read on the LEARN page${curId && lessonById(curId) ? ` · ${lessonById(curId).title}` : ''}</button>`;
     h += `<div class="tp-hero">`;
     h += `<div class="tp-herorow"><button class="tp-find" data-act="placement">🎯 Find My Level</button>`;
     h += prog.placedLevel ? `<span class="tp-level">You're ~Level ${prog.placedLevel}</span>` : `<span class="tp-level dim">Not placed yet</span>`;
@@ -299,6 +315,7 @@ export function buildTheoryContent(p) {
     el.innerHTML = STYLE + h;
     el.querySelectorAll('[data-lesson]').forEach(b => b.onclick = e => { e.stopPropagation(); openLesson(b.dataset.lesson); });
     el.querySelector('[data-act="placement"]')?.addEventListener('click', e => { e.stopPropagation(); startPlacement(); });
+    el.querySelector('[data-act="readpage"]')?.addEventListener('click', e => { e.stopPropagation(); openOnPage(curId); });
     // Returning from a lesson lands you back on THAT lesson in its unit, not
     // at the top of the path. curId survives the back action, so scroll to it.
     if (curId) {
@@ -347,7 +364,9 @@ export function buildTheoryContent(p) {
     if (!L) { view = 'path'; return renderPath(); }
     const u = L._unit, ex = L.exercises[exIdx] || null;
     let h = `<div class="tp-wrap rk">`;
-    h += `<div class="tp-top"><button class="tp-mini" data-act="path">← Path</button><span class="tp-crumb">${u.icon} ${u.title} · Level ${L.level}</span></div>`;
+    h += `<div class="tp-top"><button class="tp-mini" data-act="path">← Path</button>`;
+    if (!onPage) h += `<button class="tp-mini tp-readpage" data-act="readpage" title="Read this lesson full-width on the LEARN page">📖 Open as page →</button>`;
+    h += `<span class="tp-crumb">${u.icon} ${u.title} · Level ${L.level}</span></div>`;
     h += `<div class="tp-title">${L.title}</div>`;
     h += `<div class="tp-card"><div class="tp-sum">${L.teach.summary}</div>`;
     h += `<ul class="tp-points">${(L.teach.points || []).map(pt => `<li>${pt}</li>`).join('')}</ul>`;
@@ -425,6 +444,7 @@ export function buildTheoryContent(p) {
     el.innerHTML = STYLE + h;
 
     el.querySelector('[data-act="path"]')?.addEventListener('click', e => { e.stopPropagation(); view = 'path'; persist(); renderPath(); });
+    el.querySelector('[data-act="readpage"]')?.addEventListener('click', e => { e.stopPropagation(); openOnPage(id); });
     el.querySelector('[data-act="demo"]')?.addEventListener('click', e => { e.stopPropagation(); if (L.drill) previewDrill(L.drill); else playDemo(L.teach.demo); });
     el.querySelector('[data-act="exaudio"]')?.addEventListener('click', e => { e.stopPropagation(); playDemo(ex.audio); });
     el.querySelectorAll('[data-ear]').forEach(b => b.onclick = e => { e.stopPropagation(); playDemo(ex.earOptions[+b.dataset.ear].audio); });
@@ -678,7 +698,9 @@ export function buildTheoryContent(p) {
 // change meaning when you change pedals.
 const STYLE = `<style>
 .tp-wrap{display:flex;flex-direction:column;gap:8px;font-size:calc(11px*var(--ui));color:var(--rk-ink)}
-.tp-top{display:flex;align-items:center;gap:8px}
+.tp-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tp-readpage{font-size:calc(11px*var(--ui))}
+button.tp-mini.tp-readpage{font-size:calc(9px*var(--ui))}
 .tp-crumb{color:var(--rk-dim);font-size:calc(9px*var(--ui));letter-spacing:.5px}
 .tp-mini{background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink-dim);border-radius:5px;padding:3px 8px;cursor:pointer;font-size:calc(9px*var(--ui))}
 .tp-title{font-size:calc(15px*var(--ui));font-weight:800;color:var(--rk-ink)}

@@ -75,7 +75,7 @@ export function buildAmpContent(p) {
     h += `<div style="display:flex;flex-wrap:wrap;gap:2px">`;
     Object.keys(AMP_PRESETS).forEach(name => {
       const sel = presetName === name;
-      h += `<button class="chord-btn amp-pr" data-ap="${name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${sel ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${name}</button>`;
+      h += `<button class="chord-btn amp-pr" data-ap="${name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${sel ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${name}</button>`;
     });
     h += `</div>`;
 
@@ -92,16 +92,16 @@ export function buildAmpContent(p) {
         ? `color-mix(in srgb, var(--rk-hot) ${val}%, var(--rk-accent))`
         : accent;
       h += `<div style="display:flex;align-items:center;gap:6px">`;
-      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));min-width:48px;text-align:right">${label}</span>`;
+      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));min-width:48px;text-align:right">${label}</span>`;
       h += `<div style="flex:1;height:6px;background:var(--rk-panel);border-radius:3px;position:relative;cursor:pointer" class="amp-slider" data-ak="${cls}">`;
       h += `<div style="width:${val}%;height:100%;background:${barCol};border-radius:3px"></div>`;
       h += `</div>`;
-      h += `<span class="mono" style="color:${accent};font-size:calc(8px*var(--ui));font-weight:700;min-width:22px">${val}</span>`;
+      h += `<span class="mono" style="color:${accent};font-size:calc(10px*var(--ui));font-weight:700;min-width:22px">${val}</span>`;
       h += `</div>`;
     });
 
-    h += `<button class="amp-toggle mono" style="background:${active ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${active ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${active ? 'var(--rk-hot)' : 'var(--rk-ink-mute)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${active ? '🔴 AMP ON' : '⚪ AMP OFF'}</button>`;
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">Connect Audio Input to route through amp</div>`;
+    h += `<button class="amp-toggle mono" style="min-height:calc(28px*var(--ui));background:${active ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${active ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${active ? 'var(--rk-hot)' : 'var(--rk-ink-mute)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${active ? '🔴 AMP ON' : '⚪ AMP OFF'}</button>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">Connect Audio Input to route through amp</div>`;
     h += `</div>`;
     el.innerHTML = h;
 

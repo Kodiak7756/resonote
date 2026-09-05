@@ -460,27 +460,27 @@ export function buildBeatMakerContent(p) {
     const chords = s.bmGenre ? genreChords(s.bmGenre, s.bmRoot) : [];
     h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge);border-radius:8px;padding:6px 7px">`;
     h += `<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px">
-        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;flex:1">BACKING TRACK</span>
-        <button id="bm-mode-beats-${p.id}" class="chord-btn" title="Drums only — time to play against" style="font-size:calc(7px*var(--ui));padding:2px 5px;${!s.bmFull ? ON : ''}">beats</button>
-        <button id="bm-mode-full-${p.id}" class="chord-btn" title="Drums and chords — a full backing track" style="font-size:calc(7px*var(--ui));padding:2px 5px;${s.bmFull && s.bmDrums !== false ? ON : ''}">+ chords</button>
-        <button id="bm-mode-chords-${p.id}" class="chord-btn" title="Chords only — the changes with no drums" style="font-size:calc(7px*var(--ui));padding:2px 5px;${s.bmFull && s.bmDrums === false ? ON : ''}">chords</button>
+        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;flex:1">BACKING TRACK</span>
+        <button id="bm-mode-beats-${p.id}" class="chord-btn" title="Drums only — time to play against" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${!s.bmFull ? ON : ''}">beats</button>
+        <button id="bm-mode-full-${p.id}" class="chord-btn" title="Drums and chords — a full backing track" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${s.bmFull && s.bmDrums !== false ? ON : ''}">+ chords</button>
+        <button id="bm-mode-chords-${p.id}" class="chord-btn" title="Chords only — the changes with no drums" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${s.bmFull && s.bmDrums === false ? ON : ''}">chords</button>
       </div>`;
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-bottom:4px">`;
-    h += `<button class="chord-btn bm-genre" data-g="" style="font-size:calc(7px*var(--ui));padding:2px 5px;${!s.bmGenre ? ON : ''}">none</button>`;
+    h += `<button class="chord-btn bm-genre" data-g="" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${!s.bmGenre ? ON : ''}">none</button>`;
     GENRE_NAMES.forEach(n => {
-      h += `<button class="chord-btn bm-genre" data-g="${n}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${s.bmGenre === n ? ON : ''}">${n}</button>`;
+      h += `<button class="chord-btn bm-genre" data-g="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${s.bmGenre === n ? ON : ''}">${n}</button>`;
     });
     h += `</div>`;
     if (g) {
       h += `<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-          <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">KEY</span>
-          <select id="bm-root-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:4px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:2px">
+          <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">KEY</span>
+          <select id="bm-root-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:4px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:2px">
             ${NOTES.map(n => `<option ${n === s.bmRoot ? 'selected' : ''}>${n}</option>`).join('')}
           </select>
-          <span class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${g.mode} · ${g.bpm} BPM</span>
-          <span class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));flex:1;text-align:right">${chords.map(c => c.label + (c.bars > 1 ? `·${c.bars}` : '')).join('  ')}</span>
+          <span class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${g.mode} · ${g.bpm} BPM</span>
+          <span class="mono" style="color:var(--rk-dim);font-size:calc(10px*var(--ui));flex:1;text-align:right">${chords.map(c => c.label + (c.bars > 1 ? `·${c.bars}` : '')).join('  ')}</span>
         </div>
-        <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7.5px*var(--ui));line-height:1.5;margin-top:4px">${g.why}</div>`;
+        <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));line-height:1.5;margin-top:4px">${g.why}</div>`;
       // ── where you are, so you can get back in ──
       // A chord chart you can only hear is useless the moment you lose your place.
       // NOW / bar n of m / NEXT answers "where am I" at a glance, and the lane
@@ -490,13 +490,13 @@ export function buildBeatMakerContent(p) {
         const comp = compOf(s.bmGenre);
         const bars = [];
         chords.forEach(c => { for (let b = 0; b < (c.bars || 1); b++) bars.push(c.label); });
-        h += `<div id="bm-now-${p.id}" class="mono" style="display:flex;align-items:baseline;gap:6px;margin-top:6px;font-size:calc(8px*var(--ui));color:var(--rk-ink-mute)"></div>`;
+        h += `<div id="bm-now-${p.id}" class="mono" style="display:flex;align-items:baseline;gap:6px;margin-top:6px;font-size:calc(10px*var(--ui));color:var(--rk-ink-mute)"></div>`;
         h += `<div id="bm-lane-${p.id}" style="display:flex;gap:2px;margin-top:3px">
             ${bars.map((lab, i) => `<div class="bm-bar" data-b="${i}" style="flex:1;min-width:0;text-align:center;padding:3px 1px;border-radius:4px;border:1px solid var(--rk-edge-soft);background:var(--rk-panel);overflow:hidden">
-                 <span class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim)">${lab}</span></div>`).join('')}
+                 <span class="mono" style="font-size:calc(10px*var(--ui));color:var(--rk-ink-dim)">${lab}</span></div>`).join('')}
           </div>
           <div style="display:flex;align-items:center;gap:3px;margin-top:4px">
-            <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));width:32px">STRUM</span>
+            <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));width:32px">STRUM</span>
             <div style="flex:1;display:flex;gap:1px">
               ${Array.from({ length: 16 }, (_, i) => {
                 const hit = comp.hits.includes(i), acc = comp.accent.includes(i);
@@ -504,7 +504,7 @@ export function buildBeatMakerContent(p) {
               }).join('')}
             </div>
           </div>
-          <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7.5px*var(--ui));line-height:1.45;margin-top:3px">${comp.feel}</div>`;
+          <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));line-height:1.45;margin-top:3px">${comp.feel}</div>`;
       }
     }
     h += `</div>`;
@@ -513,7 +513,7 @@ export function buildBeatMakerContent(p) {
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
     Object.keys(BEAT_PRESETS).forEach(name => {
       const active = presetName === name;
-      h += `<button class="chord-btn bm-preset" data-bp="${name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${active ? ON : ''}">${name}</button>`;
+      h += `<button class="chord-btn bm-preset" data-bp="${name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${active ? ON : ''}">${name}</button>`;
     });
     h += `</div>`;
 
@@ -528,7 +528,7 @@ export function buildBeatMakerContent(p) {
     h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:4px;overflow-x:auto">`;
     DRUM_ROWS.forEach(r => {
       h += `<div style="display:flex;gap:1px;margin-bottom:1px;align-items:center">`;
-      h += `<span class="mono" style="color:${r.color};font-size:calc(7px*var(--ui));font-weight:700;min-width:30px;text-align:right;padding-right:4px">${r.label}</span>`;
+      h += `<span class="mono" style="color:${r.color};font-size:calc(10px*var(--ui));font-weight:700;min-width:30px;text-align:right;padding-right:4px">${r.label}</span>`;
       for (let i = 0; i < steps; i++) {
         const on         = grid[r.key] && grid[r.key][i];
         const isDownbeat = i % 4 === 0;
@@ -546,33 +546,33 @@ export function buildBeatMakerContent(p) {
     // Tap preview buttons
     h += `<div style="display:flex;gap:2px">`;
     DRUM_ROWS.forEach(r => {
-      h += `<button class="chord-btn bm-tap" data-tk="${r.key}" style="flex:1;font-size:calc(6px*var(--ui));padding:2px 1px;color:${r.color};border-color:${r.color}33">${r.label}</button>`;
+      h += `<button class="chord-btn bm-tap" data-tk="${r.key}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:2px 1px;color:${r.color};border-color:${r.color}33">${r.label}</button>`;
     });
     h += `</div>`;
 
     // Tempo display + Clear
     h += `<div style="display:flex;gap:6px;align-items:center;justify-content:center">`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">TEMPO</span>`;
     h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span>`;
-    h += `<button class="chord-btn bm-clear" style="font-size:calc(7px*var(--ui));margin-left:auto;color:var(--rk-bad);border-color:var(--rk-edge-soft)">Clear</button>`;
+    h += `<button class="chord-btn bm-clear" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));margin-left:auto;color:var(--rk-bad);border-color:var(--rk-edge-soft)">Clear</button>`;
     h += `</div>`;
 
     // Track length selector
     h += `<div style="display:flex;gap:6px;align-items:center">`;
-    h += `<label class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));white-space:nowrap">TRACK LEN</label>`;
-    h += `<select class="bm-track-bars" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:6px;padding:5px 6px;font-size:calc(8px*var(--ui))">`;
+    h += `<label class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));white-space:nowrap">TRACK LEN</label>`;
+    h += `<select class="bm-track-bars" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:6px;padding:5px 6px;font-size:calc(10px*var(--ui))">`;
     [1, 2, 4].forEach(v => { h += `<option value="${v}" ${(s.bmTrackBars || 1) === v ? 'selected' : ''}>${v} bar${v > 1 ? 's' : ''}</option>`; });
     h += `</select></div>`;
 
     // Upload to studio
-    h += `<button class="chord-btn bm-upload-track" style="width:100%;font-size:calc(8px*var(--ui));padding:6px 8px;color:var(--rk-accent);border-color:var(--rk-line);background:var(--rk-soft)">⬆ Upload Beat as Track</button>`;
+    h += `<button class="chord-btn bm-upload-track" style="min-height:calc(28px*var(--ui));width:100%;font-size:calc(10px*var(--ui));padding:6px 8px;color:var(--rk-accent);border-color:var(--rk-line);background:var(--rk-soft)">⬆ Upload Beat as Track</button>`;
 
     // REAPER Bridge: MIDI export (drum map + button)
     h += `<div style="display:flex;gap:4px;align-items:stretch">`;
-    h += `<select class="bm-midi-map" title="Drum note map for the export" style="width:74px;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:6px;padding:4px;font-size:calc(8px*var(--ui))">`;
+    h += `<select class="bm-midi-map" title="Drum note map for the export" style="width:74px;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:6px;padding:4px;font-size:calc(10px*var(--ui))">`;
     Object.keys(DRUM_MIDI_MAPS).forEach(m => { h += `<option value="${m}" ${(s.bmMidiMap || 'GM') === m ? 'selected' : ''}>${m}</option>`; });
     h += `</select>`;
-    h += `<button class="chord-btn bm-export-midi" style="flex:1;font-size:calc(8px*var(--ui));padding:6px 8px;color:var(--rk-accent);border-color:var(--rk-line);background:var(--rk-soft)">⇄ Export MIDI for REAPER</button>`;
+    h += `<button class="chord-btn bm-export-midi" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:6px 8px;color:var(--rk-accent);border-color:var(--rk-line);background:var(--rk-soft)">⇄ Export MIDI for REAPER</button>`;
     h += `</div>`;
 
     // Play / Stop. The moment this reads STOP it is the halt control, and every
@@ -584,7 +584,7 @@ export function buildBeatMakerContent(p) {
     const pc = p._bmPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
     const pb = p._bmPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
     const pt = p._bmPlaying ? 'var(--rk-stop)'      : 'var(--rk-accent)';
-    h += `<button class="bm-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._bmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<button class="bm-play mono" style="min-height:calc(28px*var(--ui));background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._bmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
 
     el.innerHTML = h;

@@ -256,7 +256,7 @@ export function buildMirrorContent(p) {
     lastSig = sig;
     const svg = s.view === 'neck' ? neckSVG(v) : s.view === 'staff' ? staffSVG(v) : pianoSVG(v);
     const shown = [...v.bright].length ? [...v.bright] : [...v.held];
-    const chips = shown.map(n => `<span class="mono" style="background:${pcColor(n, 70, 30)};border:1px solid ${pcColor(n, 70, 52)};border-radius:4px;color:${pcColor(n, 80, 74)};font-size:calc(8px*var(--ui));padding:1px 4px">${n}</span>`).join('');
+    const chips = shown.map(n => `<span class="mono" style="background:${pcColor(n, 70, 30)};border:1px solid ${pcColor(n, 70, 52)};border-radius:4px;color:${pcColor(n, 80, 74)};font-size:calc(10px*var(--ui));padding:1px 4px">${n}</span>`).join('');
     host.innerHTML = svg +
       `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:5px;min-height:14px">
         ${chips || `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">nothing sounding — play, or light something on the neck</span>`}
@@ -264,8 +264,8 @@ export function buildMirrorContent(p) {
       </div>`;
   }
 
-  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
-  const selStyle = 'background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink);font-family:\'JetBrains Mono\',monospace;font-size:calc(9px*var(--ui));padding:3px 4px';
+  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="min-height:calc(28px*var(--ui));background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(10px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
+  const selStyle = 'background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink);font-family:\'JetBrains Mono\',monospace;font-size:calc(10px*var(--ui));padding:3px 4px';
 
   function render() {
     // class="rk" is what puts this pedal inside the kit's token scope — the card
@@ -279,9 +279,9 @@ export function buildMirrorContent(p) {
 
     if (s.view === 'piano') {
       h += `<div style="display:flex;align-items:center;gap:4px">
-        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">RANGE</span>
+        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">RANGE</span>
         ${chip('mir-oct', 'data-d="-1"', '−', false, 'padding:4px 8px')}
-        <span id="mir-range-${p.id}" class="mono" style="color:var(--rk-ink);font-size:calc(9px*var(--ui));min-width:52px;text-align:center">C${s.oct}–C${s.oct + s.span}</span>
+        <span id="mir-range-${p.id}" class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));min-width:52px;text-align:center">C${s.oct}–C${s.oct + s.span}</span>
         ${chip('mir-oct', 'data-d="1"', '+', false, 'padding:4px 8px')}
         ${chip('mir-span', 'data-n="2"', '2 oct', s.span === 2, 'margin-left:4px')}
         ${chip('mir-span', 'data-n="3"', '3 oct', s.span === 3)}
@@ -293,13 +293,13 @@ export function buildMirrorContent(p) {
         <select id="mir-tune-${p.id}" style="${selStyle};width:96px">${presets.map(t => `<option value="${t.name}" ${t.name === s.tune ? 'selected' : ''}>${t.name}</option>`).join('')}</select>
       </div>`;
     } else {
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">Written an octave above sounding, the way guitar always is — the clef carries the 8.</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">Written an octave above sounding, the way guitar always is — the clef carries the 8.</div>`;
     }
 
     h += `<div style="display:flex;align-items:center;gap:4px">
       ${chip('mir-mic', '', '🎤 Mic', s.mic)}
       ${chip('mir-hold', '', '🔒 Hold', s.hold)}
-      <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-left:auto">${s.hold ? 'last notes stay lit' : 'notes fade fast'}</span>
+      <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-left:auto">${s.hold ? 'last notes stay lit' : 'notes fade fast'}</span>
     </div>`;
     h += `<div id="mir-view-${p.id}"></div>`;
     h += `</div>`;

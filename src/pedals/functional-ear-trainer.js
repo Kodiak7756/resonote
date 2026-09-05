@@ -418,8 +418,8 @@ export function buildFunctionalEarContent(p) {
 
     // Group toggle
     h += `<div class="rk-seg" style="gap:5px">
-      <button class="rk-seg-btn fet-group${group === 'ear' ? ' is-active' : ''}" data-g="ear" style="flex:1;font-size:calc(10px*var(--ui));padding:7px 0">🎧 EAR</button>
-      <button class="rk-seg-btn fet-group${group === 'theory' ? ' is-active' : ''}" data-g="theory" style="flex:1;font-size:calc(10px*var(--ui));padding:7px 0">🧠 THEORY</button>
+      <button class="rk-seg-btn fet-group${group === 'ear' ? ' is-active' : ''}" data-g="ear" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:7px 0">🎧 EAR</button>
+      <button class="rk-seg-btn fet-group${group === 'theory' ? ' is-active' : ''}" data-g="theory" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:7px 0">🧠 THEORY</button>
     </div>`;
 
     h += `<div style="font-size:calc(9.5px*var(--ui));line-height:1.45;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid ${ACCENT};padding:6px 8px;border-radius:4px">${group === 'ear'
@@ -429,9 +429,9 @@ export function buildFunctionalEarContent(p) {
     if (group === 'ear') {
       // mode + difficulty
       h += `<div class="rk-section"><div class="rk-label">MODE</div><div class="rk-seg" style="gap:3px">`;
-      EAR_MODES.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-earmode${earMode === m ? ' is-active' : ''}" data-em="${m}" style="flex:1;min-width:48px;font-size:calc(7.5px*var(--ui));padding:5px 2px">${label}</button>`);
+      EAR_MODES.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-earmode${earMode === m ? ' is-active' : ''}" data-em="${m}" style="min-height:calc(28px*var(--ui));flex:1;min-width:48px;font-size:calc(10px*var(--ui));padding:5px 2px">${label}</button>`);
       h += `</div><div class="rk-seg" style="gap:3px;margin-top:5px">`;
-      [['easy','Easy'],['medium','Medium'],['hard','Hard']].forEach(([d, label]) => h += `<button class="rk-seg-btn fet-eardiff${earDiff === d ? ' is-active' : ''}" data-ed="${d}" style="font-size:calc(8px*var(--ui));padding:4px 10px">${label}</button>`);
+      [['easy','Easy'],['medium','Medium'],['hard','Hard']].forEach(([d, label]) => h += `<button class="rk-seg-btn fet-eardiff${earDiff === d ? ' is-active' : ''}" data-ed="${d}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:4px 10px">${label}</button>`);
       h += `</div></div>`;
       // score
       const pct = (score.correct + score.wrong) ? Math.round(score.correct / (score.correct + score.wrong) * 100) : 0;
@@ -439,36 +439,36 @@ export function buildFunctionalEarContent(p) {
       // question card
       h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:9px;padding:10px;text-align:center;min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">`;
       if (!question) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">Press START to begin</div>`;
-      else if (earMode === 'note') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">What note is this?</div><div class="mono" style="color:${ACCENT};font-size:calc(9px*var(--ui))">Play it or click the fretboard</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ It was ' + question.note}</div>`; h += replayBtn(); }
-      else if (earMode === 'interval') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">Name this interval</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">Starting from ${question.note1}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.name : '✗ It was ' + question.name}</div>`; h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">` + earIntervalSet().map(([semi, name]) => `<button class="rk-chip fet-earivl" data-semi="${semi}" style="font-size:calc(8px*var(--ui));padding:3px 7px">${name}</button>`).join('') + `</div>` + replayBtn(); }
-      else if (earMode === 'intervalPlay') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">Play the second note</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">First: <b style="color:var(--rk-accent)">${question.note1}</b> · ${question.name}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note2 : '✗ It was ' + question.note2}</div>`; h += replayBtn(); }
-      else if (earMode === 'chord') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">What type of chord?</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">Root: ${question.root}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.chordType.name : '✗ It was ' + question.chordType.name}</div>`; const chSet = earDiff === 'easy' ? CHORD_TYPES_EAR.slice(0, 4) : CHORD_TYPES_EAR; h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">` + chSet.map(ct => `<button class="rk-chip fet-earch" data-ct="${ct.name}" style="font-size:calc(8px*var(--ui));padding:3px 7px">${ct.name}</button>`).join('') + `</div>` + replayBtn(); }
-      else if (earMode === 'melody') { const len = question.notes.length; h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">Play back the melody (${melodyIdx}/${len})</div><div style="display:flex;gap:4px;justify-content:center">` + question.notes.map((n, i) => { const done = i < melodyIdx, cur = i === melodyIdx && !answered, col = done ? 'var(--rk-ok)' : cur ? 'var(--rk-hot)' : 'var(--rk-edge-soft)'; return `<div style="width:20px;height:20px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center">${done ? `<span class="mono" style="color:var(--rk-panel);font-size:calc(7px*var(--ui));font-weight:700">${n.note}</span>` : ''}</div>`; }).join('') + `</div>`; if (answered && feedback === 'wrong') h += `<div class="mono" style="color:var(--rk-bad);font-size:calc(10px*var(--ui));font-weight:700">✗ ${question.notes.map(n => n.note).join(' → ')}</div>`; else if (answered) h += `<div class="mono" style="color:var(--rk-ok);font-size:calc(14px*var(--ui));font-weight:900">✓ Perfect!</div>`; h += replayBtn(); }
+      else if (earMode === 'note') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">What note is this?</div><div class="mono" style="color:${ACCENT};font-size:calc(9px*var(--ui))">Play it or click the fretboard</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ It was ' + question.note}</div>`; h += replayBtn(); }
+      else if (earMode === 'interval') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Name this interval</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">Starting from ${question.note1}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.name : '✗ It was ' + question.name}</div>`; h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">` + earIntervalSet().map(([semi, name]) => `<button class="rk-chip fet-earivl" data-semi="${semi}" style="min-height:calc(28px*var(--ui));font-size:calc(8px*var(--ui));padding:3px 7px">${name}</button>`).join('') + `</div>` + replayBtn(); }
+      else if (earMode === 'intervalPlay') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Play the second note</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">First: <b style="color:var(--rk-accent)">${question.note1}</b> · ${question.name}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note2 : '✗ It was ' + question.note2}</div>`; h += replayBtn(); }
+      else if (earMode === 'chord') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">What type of chord?</div><div class="mono" style="color:${ACCENT};font-size:calc(11px*var(--ui))">Root: ${question.root}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.chordType.name : '✗ It was ' + question.chordType.name}</div>`; const chSet = earDiff === 'easy' ? CHORD_TYPES_EAR.slice(0, 4) : CHORD_TYPES_EAR; h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">` + chSet.map(ct => `<button class="rk-chip fet-earch" data-ct="${ct.name}" style="min-height:calc(28px*var(--ui));font-size:calc(8px*var(--ui));padding:3px 7px">${ct.name}</button>`).join('') + `</div>` + replayBtn(); }
+      else if (earMode === 'melody') { const len = question.notes.length; h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Play back the melody (${melodyIdx}/${len})</div><div style="display:flex;gap:4px;justify-content:center">` + question.notes.map((n, i) => { const done = i < melodyIdx, cur = i === melodyIdx && !answered, col = done ? 'var(--rk-ok)' : cur ? 'var(--rk-hot)' : 'var(--rk-edge-soft)'; return `<div style="width:20px;height:20px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center">${done ? `<span class="mono" style="color:var(--rk-panel);font-size:calc(7px*var(--ui));font-weight:700">${n.note}</span>` : ''}</div>`; }).join('') + `</div>`; if (answered && feedback === 'wrong') h += `<div class="mono" style="color:var(--rk-bad);font-size:calc(10px*var(--ui));font-weight:700">✗ ${question.notes.map(n => n.note).join(' → ')}</div>`; else if (answered) h += `<div class="mono" style="color:var(--rk-ok);font-size:calc(14px*var(--ui));font-weight:900">✓ Perfect!</div>`; h += replayBtn(); }
       h += `</div>`;
-      h += `<button class="rk-btn fet-earstart" style="width:100%">${question ? 'NEXT' : '▶ START'}</button>`;
+      h += `<button class="rk-btn fet-earstart" style="min-height:calc(28px*var(--ui));width:100%">${question ? 'NEXT' : '▶ START'}</button>`;
 
     } else {
       // THEORY
       const isFret = quizMode === 'find' || quizMode === 'name';
       const bestKey = `${quizMode}-${zone}-${timeLimit}`, bestScore = bestScores[bestKey] || 0;
       h += `<div class="rk-section"><div class="rk-label">DRILL</div><div class="rk-seg" style="gap:3px">`;
-      THEORY_MODES_R1.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-qmode${quizMode === m ? ' is-active' : ''}" data-qm="${m}" style="flex:1;font-size:calc(8px*var(--ui));padding:5px 2px">${label}</button>`);
+      THEORY_MODES_R1.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-qmode${quizMode === m ? ' is-active' : ''}" data-qm="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:5px 2px">${label}</button>`);
       h += `</div><div class="rk-seg" style="gap:3px;margin-top:4px">`;
       // min-width so eight drills wrap onto a second line instead of squeezing to slivers
-      THEORY_MODES_R2.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-qmode${quizMode === m ? ' is-active' : ''}" data-qm="${m}" style="flex:1;min-width:46px;font-size:calc(7.5px*var(--ui));padding:5px 2px">${label}</button>`);
+      THEORY_MODES_R2.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-qmode${quizMode === m ? ' is-active' : ''}" data-qm="${m}" style="min-height:calc(28px*var(--ui));flex:1;min-width:46px;font-size:calc(10px*var(--ui));padding:5px 2px">${label}</button>`);
       h += `</div></div>`;
       if (isFret) {
         h += `<div class="rk-seg" style="align-items:center;gap:3px"><span class="rk-label">ZONE</span>`;
-        [['all','Full'],['open','0-4'],['mid','5-9'],['upper','10+']].forEach(([z, label]) => h += `<button class="rk-seg-btn fet-zone${zone === z ? ' is-active' : ''}" data-nz="${z}" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 2px">${label}</button>`);
+        [['all','Full'],['open','0-4'],['mid','5-9'],['upper','10+']].forEach(([z, label]) => h += `<button class="rk-seg-btn fet-zone${zone === z ? ' is-active' : ''}" data-nz="${z}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 2px">${label}</button>`);
         h += `</div>`;
       }
       if (quizMode === 'build') {
         h += `<div class="rk-seg" style="align-items:center;gap:3px"><span class="rk-label">SIZE</span>`;
-        [['triad','Triad · 3'],['wide','7th / pent · 4-5']].forEach(([b, label]) => h += `<button class="rk-seg-btn fet-buildsize${buildSize === b ? ' is-active' : ''}" data-bs="${b}" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 2px">${label}</button>`);
+        [['triad','Triad · 3'],['wide','7th / pent · 4-5']].forEach(([b, label]) => h += `<button class="rk-seg-btn fet-buildsize${buildSize === b ? ' is-active' : ''}" data-bs="${b}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 2px">${label}</button>`);
         h += `</div>`;
       }
       h += `<div class="rk-seg" style="align-items:center;gap:3px"><span class="rk-label">TIME</span>`;
-      [30, 60, 90].forEach(t => h += `<button class="rk-seg-btn fet-time${timeLimit === t ? ' is-active' : ''}" data-nt="${t}" style="font-size:calc(8px*var(--ui));padding:4px 9px">${t}s</button>`);
+      [30, 60, 90].forEach(t => h += `<button class="rk-seg-btn fet-time${timeLimit === t ? ' is-active' : ''}" data-nt="${t}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:4px 9px">${t}s</button>`);
       if (bestScore > 0) h += `<span class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));margin-left:auto">★ ${bestScore}</span>`;
       h += `</div>`;
 
@@ -478,8 +478,8 @@ export function buildFunctionalEarContent(p) {
         h += `<div style="display:flex;align-items:center;justify-content:center;gap:10px"><span class="mono" style="color:${ACCENT};font-size:calc(18px*var(--ui));font-weight:900">${score.correct}</span>${score.wrong ? `<span class="mono" style="color:var(--rk-bad);font-size:calc(11px*var(--ui))">${score.wrong}✗</span>` : ''}<span class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));font-weight:700">🔥${score.streak}</span><span class="mono fet-tsecs" style="color:${barColor};font-size:calc(13px*var(--ui));font-weight:900">${timeLeft}s</span></div>`;
         h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:9px;padding:9px;text-align:center;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">`;
         if (!question) h += `<div class="mono" style="color:var(--rk-ink-mute)">Loading…</div>`;
-        else if (quizMode === 'find') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">Play or click this note:</div><div class="mono" style="color:${ACCENT};font-size:calc(26px*var(--ui));font-weight:900">${question.note}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(13px*var(--ui));font-weight:700">${feedback === 'correct' ? '✓' : '✗ str ' + (question.si + 1) + ' fret ' + question.fret}</div>`; h += `<button class="rk-chip fet-qreplay" style="font-size:calc(7px*var(--ui))">🔊 Replay</button>`; }
-        else if (quizMode === 'name') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">What note is on str ${question.si + 1} fret ${question.fret}?</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ ' + question.note}</div>`; else h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center">` + NOTES.map(n => `<button class="rk-chip fet-qname" data-na="${n}" style="font-size:calc(8px*var(--ui));min-width:26px;padding:2px 4px">${n}</button>`).join('') + `</div>`; }
+        else if (quizMode === 'find') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Play or click this note:</div><div class="mono" style="color:${ACCENT};font-size:calc(26px*var(--ui));font-weight:900">${question.note}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(13px*var(--ui));font-weight:700">${feedback === 'correct' ? '✓' : '✗ str ' + (question.si + 1) + ' fret ' + question.fret}</div>`; h += `<button class="rk-chip fet-qreplay" style="min-height:calc(28px*var(--ui));font-size:calc(7px*var(--ui))">🔊 Replay</button>`; }
+        else if (quizMode === 'name') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">What note is on str ${question.si + 1} fret ${question.fret}?</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ ' + question.note}</div>`; else h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center">` + NOTES.map(n => `<button class="rk-chip fet-qname" data-na="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(8px*var(--ui));min-width:26px;padding:2px 4px">${n}</button>`).join('') + `</div>`; }
         else if (quizMode === 'colour') {
           h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:600;line-height:1.4">${question.prompt}</div>`;
           if (answered) {
@@ -493,9 +493,9 @@ export function buildFunctionalEarContent(p) {
           // The chord family's own saturated hue would fight the note code, so the
           // panel keeps the card's accent here too.
           const q = question, acc = ACCENT;
-          h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${q.prompt}</div>`;
+          h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${q.prompt}</div>`;
           h += `<div style="display:flex;align-items:center;gap:7px">
-            <button class="rk-chip fet-treplay" style="font-size:calc(7px*var(--ui))">🔊 Again</button>
+            <button class="rk-chip fet-treplay" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui))">🔊 Again</button>
             ${answered
               ? `<span class="mono" style="color:${acc};font-size:calc(13px*var(--ui));font-weight:800">${q.chord.name}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${q.family}</span>`
               : `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">root ${q.chord.root}</span>`}</div>`;
@@ -506,28 +506,28 @@ export function buildFunctionalEarContent(p) {
             ${answered ? `<span style="position:absolute;left:${q.truth}%;top:-13px;transform:translateX(-50%);font-size:calc(11px*var(--ui));line-height:1;color:var(--rk-ink);text-shadow:0 0 4px rgba(0,0,0,.9)">▼</span>` : ''}</div>`;
           if (!answered) {
             h += `<input class="rk-slider fet-tslider" type="range" min="0" max="100" value="${q.guess}" style="--rk-fill:${q.guess}%">`;
-            h += `<div class="rk-scale"><span>at rest</span><span class="mono fet-tval" style="color:${ACCENT};font-size:calc(9px*var(--ui));font-weight:700">${q.guess}</span><span>max pull</span></div>`;
+            h += `<div class="rk-scale"><span>at rest</span><span class="mono fet-tval" style="color:${ACCENT};font-size:calc(10px*var(--ui));font-weight:700">${q.guess}</span><span>max pull</span></div>`;
           } else {
             h += `<div class="rk-scale" style="margin-top:6px;font-size:calc(8px*var(--ui))"><span>you said ${q.guess}</span><span style="color:${fb(feedback)};font-weight:700">${feedback === 'correct' ? '✓' : '✗'} off by ${q.delta}</span><span>it sits at ${q.truth}</span></div>`;
           }
           h += `</div>`;
-          if (!answered) h += `<button class="rk-btn fet-tcommit" style="width:100%;padding:6px 0;font-size:calc(9px*var(--ui))">LOCK IT IN</button>`;
+          if (!answered) h += `<button class="rk-btn fet-tcommit" style="min-height:calc(28px*var(--ui));width:100%;padding:6px 0;font-size:calc(10px*var(--ui))">LOCK IT IN</button>`;
           else {
-            h += `<div style="font-size:calc(9px*var(--ui));line-height:1.45;color:var(--rk-ink);text-align:left;background:var(--rk-soft);border-left:2px solid ${acc};padding:5px 7px;border-radius:4px">${q.why}</div>`;
-            h += `<button class="rk-chip fet-qnext" style="font-size:calc(8px*var(--ui))">NEXT →</button>`;
+            h += `<div style="font-size:calc(10px*var(--ui));line-height:1.45;color:var(--rk-ink);text-align:left;background:var(--rk-soft);border-left:2px solid ${acc};padding:5px 7px;border-radius:4px">${q.why}</div>`;
+            h += `<button class="rk-chip fet-qnext" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui))">NEXT →</button>`;
           }
         }
         else if (quizMode === 'build') {
           const q = question;
           h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:600;line-height:1.4">${q.prompt}</div>`;
           if (!answered) {
-            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7.5px*var(--ui))">${q.taps.length}/${q.target.length} placed${q.taps.length ? ' · tap a chip to take it back' : ''}</div>`;
+            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${q.taps.length}/${q.target.length} placed${q.taps.length ? ' · tap a chip to take it back' : ''}</div>`;
             // their answer builds up here, in the pedal — the neck stays dark
             h += `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:21px;align-items:center">`
-              + (q.taps.map(n => `<button class="fet-buildchip" data-bn="${n}" title="take it back" style="min-width:24px;border-radius:6px;border:1px solid ${pcColor(n, 70, 62)};background:${pcColor(n, 74, 44)};color:${pcTextOn(n)};font-family:'JetBrains Mono',monospace;font-size:calc(9.5px*var(--ui));font-weight:800;padding:3px 6px;cursor:pointer">${n}</button>`).join('')
+              + (q.taps.map(n => `<button class="fet-buildchip" data-bn="${n}" title="take it back" style="min-height:calc(28px*var(--ui));min-width:24px;border-radius:6px;border:1px solid ${pcColor(n, 70, 62)};background:${pcColor(n, 74, 44)};color:${pcTextOn(n)};font-family:'JetBrains Mono',monospace;font-size:calc(9.5px*var(--ui));font-weight:800;padding:3px 6px;cursor:pointer">${n}</button>`).join('')
                  || `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">tap the neck</span>`)
               + `</div>`;
-            h += `<button class="rk-btn fet-buildcheck" style="width:100%;padding:6px 0;font-size:calc(9px*var(--ui));${q.taps.length ? '' : 'opacity:.4'}">CHECK</button>`;
+            h += `<button class="rk-btn fet-buildcheck" style="min-height:calc(28px*var(--ui));width:100%;padding:6px 0;font-size:calc(10px*var(--ui));${q.taps.length ? '' : 'opacity:.4'}">CHECK</button>`;
           } else {
             h += `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;align-items:center">`
               + q.target.map(n => { const got = q.got.includes(n); return `<span style="min-width:24px;border-radius:6px;border:1px solid ${got ? 'var(--rk-ok)' : 'var(--rk-bad)'};background:${pcColor(n, 74, 44)};color:${pcTextOn(n)};font-family:'JetBrains Mono',monospace;font-size:calc(9.5px*var(--ui));font-weight:800;padding:3px 6px;opacity:${got ? 1 : .55}">${n}${got ? ' ✓' : ' ✗'}</span>`; }).join('')
@@ -536,7 +536,7 @@ export function buildFunctionalEarContent(p) {
               ? '✓ ' + q.label + ' — all of it'
               : `✗ ${q.missed.length ? 'missed ' + q.missed.join(' · ') : ''}${q.missed.length && q.extra.length ? ' · ' : ''}${q.extra.length ? 'not in it: ' + q.extra.join(' · ') : ''}`}</div>`;
             h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${q.label} is lit on the neck</div>`;
-            h += `<button class="rk-chip fet-qnext" style="font-size:calc(8px*var(--ui))">NEXT →</button>`;
+            h += `<button class="rk-chip fet-qnext" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui))">NEXT →</button>`;
           }
         }
         else { h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:600;line-height:1.4">${question.prompt}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900;margin:4px 0">${feedback === 'correct' ? '✓' : '✗'} ${question.answer}</div>`; else h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:4px">${theoryOptions()}</div>`; }
@@ -547,13 +547,13 @@ export function buildFunctionalEarContent(p) {
         // upstream, so re-pointing the accent on the button reaches nothing but
         // the hover rule — which is how this ended up a grey button that only
         // turned pink under the cursor.
-        h += `<button class="rk-btn fet-qstop" style="width:100%;background:var(--rk-stop-soft);border-color:var(--rk-stop-edge);color:var(--rk-stop)">■ END</button>`;
+        h += `<button class="rk-btn fet-qstop" style="min-height:calc(28px*var(--ui));width:100%;background:var(--rk-stop-soft);border-color:var(--rk-stop-edge);color:var(--rk-stop)">■ END</button>`;
       } else {
         if (score.correct > 0 || score.wrong > 0) {
           const total = score.correct + score.wrong, pctS = total ? Math.round(score.correct / total * 100) : 0;
           h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:9px;padding:10px;text-align:center"><div class="mono" style="color:${ACCENT};font-size:calc(26px*var(--ui));font-weight:900">${score.correct}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${score.correct}/${total} (${pctS}%)</div><div class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));margin-top:3px">Best streak: ${score.best}</div>${score.correct >= bestScore && score.correct > 0 ? `<div class="mono" style="color:var(--rk-hot);font-size:calc(10px*var(--ui));font-weight:700;margin-top:3px">★ NEW BEST!</div>` : ''}</div>`;
         }
-        h += `<button class="rk-btn fet-qstartround" style="width:100%">▶ START ROUND</button>`;
+        h += `<button class="rk-btn fet-qstartround" style="min-height:calc(28px*var(--ui));width:100%">▶ START ROUND</button>`;
       }
     }
 
@@ -565,20 +565,20 @@ export function buildFunctionalEarContent(p) {
     Object.assign(s, { fetGroup: group, earMode, earDiff, quizMode, quizZone: zone, quizStrings: stringFocus, quizTime: timeLimit, buildSize });
   }
 
-  function replayBtn() { return `<button class="rk-chip fet-earreplay" style="font-size:calc(8px*var(--ui))">🔊 Replay</button>`; }
+  function replayBtn() { return `<button class="rk-chip fet-earreplay" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui))">🔊 Replay</button>`; }
 
   function theoryOptions() {
     const q = question;
-    if (quizMode === 'keysig' && q.answerVal !== undefined && typeof q.answerVal === 'number') return Array.from({ length: 7 }, (_, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="font-size:calc(8px*var(--ui));min-width:24px;padding:2px 5px">${i}</button>`).join('');
-    if (quizMode === 'chordfn' && q.nums) return q.nums.map((nm, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="font-size:calc(8px*var(--ui));padding:2px 6px">${nm}</button>`).join('');
-    if (quizMode === 'degree' && q.answerDeg !== undefined) return DEGREE_NAMES.map((dn, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="font-size:calc(8px*var(--ui));padding:2px 6px">${dn}</button>`).join('');
-    if (quizMode === 'ivlname' && q.semitones !== undefined && !q.startNote) return INTERVAL_NAMES.filter(x => x[0] > 0).map(([, nm]) => `<button class="rk-chip fet-qtheory" data-ta="${nm}" style="font-size:calc(7px*var(--ui));padding:2px 5px">${nm}</button>`).join('');
-    if (quizMode === 'resolve' && q.tones) return q.tones.map(t => `<button class="rk-chip fet-qtheory" data-ta="${t}" style="font-size:calc(9px*var(--ui));min-width:26px;padding:2px 6px">${t}</button>`).join('');
-    if (quizMode === 'bassid' && q.opts) return q.opts.map(t => `<button class="rk-chip fet-qtheory" data-ta="${t}" style="font-size:calc(9px*var(--ui));min-width:34px;padding:2px 8px">${t}</button>`).join('');
+    if (quizMode === 'keysig' && q.answerVal !== undefined && typeof q.answerVal === 'number') return Array.from({ length: 7 }, (_, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:24px;padding:2px 5px">${i}</button>`).join('');
+    if (quizMode === 'chordfn' && q.nums) return q.nums.map((nm, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">${nm}</button>`).join('');
+    if (quizMode === 'degree' && q.answerDeg !== undefined) return DEGREE_NAMES.map((dn, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">${dn}</button>`).join('');
+    if (quizMode === 'ivlname' && q.semitones !== undefined && !q.startNote) return INTERVAL_NAMES.filter(x => x[0] > 0).map(([, nm]) => `<button class="rk-chip fet-qtheory" data-ta="${nm}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px">${nm}</button>`).join('');
+    if (quizMode === 'resolve' && q.tones) return q.tones.map(t => `<button class="rk-chip fet-qtheory" data-ta="${t}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:26px;padding:2px 6px">${t}</button>`).join('');
+    if (quizMode === 'bassid' && q.opts) return q.opts.map(t => `<button class="rk-chip fet-qtheory" data-ta="${t}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:34px;padding:2px 8px">${t}</button>`).join('');
     // colour mode: the swatches ARE the answers (no letters on them — that's the
     // point; the letter appears only in the reveal, which is the feedback)
     if (quizMode === 'colour') return FIFTHS.map(t => `<button class="fet-qtheory" data-ta="${t}" title="answer with the colour" style="width:26px;height:26px;border-radius:6px;border:1px solid ${pcColor(t, 70, 62)};background:${pcColor(t, 74, 44)};cursor:pointer;padding:0"></button>`).join('');
-    return NOTES.map(n => `<button class="rk-chip fet-qtheory" data-ta="${n}" style="font-size:calc(8px*var(--ui));min-width:24px;padding:2px 4px">${n}</button>`).join('');
+    return NOTES.map(n => `<button class="rk-chip fet-qtheory" data-ta="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:24px;padding:2px 4px">${n}</button>`).join('');
   }
 
   function wire() {

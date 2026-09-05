@@ -224,7 +224,7 @@ export function buildChordLabContent(p) {
         grouped[grouped.length - 1].items.push([mm, i]);
       });
       grouped.forEach(gr => {
-        if (gr.g) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.2px;margin-top:3px">${gr.g.replace('{R}', root)}</div>`;
+        if (gr.g) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.2px;margin-top:3px">${gr.g.replace('{R}', root)}</div>`;
         h += `<div style="display:flex;flex-wrap:wrap;gap:4px">`;
         gr.items.forEach(([mm, i]) => {
           const on = i === memberIdx;
@@ -247,7 +247,7 @@ export function buildChordLabContent(p) {
     h += `<div style="background:var(--rk-panel2);border:1px solid var(--rk-edge);border-radius:8px;padding:8px 10px">`;
     h += `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">`;
     h += `<span class="mono" style="color:${acc};font-size:calc(22px*var(--ui));font-weight:800">${c.name}</span>`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">vs plain <b style="color:var(--rk-ink-dim)">${baseChord().name}</b></span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">vs plain <b style="color:var(--rk-ink-dim)">${baseChord().name}</b></span>`;
     h += `</div>`;
     h += `<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px">`;
     c.notes.forEach(n => {
@@ -283,14 +283,14 @@ export function buildChordLabContent(p) {
     h += `<span class="mono" style="color:${acc};font-size:calc(13px*var(--ui));font-weight:800">${c.name}</span>`;
     h += `<span style="color:var(--rk-ink-mute)">→</span>`;
     h += `<span class="mono" style="color:var(--rk-ok);font-size:calc(13px*var(--ui));font-weight:800">${t.name}</span>`;
-    h += `<span style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui))">${t.motion}</span>`;
+    h += `<span style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${t.motion}</span>`;
     h += `</div>`;
     // tension meter
     h += `<div style="height:9px;border-radius:5px;background:var(--rk-panel);overflow:hidden;border:1px solid var(--rk-edge-soft)">`;
     h += `<div id="cl-meter-fill-${p.id}" style="height:100%;width:${Math.round(m.tension * 100)}%;background:linear-gradient(90deg,var(--rk-dim),var(--rk-hot));transition:width .35s ease,background .35s ease"></div>`;
     h += `</div>`;
     h += `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">`;
-    h += `<span id="cl-meter-lab-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">tension ${Math.round(m.tension * 100)}%</span>`;
+    h += `<span id="cl-meter-lab-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">tension ${Math.round(m.tension * 100)}%</span>`;
     h += `<button class="cl-mini" id="cl-resolve-${p.id}" style="border-color:color-mix(in srgb,var(--rk-ok) 50%,transparent);color:var(--rk-ok)">▶ Hear it resolve</button>`;
     h += `</div></div>`;
 
@@ -342,12 +342,12 @@ export function buildChordLabContent(p) {
 const STYLE = `<style>
 .cl-fam,.cl-mem,.cl-root,.cl-ab,.cl-mini{
   font-family:inherit;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);
-  color:var(--rk-ink-dim);border-radius:6px;cursor:pointer;
+  color:var(--rk-ink-dim);border-radius:6px;cursor:pointer;min-height:calc(28px*var(--ui));
   transition:background .14s,border-color .14s,color .14s}
 .cl-fam,.cl-mem{padding:4px 8px;font-size:calc(10px*var(--ui));font-weight:600}
 .cl-root{min-width:24px;padding:4px 0;font-size:calc(10px*var(--ui));font-weight:700;background:transparent}
 .cl-ab{flex:1;padding:7px 9px;font-size:calc(11px*var(--ui));font-weight:700;line-height:1.35}
-.cl-mini{padding:4px 9px;font-size:calc(9px*var(--ui));font-weight:700}
+.cl-mini{padding:4px 9px;font-size:calc(10px*var(--ui));font-weight:700}
 .cl-fam:not(.on):hover,.cl-mem:not(.on):hover,.cl-root:not(.on):hover,.cl-ab:not(.on):hover{
   border-color:var(--rk-line);color:var(--rk-accent)}
 /* the ok/bad minis set colour inline, so their hover is carried by the wash instead */

@@ -431,7 +431,7 @@ export function buildWorkoutsContent(p) {
       : s.adv === 'listen' ? 'tap a note to pick up from there'
       : 'the whole run, laid out';
     return `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:8px;padding:6px 7px">
-      <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📜 ${esc(strip.title || 'STEP STRIP')} · ${hint}</div>
+      <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">📜 ${esc(strip.title || 'STEP STRIP')} · ${hint}</div>
       <div id="wostrip-${p.id}">${stripInner()}</div></div>`;
   }
   function wireStrip() {
@@ -984,8 +984,8 @@ export function buildWorkoutsContent(p) {
   }
 
   // ── render ───────────────────────────────────────────────────────────
-  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
-  const lbl = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin:4px 0 1px">${t}</div>`;
+  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="min-height:calc(28px*var(--ui));background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(10px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
+  const lbl = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin:4px 0 1px">${t}</div>`;
   const row = inner => `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap">${inner}</div>`;
   // Deleting a saved workout throws away Kevin's own setup, so the button has to stop
   // looking like the ones beside it. --rk-bad is the app's one "this went wrong" colour;
@@ -997,9 +997,9 @@ export function buildWorkoutsContent(p) {
     if (!st || !active) return;
     const per = beatsPerItem();
     const mins = Math.floor((Date.now() - active.startedAt) / 60000), secs = Math.floor((Date.now() - active.startedAt) / 1000) % 60;
-    let h = `<div class="mono" style="color:var(--rk-dim);font-size:calc(7px*var(--ui));letter-spacing:1.5px">${active.icon} ${esc(active.name.toUpperCase())} · ${active.bpm} BPM · ${mins}:${String(secs).padStart(2, '0')}</div>`;
+    let h = `<div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));letter-spacing:1.5px">${active.icon} ${esc(active.name.toUpperCase())} · ${active.bpm} BPM · ${mins}:${String(secs).padStart(2, '0')}</div>`;
     h += `<div class="mono" style="color:var(--rk-accent);font-size:calc(19px*var(--ui));font-weight:800;line-height:1.2">${esc(active.cur?.label || '…')}</div>`;
-    if (active.cur?.sub) h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui))">${esc(active.cur.sub)}</div>`;
+    if (active.cur?.sub) h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${esc(active.cur.sub)}</div>`;
     if (active.engine === 'flash') {
       if (s.adv === 'auto') {
         h += `<div style="display:flex;gap:3px;margin-top:5px">`;
@@ -1007,8 +1007,8 @@ export function buildWorkoutsContent(p) {
         h += `</div>`;
       } else {
         const want = [...new Set(active.cur?.notes || [])];
-        h += `<div style="display:flex;gap:4px;margin-top:5px;justify-content:center">` + want.map(n => `<span class="mono" style="font-size:calc(9px*var(--ui));padding:2px 7px;border-radius:4px;border:1px solid ${active.heard.has(n) ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${active.heard.has(n) ? 'var(--rk-soft2)' : 'transparent'};color:${active.heard.has(n) ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'}">${n}${active.heard.has(n) ? ' ✓' : ''}</span>`).join('') + `</div>`;
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-top:3px">🎤 play every note to advance</div>`;
+        h += `<div style="display:flex;gap:4px;margin-top:5px;justify-content:center">` + want.map(n => `<span class="mono" style="font-size:calc(10px*var(--ui));padding:2px 7px;border-radius:4px;border:1px solid ${active.heard.has(n) ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${active.heard.has(n) ? 'var(--rk-soft2)' : 'transparent'};color:${active.heard.has(n) ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'}">${n}${active.heard.has(n) ? ' ✓' : ''}</span>`).join('') + `</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-top:3px">🎤 play every note to advance</div>`;
       }
       if (active.nxt) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-top:4px">next: ${esc(active.nxt.label)}</div>`;
     }
@@ -1021,28 +1021,28 @@ export function buildWorkoutsContent(p) {
         <span class="mono" style="font-size:calc(13px*var(--ui));font-weight:800;color:var(--rk-accent);border:1px solid var(--rk-line);border-radius:6px;padding:2px 10px">${target}</span>
         <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">note ${i + 1}/${n}</span></div>`;
       h += `<div style="background:var(--rk-panel);border-radius:3px;height:5px;margin-top:5px;overflow:hidden"><div style="height:100%;width:${Math.round((i / n) * 100)}%;background:var(--rk-accent)"></div></div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-top:3px">🎤 play the lit note — silence between repeats${audio.connected ? '' : ' · MIC NOT CONNECTED'}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-top:3px">🎤 play the lit note — silence between repeats${audio.connected ? '' : ' · MIC NOT CONNECTED'}</div>`;
     }
     // The march measures itself: how many grips, how wide the hand has to open, and how far
     // the loop jumps to start over. (The total travel is already in the engine's own headline —
     // that number IS the lesson: I–V–vi–IV costs the same 9 frets in every key.)
     const m = active.plan?.march;
-    if (m) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(7.5px*var(--ui));margin-top:3px">${m.grips} grips · ${m.setLabel} · span ${m.span}fr${m.loopTravel ? ` · ${m.loopTravel} frets back to the top` : ''}</div>`;
+    if (m) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));margin-top:3px">${m.grips} grips · ${m.setLabel} · span ${m.span}fr${m.loopTravel ? ` · ${m.loopTravel} frets back to the top` : ''}</div>`;
     // WHOSE fingering is under your hands. A run out of Kevin's seed and a run out of a
     // generated box look identical on the neck and on the strip, and they are not the same
     // exercise — so the status block names the source for as long as the workout is running.
     const psrc = active.plan?.source;
-    if (psrc) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(7.5px*var(--ui));margin-top:3px">${esc(psrc.line)}</div>`;
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-top:3px">${active.itemCount} ${active.engine === 'flash' ? 'chords' : 'cycles'}${active.ramp ? ` · ramp → ${active.ramp.to}` : ''}</div>`;
+    if (psrc) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));margin-top:3px">${esc(psrc.line)}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-top:3px">${active.itemCount} ${active.engine === 'flash' ? 'chords' : 'cycles'}${active.ramp ? ` · ramp → ${active.ramp.to}` : ''}</div>`;
     st.innerHTML = h;
   }
 
   function card(ent) {
     const dim = ent.retired ? 'opacity:.55;border-style:dashed;' : '';
     const running = active?.openId === ent.id;
-    return `<button class="wo-card" data-open="${ent.id}" style="display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:${running ? 'var(--rk-soft)' : 'var(--rk-panel2)'};border:1px solid ${running ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:8px;padding:8px 9px;cursor:pointer;text-align:left;${dim}">
+    return `<button class="wo-card" data-open="${ent.id}" style="min-height:calc(28px*var(--ui));display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:${running ? 'var(--rk-soft)' : 'var(--rk-panel2)'};border:1px solid ${running ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:8px;padding:8px 9px;cursor:pointer;text-align:left;${dim}">
       <span style="font-size:calc(13px*var(--ui))">${ent.icon} <span class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:700">${esc(ent.name)}</span></span>
-      <span class="mono" style="color:var(--rk-ink-dim);font-size:calc(7.5px*var(--ui))">${esc(ent.sub)}</span></button>`;
+      <span class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${esc(ent.sub)}</span></button>`;
   }
 
   // ── the shared practice controls (BARS · ADVANCE · tempo) ────────────
@@ -1051,9 +1051,9 @@ export function buildWorkoutsContent(p) {
   // still reach them without leaving a running workout.
   function sharedControls() {
     let h = row(
-      `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BARS</span>` +
+      `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">BARS</span>` +
       [1, 2, 4].map(b => chip('wo-bars', `data-b="${b}"`, b, s.bars === b)).join('') +
-      `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-left:6px">ADVANCE</span>` +
+      `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-left:6px">ADVANCE</span>` +
       chip('wo-adv', `data-v="auto"`, '⏱ Auto', s.adv === 'auto') +
       chip('wo-adv', `data-v="listen"`, '🎤 Listen', s.adv === 'listen')
     );
@@ -1075,7 +1075,7 @@ export function buildWorkoutsContent(p) {
         // blues, diatonic, modes, symmetric. The CATEGORY is stored, not just the name.
         h += lbl(sp.lbl);
         Object.entries(SCALE_TYPES).forEach(([cat, items]) => {
-          h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(7px*var(--ui));margin:3px 0 1px">${cat}</div>`;
+          h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(8px*var(--ui));margin:3px 0 1px">${cat}</div>`;
           h += row(Object.keys(items).map(nm => chip('wo-opt', `data-k="scale" data-v="${cat}|${nm}"`, nm, bag.scaleCat === cat && bag.scaleName === nm)).join(''));
         });
         return;
@@ -1088,14 +1088,14 @@ export function buildWorkoutsContent(p) {
       h += lbl(sp.lbl) + row(valsOf(sp, bag).map(([v, l]) => chip('wo-opt', `data-k="${sp.k}" data-v="${v}"`, l, String(bag[sp.k]) === String(v))).join(''));
     });
     const note = w.note?.(bag);
-    if (note) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(7px*var(--ui));text-align:center;margin-top:3px">${esc(note)}</div>`;
+    if (note) h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));text-align:center;margin-top:3px">${esc(note)}</div>`;
     // Before you press START: which fingering this key + scale will actually run on. The
     // march says it with its 🎸 My March chip; the scale workouts have no such chip to read,
     // so they say it in a line. (The march is excluded — it already answers for itself.)
     if (w.engine === 'run' && w.id !== 'march') {
       const src = sourceFor(w.id, bag);
-      h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(7.5px*var(--ui));text-align:center;margin-top:4px">${esc(src.line)}</div>`;
-      if (src.warn) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;line-height:1.5">${esc(src.warn)}</div>`;
+      h += `<div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));text-align:center;margin-top:4px">${esc(src.line)}</div>`;
+      if (src.warn) h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;line-height:1.5">${esc(src.warn)}</div>`;
     }
     return h;
   }
@@ -1104,7 +1104,7 @@ export function buildWorkoutsContent(p) {
     let h = lbl('TEMPO RAMP · pro');
     let inner = chip('wo-ramp', '', bag.rampOn ? 'On' : 'Off', !!bag.rampOn);
     if (bag.rampOn) {
-      const num = (id, v, w2) => `<input id="${id}-${p.id}" type="number" value="${v}" style="width:${w2}px;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:4px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(8px*var(--ui));padding:3px;text-align:center"/>`;
+      const num = (id, v, w2) => `<input id="${id}-${p.id}" type="number" value="${v}" style="width:${w2}px;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:4px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:3px;text-align:center"/>`;
       inner += num('worfrom', bag.rampFrom, 34) + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">→</span>` + num('worto', bag.rampTo, 34) + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">+</span>` + num('worstep', bag.rampStep, 26);
     }
     return h + row(inner);
@@ -1113,30 +1113,30 @@ export function buildWorkoutsContent(p) {
   function panelView(ent) {
     const w = ent.w, bag = bagFor(ent);
     const running = active?.openId === ent.id;
-    let h = `<button id="woback-${p.id}" class="mono" style="align-self:flex-start;background:transparent;border:none;color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));padding:0;cursor:pointer">‹ all workouts</button>`;
+    let h = `<button id="woback-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));align-self:flex-start;background:transparent;border:none;color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));padding:0;cursor:pointer">‹ all workouts</button>`;
     h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(12px*var(--ui));font-weight:800">${ent.icon} ${esc(ent.name.toUpperCase())}</div>`;
-    if (w.blurb) h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7.5px*var(--ui));line-height:1.5">${esc(w.blurb)}</div>`;
+    if (w.blurb) h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9.5px*var(--ui));line-height:1.5">${esc(w.blurb)}</div>`;
     h += optionRows(w, bag);
     h += rampRow(bag);
     h += `<div style="height:1px;background:var(--rk-edge-soft);margin:3px 0"></div>`;
     h += sharedControls();
-    h += `<button id="wostart-${p.id}" class="mono" style="background:var(--rk-soft2);border:1px solid var(--rk-line);border-radius:7px;color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:800;padding:9px;cursor:pointer;letter-spacing:1px">${running ? '↻ RESTART' : '▶ START'} ${esc(ent.name.toUpperCase())}</button>`;
+    h += `<button id="wostart-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));background:var(--rk-soft2);border:1px solid var(--rk-line);border-radius:7px;color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:800;padding:9px;cursor:pointer;letter-spacing:1px">${running ? '↻ RESTART' : '▶ START'} ${esc(ent.name.toUpperCase())}</button>`;
     // save / manage
     if (ent.custom) {
       h += `<div style="display:flex;gap:4px">${chip('wo-del', `data-id="${ent.id}"`, '🗑 Delete this workout', false, DANGER)}</div>`;
-      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(7px*var(--ui));text-align:center">edits to a saved workout are kept as you make them</div>`;
+      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(8px*var(--ui));text-align:center">edits to a saved workout are kept as you make them</div>`;
     } else {
       h += `<div style="display:flex;gap:4px;align-items:center">
-        <input id="woname-${p.id}" placeholder="Name this setup…" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:5px 7px;outline:none"/>
+        <input id="woname-${p.id}" placeholder="Name this setup…" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:5px 7px;outline:none"/>
         ${chip('wo-save', '', '💾 Save', false, 'padding:6px 9px')}</div>`;
-      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(7px*var(--ui));text-align:center">saving pins these exact options to 🔧 MY WORKOUTS</div>`;
+      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(8px*var(--ui));text-align:center">saving pins these exact options to 🔧 MY WORKOUTS</div>`;
     }
     return h;
   }
 
   function gridView() {
     let h = sharedControls();
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-top:2px">WORKOUTS · tap to set up</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-top:2px">WORKOUTS · tap to set up</div>`;
     h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">` + WORKOUTS.map(w => {
       const bag = bagOf(w, s.opt[w.id]);
       return card({ id: w.id, icon: w.icon, name: w.name, sub: w.summary(bag) });
@@ -1145,14 +1145,14 @@ export function buildWorkoutsContent(p) {
     // The tier chip is the kit's own badge, not a yellow of ours — the finish channel says
     // "this is a pro feature" in white light everywhere in the app, and a gold pill here
     // would read as a seventh pedal family.
-    h += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px">🔧 MY WORKOUTS</span><span class="tier-badge mono">PRO</span><button id="wonew-${p.id}" class="mono" style="margin-left:auto;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));padding:3px 8px;cursor:pointer">${s.building ? '✕ Close' : '＋ New'}</button></div>`;
+    h += `<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px">🔧 MY WORKOUTS</span><span class="tier-badge mono">PRO</span><button id="wonew-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));margin-left:auto;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:5px;color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));padding:3px 8px;cursor:pointer">${s.building ? '✕ Close' : '＋ New'}</button></div>`;
     if (s.building) {
       h += `<div style="background:var(--rk-panel);border:1px dashed var(--rk-edge-soft);border-radius:8px;padding:8px">
         <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));line-height:1.6">Open any workout above, set the key / scale / position you want, then press <b style="color:var(--rk-dim)">💾 Save</b> in that panel. It becomes a one-tap card down here — with its own tempo ramp if you set one.</div></div>`;
     }
     if (customs.length) {
       h += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">` + customs.map(c => card({ id: c.id, icon: c.icon || '🔧', name: c.name, sub: c.sub || '', retired: c.retired })).join('') + `</div>`;
-      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(7px*var(--ui));text-align:center">tap to open · right-click to delete</div>`;
+      h += `<div class="mono" style="color:color-mix(in srgb, var(--rk-ink-mute) 72%, transparent);font-size:calc(8px*var(--ui));text-align:center">tap to open · right-click to delete</div>`;
     }
     return h;
   }
@@ -1160,7 +1160,7 @@ export function buildWorkoutsContent(p) {
   // A retired custom gets a page of its own rather than a dead card: what it was, why it
   // stopped working, and the two honest choices.
   function retiredView(c) {
-    let h = `<button id="woback-${p.id}" class="mono" style="align-self:flex-start;background:transparent;border:none;color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));padding:0;cursor:pointer">‹ all workouts</button>`;
+    let h = `<button id="woback-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));align-self:flex-start;background:transparent;border:none;color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));padding:0;cursor:pointer">‹ all workouts</button>`;
     h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(12px*var(--ui));font-weight:800">⚠ ${esc(c.name)}</div>`;
     h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));line-height:1.6">This saved workout ran <b>${esc(c.retiredFrom || 'a workout')}</b>, which is no longer part of the pedal. Nothing was deleted — it just has no engine to run on any more. Convert it to a 🎼 Scales run in the same key, or remove it.</div>`;
     h += `<div style="display:flex;gap:4px">${chip('wo-convert', `data-id="${c.id}"`, '🎼 Convert to Scales', false, 'flex:1')}${chip('wo-del', `data-id="${c.id}"`, '🗑 Remove', false, DANGER)}</div>`;
@@ -1176,7 +1176,7 @@ export function buildWorkoutsContent(p) {
     // colour instead of naming its own. The 7px gap is this pedal's, not the kit's default.
     let h = `<div class="rk" style="gap:7px">`;
 
-    if (notice) h += `<div class="mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:7px;padding:7px 9px;color:var(--rk-ink);font-size:calc(8px*var(--ui));line-height:1.5">${esc(notice)} <button id="wonot-${p.id}" style="background:none;border:none;color:var(--rk-ink-dim);cursor:pointer;font-size:calc(9px*var(--ui))">✕</button></div>`;
+    if (notice) h += `<div class="mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:7px;padding:7px 9px;color:var(--rk-ink);font-size:calc(9.5px*var(--ui));line-height:1.5">${esc(notice)} <button id="wonot-${p.id}" style="min-height:calc(28px*var(--ui));background:none;border:none;color:var(--rk-ink-dim);cursor:pointer;font-size:calc(10px*var(--ui))">✕</button></div>`;
     // the running block lives above BOTH views, so leaving a panel never hides the workout
     if (active) h += `<div id="wost-${p.id}" style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:8px;padding:9px 11px;min-height:74px"></div>`;
     h += stripBlock();                       // under the status block, and it outlives the run
@@ -1184,7 +1184,7 @@ export function buildWorkoutsContent(p) {
     // "this halts something" signal, so it must look the same in every pedal rather than
     // take on each one's accent. It was three hand-mixed reds until now, which is exactly
     // how a signal that has to be recognised without reading it drifts apart pedal by pedal.
-    if (active) h += `<button id="wostop-${p.id}" class="mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);border-radius:6px;color:var(--rk-stop);font-size:calc(10px*var(--ui));font-weight:700;padding:7px;cursor:pointer">⏹ STOP WORKOUT</button>`;
+    if (active) h += `<button id="wostop-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);border-radius:6px;color:var(--rk-stop);font-size:calc(10px*var(--ui));font-weight:700;padding:7px;cursor:pointer">⏹ STOP WORKOUT</button>`;
 
     h += ent ? (ent.w ? panelView(ent) : retiredView(ent.custom)) : gridView();
     h += `</div>`;

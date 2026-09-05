@@ -1,7 +1,7 @@
 import { audio } from './core/audio.js';
 import { setCurrentInstrument, setCustomTuning, applyTuning, currentInstrument, customTuning, INSTRUMENTS } from './core/tuning.js';
 import { loadState, saveState, setShowIntervals, setShowNoteMap, chordHighlight, pedalBus, metroClock, fretboardView } from './core/state.js';
-import { boardHistory, restoreBoard, snapshotBoardNow, inventory } from './core/store.js';
+import { boardHistory, restoreBoard, snapshotBoardNow, inventory, read as storeRead, write as storeWrite, KEYS } from './core/store.js';
 import { restoreMissing } from './core/kevin-library.js';
 import { buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
 import { renderHeader, renderInstrumentBar, renderInstrumentDisplay, renderCatalog, renderHelp, loadoutDone } from './ui/header.js';
@@ -228,6 +228,7 @@ function restoreState() {
     // so re-applying the ratio here would compound it on every launch until a
     // pedal was wider than the screen.
     if (d.uiScale) setDensity(d.uiScale, { skipCards: true, quiet: true });
+    if (d.learnSettings && typeof d.learnSettings === 'object') learnSettings = d.learnSettings;
   }
 }
 
@@ -251,6 +252,7 @@ function save() {
     focusMode,
     focusPrev,
     uiScale,
+    learnSettings,
   });
 }
 window.addEventListener('beforeunload', save);
@@ -607,12 +609,19 @@ function positionDock() {
   const neck = document.getElementById('instrument-display');
   if (!dock) return;
   const top = neck && neck.offsetParent !== null ? Math.round(neck.getBoundingClientRect().bottom) : 0;
+  // The strips hang off the neck's bottom edge — but on a page that SCROLLS (the
+  // LEARN page was the first) the neck leaves the top of the viewport, that edge
+  // goes negative, and clamping to zero parked both strips over the wordmark.
+  // They may follow the neck down, never above the header: below whichever of the
+  // two is lower. Re-measured on scroll, because that is when this changes.
+  const head = document.getElementById('header');
+  const headBottom = head ? Math.round(head.getBoundingClientRect().bottom) : 0;
   // FOCUS sits in its own strip directly ABOVE the dock rail: it is the control
   // that fills that rail, so it belongs at the head of it rather than out on the
   // neck. The strip is measured, not assumed — the density slider scales its type,
   // so its height changes and a hard-coded offset would drift.
   const bar = document.getElementById('focus-bar');
-  let y = Math.max(0, top);
+  let y = Math.max(0, headBottom, top);
   if (bar) {
     bar.style.top = y + 'px';
     y += Math.round(bar.getBoundingClientRect().height);
@@ -717,6 +726,11 @@ function setFocusMode(on) {
 // A shorter window makes the board deeper (and a taller one shallower), so the
 // rail and the pan both have to be re-measured against the new screen.
 window.addEventListener('resize', () => { positionDock(); setBoardPan(boardPan); });
+// Capture phase on the document, not a plain window listener: scroll events do
+// not bubble, and the thing that scrolls here is #app (overflow:auto), not the
+// window — a window listener would never fire and the strips would sit on the
+// wordmark the moment a lesson scrolled.
+document.addEventListener('scroll', positionDock, { capture: true, passive: true });
 
 function addPedal(type) {
   const entry   = CATALOG.find(c => c.type === type);
@@ -1115,12 +1129,31 @@ function switchMode(mode) {
   const boardOnly   = document.getElementById('board-area');
   const studioEl    = document.getElementById('studio-mode');
   const tabEl       = document.getElementById('tab-mode');
+  const learnEl     = document.getElementById('learn-mode');
   const btnP = document.getElementById('btn-mode-practice');
+  const btnL = document.getElementById('btn-mode-learn');
   const btnT = document.getElementById('btn-mode-tab');
   const btnS = document.getElementById('btn-mode-studio');
-  const setActive = btn => { [btnP, btnT, btnS].forEach(b => b?.classList.remove('active-green')); btn?.classList.add('active-green'); };
+  const setActive = btn => { [btnP, btnL, btnT, btnS].forEach(b => b?.classList.remove('active-green')); btn?.classList.add('active-green'); };
+  if (learnEl && mode !== 'learn') { learnEl.style.display = 'none'; }
+  // A body class the stylesheet can hang page-specific rules off. The LEARN page
+  // uses it to drop the FOCUS strip and the dock rail: positioned correctly they
+  // sit on the lesson text as it scrolls, and neither means anything on a page
+  // with no board. TAB and STUDIO keep them - they still work with pedals.
+  document.body.classList.toggle('page-learn', mode === 'learn');
 
-  if (mode === 'studio') {
+  if (mode === 'learn') {
+    // The lesson page: neck on top, the board out of the way, the Theory Path
+    // rendered full-width below in a reading column. Same renderer as the pedal,
+    // mounted on a derived handle — one Theory Path, one progress record.
+    practiceEls.forEach(el => el.style.display = '');
+    if (boardOnly) boardOnly.style.display = 'none';
+    if (studioEl) studioEl.style.display = 'none';
+    if (tabEl) tabEl.style.display = 'none';
+    if (learnEl) learnEl.style.display = 'flex';
+    setActive(btnL);
+    mountLearn();
+  } else if (mode === 'studio') {
     practiceEls.forEach(el => el.style.display = 'none');
     if (tabEl) tabEl.style.display = 'none';
     if (studioEl) studioEl.style.display = 'flex';
@@ -1145,8 +1178,35 @@ function switchMode(mode) {
   // Landing on a page gives a fresh arrangement rather than wherever the pedals
   // were left — each page has different content under the floating layer, so the
   // tidy positions differ. Locked pedals are exempt (that is what locking means).
-  pageMode = mode === 'studio' ? 'studio' : mode === 'tab' ? 'tab' : 'practice';
+  pageMode = mode === 'studio' ? 'studio' : mode === 'tab' ? 'tab' : mode === 'learn' ? 'learn' : 'practice';
   layoutPedals();
+}
+
+// ── The LEARN page ────────────────────────────────────────────────────
+// Progress is the Theory Path PEDAL's settings object when one is on the board,
+// so a lesson finished on the page is finished in the pedal and vice versa. With
+// no pedal, the page keeps its own object and persists it with the display state.
+let learnSettings = null;
+function learnHandle() {
+  const tp = pedals.find(x => x.type === 'theory');
+  const settings = tp ? (tp.settings = tp.settings || {}) : (learnSettings = learnSettings || {});
+  return { id: 'learn', type: 'theory', settings };
+}
+function mountLearn(lessonId) {
+  const host = document.getElementById('learn-mode');
+  if (!host) return;
+  if (!document.getElementById('body-learn')) {
+    host.innerHTML = `<div id="learn-col">
+      <div id="learn-bar">
+        <span class="learn-kicker">LEARN · THEORY PATH</span>
+        <span class="learn-hint">Demos light the neck above · ▶ runs the drill · your progress is shared with the 🧭 pedal</span>
+      </div>
+      <div id="body-learn" class="rk rk-host"></div>
+    </div>`;
+  }
+  const h = learnHandle();
+  if (lessonId) { h.settings._openLesson = lessonId; h.settings.view = 'lesson'; }
+  buildContent(h);
 }
 
 // ── Fretboard click dispatch ───────────────────────────────────────────
@@ -1376,15 +1436,12 @@ async function init() {
   };
 
   // "Learn the theory →" from any pedal's smart Theory panel → open Theory Path at that lesson.
+  // "Open the lesson" lands on the LEARN page, not the pedal: the page is where a
+  // lesson can be read. The pedal stays the compact launcher and progress card.
   window.addEventListener('resonote:open-lesson', e => {
     const lessonId = e.detail?.lessonId || null;
-    let tp = pedals.find(x => x.type === 'theory');
-    if (!tp) { addPedal('theory'); tp = pedals.find(x => x.type === 'theory'); }
-    if (!tp) return;
-    tp.settings = tp.settings || {};
-    tp.settings._openLesson = lessonId;
-    buildContent(tp);
-    raise(tp.id);
+    switchMode('learn');
+    mountLearn(lessonId);
     save();
   });
 
@@ -1478,16 +1535,26 @@ async function init() {
   // once, behind a flag, so deliberately clearing them out stays possible.
   try {
     const seeded = localStorage.getItem('rn-lib-seeded');
-    const lib = JSON.parse(localStorage.getItem('rn-sketch-lib') || '[]');
-    if (!seeded || !lib.length) {
+    const lib = storeRead(KEYS.pieces, []);
+    if (!seeded || !(Array.isArray(lib) && lib.length)) {
       const { library, added } = restoreMissing(Array.isArray(lib) ? lib : []);
-      if (added.length) localStorage.setItem('rn-sketch-lib', JSON.stringify(library));
+      if (added.length) storeWrite(KEYS.pieces, library);   // through the store: one cap for every writer
       localStorage.setItem('rn-lib-seeded', '1');
     }
   } catch (e) { /* private mode — the pedals still work, the shelf is just empty */ }
 
-  // Mount saved pedals
-  pedals.forEach(p => mountPedal(p));
+  // Mount saved pedals — each one on its own. A pedal that throws in someone
+  // else's browser (an audio device that is not there, a permission that is
+  // refused) must not take the whole first run down with it: the card stays,
+  // says what happened, and the other pedals mount normally.
+  pedals.forEach(p => {
+    try { mountPedal(p); }
+    catch (e) {
+      console.error('pedal failed to mount:', p.type, e);
+      const body = document.getElementById('body-' + p.id);
+      if (body) body.innerHTML = `<div class="mono" style="padding:14px;font-size:calc(11px*var(--ui));color:var(--rk-ink-dim);line-height:1.5">This pedal hit an error while opening.<br><span style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${String(e && e.message || e).replace(/</g,'&lt;').slice(0,160)}</span><br>Close it and add it again from + PEDALS.</div>`;
+    }
+  });
 
   // First run gets the tidy arrangement rather than the raw default coordinates.
   if (firstRun) layoutPedals();

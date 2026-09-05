@@ -30,6 +30,7 @@ export function renderHeader({ onSave, onCatalog, onHelp, onModeSwitch, onFocus 
     </div>
     <div class="header-actions">
       <button id="btn-mode-practice" class="mono btn active-green" style="font-size:calc(10px*var(--ui));letter-spacing:1px">PRACTICE</button>
+      <button id="btn-mode-learn"    class="mono btn" title="The Theory Path as a page you can actually read — the neck stays up top" style="font-size:calc(10px*var(--ui));letter-spacing:1px">LEARN</button>
       <button id="btn-mode-tab"      class="mono btn"              style="font-size:calc(10px*var(--ui));letter-spacing:1px">TAB</button>
       <button id="btn-mode-studio"   class="mono btn"              style="font-size:calc(10px*var(--ui));letter-spacing:1px">STUDIO</button>
       <span class="header-divider"></span>
@@ -44,6 +45,7 @@ export function renderHeader({ onSave, onCatalog, onHelp, onModeSwitch, onFocus 
   document.getElementById('btn-catalog')?.addEventListener('click', onCatalog);
   document.getElementById('btn-help')   ?.addEventListener('click', onHelp);
   document.getElementById('btn-mode-practice')?.addEventListener('click', () => onModeSwitch('practice'));
+  document.getElementById('btn-mode-learn')   ?.addEventListener('click', () => onModeSwitch('learn'));
   document.getElementById('btn-mode-tab')     ?.addEventListener('click', () => onModeSwitch('tab'));
   document.getElementById('btn-mode-studio')  ?.addEventListener('click', () => onModeSwitch('studio'));
 }
@@ -227,7 +229,7 @@ export function renderInstrumentBar(onInstrumentChange, onFocus) {
   // Two views for now. The other renderers (function / tension / chord tones /
   // interval / voice leading) are all still live in fretboard.js — this list is
   // the shop window, not the stock room, and they go back in by adding a row.
-  const FB_VIEWS = [['standard','● Standard'],['spectrum','🌈 Spectrum']];
+  const FB_VIEWS = [['standard','● Standard'],['spectrum','🌈 Spectrum'],['intervals','⟡ Intervals']];
   // A board saved while one of the hidden views was selected would otherwise come
   // back in a mode the dropdown can't name and can't get you out of.
   const viewFellBack = !FB_VIEWS.some(([v]) => v === fretboardView);
@@ -565,7 +567,7 @@ const PEDAL_QUICKSTART = {
   beatmaker:   ['Pick a genre — it loads that groove, mode, tempo and chord progression at once.', 'Choose “beats only” for the kit alone, or “+ chords” for a full backing track in any key.', 'Press play. Shape the groove in the 16-step grid; everything follows the session tempo.'],
   amp:         ['Connect your guitar (Input & Tuner pedal).', 'Pick an amp + cab, set gain and EQ.', 'Add reverb to taste and play.'],
   looper:      ['Connect audio input.', 'Record your first loop — its length sets the cycle.', 'Overdub layers on top; mute or clear per layer.'],
-  reaper:      ['One-time REAPER setup: Actions → Show action list → New action → Load ReaScript → pick Resonote_Import.lua (in the repo’s reaper folder), and give it a shortcut.', 'OUT: hit ⇄ Export here, in Progression Studio, or in Beat Maker — then run Resonote Import in REAPER to drop the newest .mid at the cursor.', 'IN: render or record in REAPER, choose the WAV here — get tempo, key & every note mapped on the fretboard.'],
+  reaper:      ['One-time REAPER setup: Actions → Show action list → New action → Load ReaScript → pick Resonote_Import.lua (in the repo’s reaper folder), and give it a shortcut.', 'OUT: hit ⇄ Export here, in Progression Studio, or in Backing Track — then run Resonote Import in REAPER to drop the newest .mid at the cursor.', 'IN: render or record in REAPER, choose the WAV here — get tempo, key & every note mapped on the fretboard.'],
   workouts:    ['Tap any workout card — random chords/triads flash on the neck and change every 1, 2 or 4 bars at the session tempo.', 'Switch ADVANCE to 🎤 Listen and it waits until it hears you play every note of the grip.', 'PRO: ＋ New builds your own — pick the chord pool or string set, add a tempo ramp, save it as a card.'],
   improvlab:   ['🗣️ Call & Response: pick a key + feel, press ▶ Play the call — the app plays a phrase that asks a question, then it\'s your turn. Start on ① Echo (play it back), climb to ③ Create (improvise a reply that resolves).', '🎸 Jam: choose a backing, set the key, ▶ Start jam — the neck lights the scale, the current chord\'s arpeggio (your safe notes), and the target 3rd to aim for through the changes.', 'Connect your guitar to play answers back and get feedback — or just listen and learn the grammar of responding.'],
 };
@@ -584,7 +586,7 @@ export function renderHelp(tab = 'guide') {
     body += `<div style="display:flex;flex-direction:column;gap:12px">`;
     body += card('QUICK START', `1 · Open the ${hl('Theory Path')} pedal and press ${hl('▶ Continue')} — it picks your next lesson.<br>2 · In any lesson, ${hl('Hear & see it')} plays the concept on the neck; the ${hl('facts strip')} under the fretboard states its theory.<br>3 · Finish with ${hl('🏋 Dynamic Practice')}: same structure, your choice of key, tempo, and layer.`);
     body += card('THE BOARD', `${hl('Instruments')} — guitar, 8-string, bass, banjo, mandolin, piano, or 🎤 vocals; tuning and wood style are per-instrument.<br>${hl('Resize')} — drag the slim handle between the board and the pedalboard (double-click = full width). Your size is remembered.<br>${hl('Readout + facts strip')} — under the neck: what's playing now, then its objective theory (notes · degrees · structure · resolution).`);
-    body += card('DISPLAY &amp; THE MAP', `${hl('● Standard')} — plain dots · ${hl('🌈 Spectrum')} — every note wears its own colour (fifths-ordered, matching the legend and both circles).<br>${hl('🗺 MAP')} labels the neck itself. ${hl('♮ NAMES')} writes note names, ${hl('⟡ DEGREES')} writes each note's degree in the session key (R ♭2 2 3 …) — press the lit one again to hide the map. ${hl('IN KEY')} shows only the notes of the session key, so the neck becomes a map of that key; ${hl('WHOLE NECK')} shows all twelve as a chromatic reference. The tonic is drawn brightest. ${hl('✕ CLEAR')} empties the neck.<br>${hl('🎯 FOCUS')} (by the instruments) docks everything and hands the room to the strings.`);
+    body += card('DISPLAY &amp; THE MAP', `${hl('● Standard')} — plain dots · ${hl('🌈 Spectrum')} — every note wears its own colour (fifths-ordered, matching the legend and both circles) · ${hl('⟡ Intervals')} — every note wears its FUNCTION in the session key: gold is home, amber and terracotta are the 3rds, rose and wine the 7ths, sage/teal/olive the colour tones, slate and plum the notes that pull hardest. Change the key and the whole neck recolours.<br>${hl('🗺 MAP')} labels the neck itself. ${hl('♮ NAMES')} writes note names, ${hl('⟡ DEGREES')} writes each note's degree in the session key (R ♭2 2 3 …) — press the lit one again to hide the map. ${hl('IN KEY')} shows only the notes of the session key, so the neck becomes a map of that key; ${hl('WHOLE NECK')} shows all twelve as a chromatic reference. The tonic is drawn brightest. ${hl('✕ CLEAR')} empties the neck.<br>${hl('🎯 FOCUS')} (by the instruments) docks everything and hands the room to the strings.`);
     body += card('SESSION BUSES', `The top bar's ${hl('KEY')} and ${hl('TEMPO')} drive every linked pedal at once — change the key and the Circle, Explorer, drills and labs follow. ${hl('⟲ Re-link all')} reattaches any pedal you detached.`);
     body += card('PEDALS', `${hl('Drag')} by the header · ${hl('resize')} from the corner · ${hl('▁ minimize')} · add more from ${hl('+ PEDALS')}. Each pedal's goal and fast setup lives in the ${hl('PEDALS')} tab of this help. ${hl('💾 SAVE')} stores your whole board and every pedal's settings.`);
     body += card('THE LEARNING LOOP', `${hl('Theory Path')} teaches a concept → its exercises make you build and hear it → ${hl('Dynamic Practice')} transfers it to any key/tempo/layer → the ${hl('Practice Manager')} loops any drill for daily reps. The ${hl('Circle of Fifths')} traces whatever plays, and the Practice Manager's ${hl('📖 Songbook')} turns real tabs and your own ideas into the same kind of guided practice.`);

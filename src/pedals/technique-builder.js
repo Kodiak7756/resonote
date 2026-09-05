@@ -286,18 +286,18 @@ export function buildTechniqueContent(p) {
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
     Object.keys(TECHNIQUE_EXERCISES).forEach(tc => {
       const sym = TECHNIQUE_EXERCISES[tc].symbol;
-      h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:calc(7px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${sym} ${tc}</button>`;
+      h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${sym} ${tc}</button>`;
     });
     h += `</div>`;
 
     // Description
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
 
     // Exercise selector
     const exs = TECHNIQUE_EXERCISES[techCat]?.exercises || [];
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
     exs.forEach(e => {
-      h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`;
+      h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`;
     });
     h += `</div>`;
 
@@ -305,9 +305,9 @@ export function buildTechniqueContent(p) {
 
     // String offset
     h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center">`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">START STRING</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">START STRING</span>`;
     customTuning.forEach((_, i) => {
-      h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:calc(7px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`;
+      h += `<button class="chord-btn tech-str" data-ts="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`;
     });
     h += `</div>`;
 
@@ -326,17 +326,17 @@ export function buildTechniqueContent(p) {
 
       h += `<div class="tech-step" style="background:${bg};border:1.5px solid ${bc};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px;transition:all .1s">`;
       h += `<div class="mono" style="color:${step[2] === 'pick' ? 'var(--rk-accent)' : 'var(--rk-dim)'};font-size:calc(11px*var(--ui));font-weight:800">${actionLabel}</div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${note}</div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));font-weight:600">${note}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div>`;
       h += `</div>`;
     });
     h += `</div>`;
 
     // Tempo display
     h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px">`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">TEMPO</span>`;
     h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span>`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">BPM</span>`;
     h += `</div>`;
 
     // Play/stop button. While it reads ■ STOP it is not the pedal reporting that
@@ -346,7 +346,7 @@ export function buildTechniqueContent(p) {
     const pc = p._techPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
     const pb = p._techPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
     const pt = p._techPlaying ? 'var(--rk-stop)'      : accent;
-    h += `<button class="tech-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<button class="tech-play mono" style="min-height:calc(28px*var(--ui));background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
 
     h += `</div>`;
     el.innerHTML = h;

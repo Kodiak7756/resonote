@@ -132,8 +132,8 @@ export function buildScaleArpContent(p) {
 
     // Mode toggle
     h += `<div class="rk-seg" style="gap:5px">
-      <button class="rk-seg-btn sa-mode${mode === 'scales' ? ' is-active' : ''}" data-m="scales" style="flex:1;font-size:calc(10px*var(--ui));padding:7px 0">◆ SCALES</button>
-      <button class="rk-seg-btn sa-mode${mode === 'arps' ? ' is-active' : ''}" data-m="arps" style="flex:1;font-size:calc(10px*var(--ui));padding:7px 0">◈ ARPEGGIOS</button>
+      <button class="rk-seg-btn sa-mode${mode === 'scales' ? ' is-active' : ''}" data-m="scales" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:7px 0">◆ SCALES</button>
+      <button class="rk-seg-btn sa-mode${mode === 'arps' ? ' is-active' : ''}" data-m="arps" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:7px 0">◈ ARPEGGIOS</button>
     </div>`;
 
     // Top blurb for the active mode (Chord-Family-Lab style)
@@ -144,7 +144,7 @@ export function buildScaleArpContent(p) {
     // Root selector
     h += `<div class="rk-section"><div class="rk-label">ROOT</div><div class="rk-seg" style="gap:3px">`;
     NOTES.forEach(n => {
-      h += `<button class="rk-seg-btn sa-root${n === root ? ' is-active' : ''}" data-root="${n}" style="min-width:26px;padding:5px 0">${n}</button>`;
+      h += `<button class="rk-seg-btn sa-root${n === root ? ' is-active' : ''}" data-root="${n}" style="min-height:calc(28px*var(--ui));min-width:26px;padding:5px 0">${n}</button>`;
     });
     h += `</div></div>`;
 
@@ -154,7 +154,7 @@ export function buildScaleArpContent(p) {
       h += `<div class="rk-label" style="margin-top:5px;color:var(--rk-ink-mute)">${c}</div><div class="rk-seg" style="gap:3px">`;
       Object.keys(types).forEach(nm => {
         const act = name === nm && cat === c;
-        h += `<button class="rk-seg-btn sa-type${act ? ' is-active' : ''}" data-n="${nm}" data-c="${c}" style="font-size:calc(8.5px*var(--ui));padding:5px 8px">${nm}</button>`;
+        h += `<button class="rk-seg-btn sa-type${act ? ' is-active' : ''}" data-n="${nm}" data-c="${c}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:5px 8px">${nm}</button>`;
       });
       h += `</div>`;
     });
@@ -171,8 +171,8 @@ export function buildScaleArpContent(p) {
 
     // View toggle
     h += `<div class="rk-seg" style="gap:5px">
-      <button class="rk-seg-btn sa-view${view === 'positions' ? ' is-active' : ''}" data-v="positions" style="flex:1;font-size:calc(9px*var(--ui));padding:6px 0">⬚ POSITIONS</button>
-      <button class="rk-seg-btn sa-view${view === 'all' ? ' is-active' : ''}" data-v="all" style="flex:1;font-size:calc(9px*var(--ui));padding:6px 0">◈ ALL NOTES</button>
+      <button class="rk-seg-btn sa-view${view === 'positions' ? ' is-active' : ''}" data-v="positions" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:6px 0">⬚ POSITIONS</button>
+      <button class="rk-seg-btn sa-view${view === 'all' ? ' is-active' : ''}" data-v="all" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:6px 0">◈ ALL NOTES</button>
     </div>`;
 
     if (view === 'positions') {
@@ -188,14 +188,14 @@ export function buildScaleArpContent(p) {
           h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${b.label}${b.lo !== undefined ? ` · Frets ${b.lo}–${b.hi}` : ''} · ${b.totalNotes} notes</div>`;
         }
       } else {
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px 0">No positions found</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:12px 0">No positions found</div>`;
       }
     } else {
-      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));text-align:center;padding:2px 0">All ${root} ${name} ${cfg.noteLabel} on the fretboard</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));text-align:center;padding:2px 0">All ${root} ${name} ${cfg.noteLabel} on the fretboard</div>`;
       h += `<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:2px 0">`;
       notes.forEach((n, i) => {
         const isR = i === 0;
-        h += `<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${isR ? cfg.COLORS.root : cfg.COLORS.tone}"></span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${isR ? 'R' : (showIntervals ? intervalLabel(root, n) : i + 1)}=${n}</span></span>`;
+        h += `<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${isR ? cfg.COLORS.root : cfg.COLORS.tone}"></span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${isR ? 'R' : (showIntervals ? intervalLabel(root, n) : i + 1)}=${n}</span></span>`;
       });
       h += `</div>`;
     }

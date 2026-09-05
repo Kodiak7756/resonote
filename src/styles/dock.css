@@ -13,7 +13,10 @@
 #pedal-dock {
   position: fixed;
   left: 0; right: 0;
-  z-index: 60;                       /* over the board backdrop, under a live card */
+  /* 30, not 60: #pedals-container sits at 40, and the rail must be UNDER the
+     pedals, not over them - a card dragged across it covers it, which is the
+     right way round. Above the board backdrop, below every card. */
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -108,7 +111,7 @@
    inside the rail, because the rail hides itself when empty (#pedal-dock:empty)
    and FOCUS has to stay reachable when nothing is docked. */
 #focus-bar {
-  position: fixed; left: 0; right: 0; z-index: 61;
+  position: fixed; left: 0; right: 0; z-index: 31;   /* one above the rail, still under the pedals */
   display: flex; align-items: center;
   padding: 4px 10px 2px;
   pointer-events: none;              /* the strip is a spacer; only the button takes clicks */
@@ -143,3 +146,8 @@ body.focus-mode #pedal-dock {
 body.focus-mode .pedal-card:not(.minimized) {
   box-shadow: 0 0 0 1px rgba(255,206,106,.28), 0 14px 40px rgba(0,0,0,.6);
 }
+
+/* No rail and no FOCUS on the LEARN page: positioned correctly they sit on the
+   lesson as it scrolls, and neither means anything on a page with no board. */
+body.page-learn #pedal-dock,
+body.page-learn #focus-bar { display: none; }

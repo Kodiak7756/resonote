@@ -1,0 +1,77 @@
+/* ─── The LEARN page ───────────────────────────────────────────────────
+   The Theory Path holds ~56,000 words of lesson, and it was being read inside a
+   470×690 card at 11px — a textbook in a sticky note. The only way to read a
+   lesson was to drag the card big, which put it over the neck the lesson is
+   ABOUT. Reading wants width, height and comfortable type; a pedal wants to be
+   small so the neck stays visible. Those are not reconcilable with a font size.
+
+   So lessons get a page. The neck stays on top (a demo lights it, a drill runs on
+   it — the lesson refers to it constantly); the lesson sits below in a column
+   sized for reading. The same renderer the pedal uses is mounted here on a
+   derived handle, exactly as the Songbook is mounted inside the Practice Manager,
+   so there is ONE Theory Path with ONE progress record, shown two ways. */
+
+#learn-mode {
+  --rk-pedal-accent: #73bd85;                 /* the Theory Path's own accent */
+  --rk-chassis:      #18231b;
+  display: flex; justify-content: center;
+  padding: 18px 24px 60px;
+  background: #0a0a0a;
+}
+#learn-col {
+  width: 100%; max-width: 820px;              /* ~70 characters a line at reading size */
+  display: flex; flex-direction: column; gap: 14px;
+}
+#learn-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 2px 4px;
+}
+#learn-bar .learn-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: calc(9px*var(--ui)); letter-spacing: 1.6px; font-weight: 700;
+  color: var(--rk-ink-mute, #8a8f8a);
+}
+#learn-bar .learn-hint {
+  font-size: calc(11px*var(--ui)); color: #6f746f; margin-left: auto;
+}
+
+/* The host the renderer mounts into. It carries the card's ladder of kit tokens
+   without being a card: no chassis, no rim, no tier finish — a page, not a pedal. */
+#body-learn.rk-host {
+  display: flex; flex-direction: column;
+  border: 0; background: transparent; padding: 0;
+}
+
+/* ── READING SIZE ────────────────────────────────────────────────────────
+   These override the renderer's own inline stylesheet, which was written for a
+   card. Everything still multiplies by --ui, so the density slider carries the
+   page too. Body copy at 16px, points at 15px, title at 26px: sizes chosen for
+   a lesson you sit back from, not a label you lean into. */
+#learn-mode .tp-wrap   { gap: 16px; font-size: calc(15px*var(--ui)); }
+#learn-mode .tp-crumb  { font-size: calc(11px*var(--ui)); letter-spacing: 1px; }
+#learn-mode .tp-mini   { font-size: calc(12px*var(--ui)); padding: 7px 12px; }
+#learn-mode .tp-title  { font-size: calc(26px*var(--ui)); line-height: 1.2; letter-spacing: -.2px; margin: 4px 0 2px; }
+#learn-mode .tp-card   { padding: 18px 20px; border-radius: 12px; }
+#learn-mode .tp-sum    { font-size: calc(16px*var(--ui)); line-height: 1.6; }
+#learn-mode .tp-points { font-size: calc(15px*var(--ui)); line-height: 1.7; padding-left: 22px; margin-top: 10px; }
+#learn-mode .tp-points li { margin: 5px 0; }
+#learn-mode .tp-tip    { font-size: calc(14px*var(--ui)); line-height: 1.6; padding: 12px 14px; margin-top: 12px; }
+#learn-mode .tp-demo   { font-size: calc(13px*var(--ui)); padding: 10px 16px; margin-top: 12px; }
+#learn-mode .tp-demo.sm{ font-size: calc(12px*var(--ui)); padding: 7px 12px; }
+#learn-mode .tp-ex     { padding: 16px 18px; border-radius: 12px; gap: 12px; }
+#learn-mode .tp-exhead { font-size: calc(11px*var(--ui)); letter-spacing: 1.6px; }
+#learn-mode .tp-ex .mono { font-size: calc(13px*var(--ui)); }
+#learn-mode .tp-fb     { font-size: calc(14px*var(--ui)); line-height: 1.55; padding: 12px 14px; }
+#learn-mode .tp-next   { font-size: calc(13px*var(--ui)); padding: 12px 18px; }
+#learn-mode .tp-done   { font-size: calc(18px*var(--ui)); }
+
+/* Exercise answer chips: a lesson is read with a guitar on, and 44px is the
+   smallest thing you should be asked to hit from that posture. */
+#learn-mode .tp-ex button:not(.tp-next):not(.tp-demo) {
+  min-height: 44px; font-size: calc(14px*var(--ui)); padding: 10px 16px;
+}
+
+/* The path view (units → lessons) on the page: roomier rows, real hit targets. */
+#learn-mode .tp-unit, #learn-mode .tp-lesson { min-height: 44px; }
+#learn-mode .tp-unit  { font-size: calc(15px*var(--ui)); padding: 12px 14px; }
+#learn-mode .tp-lesson{ font-size: calc(14px*var(--ui)); padding: 10px 14px; }

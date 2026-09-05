@@ -186,7 +186,7 @@ function renderTabStrip(systems, columns, curIdx) {
 
     // Section divider for multi-system tabs
     if (systems.length > 1) {
-      html += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));padding:6px 0 2px;letter-spacing:2px;user-select:none">── ${sysIdx + 1} ──</div>`;
+      html += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));padding:6px 0 2px;letter-spacing:2px;user-select:none">── ${sysIdx + 1} ──</div>`;
     }
 
     html += `<div class="tab-system" data-sysidx="${sysIdx}" style="font-family:'JetBrains Mono',monospace;font-size:calc(11px*var(--ui));white-space:pre;line-height:1.65">`;
@@ -252,7 +252,7 @@ function renderColCard(col, label, accent, bg) {
 
   if (!col) {
     return `<div style="background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:6px 8px;min-height:44px">
-      <div class="mono" style="color:${accent};font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
+      <div class="mono" style="color:${accent};font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
       <div style="${dim}">—</div>
     </div>`;
   }
@@ -263,11 +263,11 @@ function renderColCard(col, label, accent, bg) {
     if (si >= ns) return null;
     const info = getNoteAtFret(customTuning[si].note, customTuning[si].octave, fret);
     return `<span class="mono" style="color:${accent};font-weight:700">${info.note}</span>` +
-           `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${fret}</span>`;
+           `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${fret}</span>`;
   }).filter(Boolean);
 
   return `<div style="background:${bg};border:1px solid var(--rk-edge-soft);border-radius:5px;padding:6px 8px">
-    <div class="mono" style="color:${accent};font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
+    <div class="mono" style="color:${accent};font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-bottom:3px">${label}</div>
     <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:baseline">${noteItems.join('')}</div>
   </div>`;
 }
@@ -288,7 +288,7 @@ const playBtnCSS = halting =>
   `background:${halting ? 'var(--rk-stop-soft)' : 'var(--rk-soft2)'};` +
   `border:1px solid ${halting ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};border-radius:3px;` +
   `color:${halting ? 'var(--rk-stop)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;` +
-  `font-size:calc(9px*var(--ui));padding:3px 8px;cursor:pointer`;
+  `font-size:calc(10px*var(--ui));min-height:calc(28px*var(--ui));padding:3px 8px;cursor:pointer`;
 
 // ─── Exported pedal builder ───────────────────────────────────────────────────
 
@@ -480,16 +480,16 @@ export function buildTabContent(p) {
     // ── Import panel ──
     if (!hasTab) {
       h += `<div style="border:1px solid var(--rk-edge-soft);border-radius:6px;padding:8px">`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-bottom:5px">PASTE ASCII TAB</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-bottom:5px">PASTE ASCII TAB</div>`;
       h += `<textarea id="ta-${p.id}" rows="7"
           placeholder="e|---0---3---5---|\nB|---1---3---5---|\nG|---0---0---5---|\nD|---2---0---5---|\nA|---3-------5---|\nE|---0-------3---|"
           style="width:100%;background:var(--rk-panel);color:var(--rk-ink);border:1px solid var(--rk-edge-soft);border-radius:4px;
-                 font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:5px;resize:vertical;
+                 font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:5px;resize:vertical;
                  box-sizing:border-box;outline:none;line-height:1.6"></textarea>`;
       h += `<div id="err-${p.id}" style="display:none;color:var(--rk-bad);font-family:'JetBrains Mono',monospace;font-size:calc(8px*var(--ui));padding:3px 0"></div>`;
       h += `<button id="import-${p.id}"
-          style="margin-top:5px;width:100%;background:var(--rk-soft);border:1px solid var(--rk-line);
-                 border-radius:4px;color:var(--rk-accent);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));
+          style="min-height:calc(28px*var(--ui));margin-top:5px;width:100%;background:var(--rk-soft);border:1px solid var(--rk-line);
+                 border-radius:4px;color:var(--rk-accent);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));
                  padding:6px;cursor:pointer;letter-spacing:1px">↓ IMPORT TAB</button>`;
       h += `</div>`;
 
@@ -509,26 +509,26 @@ export function buildTabContent(p) {
       // Mode toggle
       const isWatch = mode === 'watch';
       h += `<button id="mode-${p.id}"
-          style="background:${isWatch ? 'var(--rk-soft)' : 'var(--rk-soft2)'};
+          style="min-height:calc(28px*var(--ui));background:${isWatch ? 'var(--rk-soft)' : 'var(--rk-soft2)'};
                  border:1px solid ${isWatch ? 'var(--rk-edge)' : 'var(--rk-line)'};border-radius:4px;
                  color:${isWatch ? 'var(--rk-ink-dim)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;
-                 font-size:calc(8px*var(--ui));padding:3px 7px;cursor:pointer;letter-spacing:1px">
+                 font-size:calc(10px*var(--ui));padding:3px 7px;cursor:pointer;letter-spacing:1px">
           ${isWatch ? '👁 WATCH' : '🎸 PRACTICE'}</button>`;
 
       // Prev / Play / Next
       h += `<div style="display:flex;gap:3px;margin-left:auto">`;
-      h += `<button id="prev-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:3px 7px;cursor:pointer">◄</button>`;
+      h += `<button id="prev-${p.id}" style="min-height:calc(28px*var(--ui));background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:3px 7px;cursor:pointer">◄</button>`;
       if (isWatch) {
         h += `<button id="play-${p.id}" style="${playBtnCSS(playing)}">${playing ? '⏸ PAUSE' : '▶ PLAY'}</button>`;
       }
-      h += `<button id="next-${p.id}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:3px 7px;cursor:pointer">►</button>`;
+      h += `<button id="next-${p.id}" style="min-height:calc(28px*var(--ui));background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:3px;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:3px 7px;cursor:pointer">►</button>`;
       h += `</div>`;
       h += `</div>`;
 
       // Column counter + load-new link
       h += `<div style="display:flex;align-items:center;justify-content:space-between">`;
-      h += `<span id="ctr-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${curIdx + 1} / ${columns.length}</span>`;
-      h += `<button id="new-${p.id}" style="background:none;border:none;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(7px*var(--ui));cursor:pointer;letter-spacing:1px;text-decoration:underline">load new tab</button>`;
+      h += `<span id="ctr-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">${curIdx + 1} / ${columns.length}</span>`;
+      h += `<button id="new-${p.id}" style="min-height:calc(28px*var(--ui));background:none;border:none;color:var(--rk-ink-mute);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));cursor:pointer;letter-spacing:1px;text-decoration:underline">load new tab</button>`;
       h += `</div>`;
 
       // ── Tab strip ──

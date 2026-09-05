@@ -522,15 +522,15 @@ export function buildProgressionContent(p) {
     h += `<div class="rk-section">
       <div class="rk-label">KEY
         <span style="flex:1"></span>
-        <button class="rk-chip numlabel-toggle" title="Show numbers or letter names first">${numLabelMode === 'NUM' ? '♯ NUM' : 'A NAMES'}</button>
+        <button style="min-height:calc(28px*var(--ui))" class="rk-chip numlabel-toggle" title="Show numbers or letter names first">${numLabelMode === 'NUM' ? '♯ NUM' : 'A NAMES'}</button>
       </div>
       <div class="rk-seg" style="gap:3px">`;
     NOTES.forEach(n => {
-      h += `<button class="rk-seg-btn prog-root${n === root ? ' is-active' : ''}" data-r="${n}" style="min-width:26px;padding:5px 0">${n}</button>`;
+      h += `<button class="rk-seg-btn prog-root${n === root ? ' is-active' : ''}" data-r="${n}" style="min-height:calc(28px*var(--ui));min-width:26px;padding:5px 0">${n}</button>`;
     });
     h += `</div><div class="rk-seg" style="margin-top:5px">`;
     KEY_TYPES.forEach(kt => {
-      h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="flex:1;font-size:calc(8.5px*var(--ui))">${kt}</button>`;
+      h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">${kt}</button>`;
     });
     h += `</div></div>`;
 
@@ -545,12 +545,12 @@ export function buildProgressionContent(p) {
       ? 'background:var(--rk-stop-soft);border-color:var(--rk-stop-edge);color:var(--rk-stop)'
       : '';
     h += `<div class="rk-readoutrow">
-      <button class="rk-play prog-play${p._progPlaying ? ' is-playing' : ''}" style="${stopSkin}" title="${p._progPlaying ? 'Stop' : 'Play the progression'}">${p._progPlaying ? '◼' : '▶'}</button>
+      <button class="rk-play prog-play${p._progPlaying ? ' is-playing' : ''}" style="min-height:calc(28px*var(--ui));${stopSkin}" title="${p._progPlaying ? 'Stop' : 'Play the progression'}">${p._progPlaying ? '◼' : '▶'}</button>
       <div class="rk-readout">
         <div class="rk-readout-num prog-readout-main" style="font-size:calc(18px*var(--ui))">${roMain}</div>
         <div class="rk-readout-sub prog-readout-sub">${roSub}</div>
       </div>
-      ${armedChord ? `<button class="rk-chip disarm-btn" style="align-self:center">DONE</button>` : ''}
+      ${armedChord ? `<button class="rk-chip disarm-btn" style="min-height:calc(28px*var(--ui));align-self:center">DONE</button>` : ''}
     </div>`;
 
     // ── QUALITY switch ──
@@ -558,14 +558,14 @@ export function buildProgressionContent(p) {
       <div class="rk-label">QUALITY</div>
       <div class="rk-seg">`;
     QUALITY_MODES.forEach(qm => {
-      h += `<button class="rk-seg-btn qual-btn${qm === qualityMode ? ' is-active' : ''}" data-qm="${qm}" style="flex:1;min-width:34px;font-size:calc(8px*var(--ui));padding:5px 2px">${qm}</button>`;
+      h += `<button class="rk-seg-btn qual-btn${qm === qualityMode ? ' is-active' : ''}" data-qm="${qm}" style="min-height:calc(28px*var(--ui));flex:1;min-width:34px;font-size:calc(10px*var(--ui));padding:5px 2px">${qm}</button>`;
     });
     h += `</div>`;
     if (subs.length) {
       h += `<div class="rk-seg" style="margin-top:4px">`;
       subs.forEach(([val, lab]) => {
         const on = subAlt === val || (!subAlt && val === subs[0][0]);
-        h += `<button class="rk-seg-btn sub-pill${on ? ' is-active' : ''}" data-sub="${val}" style="font-size:calc(8px*var(--ui));padding:4px 8px">${lab}</button>`;
+        h += `<button class="rk-seg-btn sub-pill${on ? ' is-active' : ''}" data-sub="${val}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:4px 8px">${lab}</button>`;
       });
       h += `</div>`;
     }
@@ -587,14 +587,14 @@ export function buildProgressionContent(p) {
       const armed = armedChord && armedChord.root === c.root && armedChord.quality === q && armedChord.numeral === c.numeral;
       const primary   = numLabelMode === 'NUM' ? numLabel : nameLabel;
       const secondary = numLabelMode === 'NUM' ? nameLabel : numLabel;
-      h += `<button class="rk-seg-btn fn-btn${armed ? ' is-active' : ''}" data-root="${c.root}" data-q="${q}" data-num="${c.numeral}" style="flex:1;min-width:40px;gap:1px;padding:6px 2px">
+      h += `<button class="rk-seg-btn fn-btn${armed ? ' is-active' : ''}" data-root="${c.root}" data-q="${q}" data-num="${c.numeral}" style="min-height:calc(28px*var(--ui));flex:1;min-width:40px;gap:1px;padding:6px 2px">
         <span style="font-size:calc(13px*var(--ui));font-weight:800;line-height:1">${primary}</span>
         <span style="font-size:calc(7.5px*var(--ui));opacity:.65;line-height:1">${secondary}</span>
       </button>`;
     });
     h += `</div>`;
     // COLOR drawer (borrowed + secondary dominants)
-    h += `<button class="rk-chip color-toggle${showColor ? ' is-active' : ''}" style="align-self:flex-start;margin-top:5px">${showColor ? '▾' : '▸'} COLOR · borrowed & secondary</button>`;
+    h += `<button class="rk-chip color-toggle${showColor ? ' is-active' : ''}" style="min-height:calc(28px*var(--ui));align-self:flex-start;margin-top:5px">${showColor ? '▾' : '▸'} COLOR · borrowed & secondary</button>`;
     if (showColor) {
       const borrowed = getBorrowedChords(root, keyType);
       const secondary = getSecondaryDominants(root, keyType);
@@ -602,7 +602,7 @@ export function buildProgressionContent(p) {
         let r = `<div class="rk-label" style="margin-top:6px">${label}</div><div class="rk-seg" style="gap:4px">`;
         list.forEach(c => {
           const armed = armedChord && armedChord.root === c.root && armedChord.quality === c.quality && armedChord.numeral === c.numeral;
-          r += `<button class="rk-chip color-chip${armed ? ' is-active' : ''}" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" title="${(c.why || '').replace(/"/g, '&quot;')}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
+          r += `<button style="min-height:calc(28px*var(--ui))" class="rk-chip color-chip${armed ? ' is-active' : ''}" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" title="${(c.why || '').replace(/"/g, '&quot;')}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
         });
         return r + `</div>`;
       };
@@ -619,7 +619,7 @@ export function buildProgressionContent(p) {
       <div style="background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:8px;padding:6px;overflow-y:auto;max-height:190px">`;
     for (let bar = 0; bar < gridBars; bar++) {
       h += `<div style="display:flex;gap:3px;margin-bottom:3px;align-items:center">`;
-      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));min-width:14px;text-align:right">${bar + 1}</span>`;
+      h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));min-width:14px;text-align:right">${bar + 1}</span>`;
       for (let b = 0; b < beatsPerBar; b++) {
         const bi     = bar * beatsPerBar + b;
         const ch     = customGrid[bi];
@@ -632,8 +632,8 @@ export function buildProgressionContent(p) {
         const border = isSel ? 'var(--rk-accent)' : isCur ? 'var(--rk-accent)' : ch ? 'var(--rk-line)' : 'var(--rk-edge-soft)';
         const color  = ch ? 'var(--rk-accent)' : 'var(--rk-ink-mute)';
         h += `<div class="grid-cell" data-bi="${bi}" title="Bar ${bar + 1} beat ${b + 1}" style="flex:1;min-height:30px;background:${bg};border:1px solid ${border};border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .1s;${b === 0 ? 'border-left-width:2px;border-left-color:var(--rk-line)' : ''}">
-          <span class="mono" style="color:${color};font-size:${ch ? 10 : 9}px;font-weight:${ch ? 800 : 400};line-height:1">${label || sustain}</span>
-          ${ch ? `<span class="mono" style="color:var(--rk-dim);font-size:calc(6.5px*var(--ui));line-height:1">${numLabelMode === 'NUM' ? ch.root + sfx(ch.quality) : ch.numeral}</span>` : ''}
+          <span class="mono" style="color:${color};font-size:calc(${ch ? 10 : 9}px*var(--ui));font-weight:${ch ? 800 : 400};line-height:1">${label || sustain}</span>
+          ${ch ? `<span class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));line-height:1">${numLabelMode === 'NUM' ? ch.root + sfx(ch.quality) : ch.numeral}</span>` : ''}
         </div>`;
       }
       h += `</div>`;
@@ -643,7 +643,7 @@ export function buildProgressionContent(p) {
     h += `<div class="rk-seg" style="margin-top:5px;align-items:center">
       <span class="rk-label" style="margin-right:2px">LENGTH</span>`;
     [4, 8, 12, 16].forEach(bl => {
-      h += `<button class="rk-seg-btn prog-gl${gridBars === bl ? ' is-active' : ''}" data-gl="${bl}" style="font-size:calc(8px*var(--ui));padding:4px 8px">${bl}</button>`;
+      h += `<button class="rk-seg-btn prog-gl${gridBars === bl ? ' is-active' : ''}" data-gl="${bl}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:4px 8px">${bl}</button>`;
     });
     h += `<span class="rk-label-hint" style="margin-left:4px">bars</span></div>`;
     h += `</div>`;
@@ -655,31 +655,31 @@ export function buildProgressionContent(p) {
         <div class="rk-label">✦ FITS HERE <span class="rk-label-hint">bar ${Math.floor(selectedBeat / beatsPerBar) + 1} · beat ${(selectedBeat % beatsPerBar) + 1}</span></div>
         <div style="display:flex;flex-direction:column;gap:4px">`;
       ranked.slice(0, 5).forEach(c => {
-        h += `<button class="smart-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" style="display:flex;align-items:center;gap:8px;background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:7px;padding:5px 8px;cursor:pointer;text-align:left;width:100%">
+        h += `<button class="smart-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" style="min-height:calc(28px*var(--ui));display:flex;align-items:center;gap:8px;background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:7px;padding:5px 8px;cursor:pointer;text-align:left;width:100%">
           <span class="mono" style="color:var(--rk-accent);font-size:calc(13px*var(--ui));font-weight:800;min-width:34px">${c.numeral}</span>
-          <span class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));min-width:30px">${c.root}${sfx(c.quality)}</span>
-          <span style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));flex:1">${c.why}</span>
+          <span class="mono" style="color:var(--rk-dim);font-size:calc(10px*var(--ui));min-width:30px">${c.root}${sfx(c.quality)}</span>
+          <span style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));flex:1">${c.why}</span>
         </button>`;
       });
       h += `</div>`;
       // Tier 3 — color & extend
-      h += `<button class="rk-chip tier3-toggle${showTier3 ? ' is-active' : ''}" style="margin-top:6px">${showTier3 ? '▾' : '▸'} COLOR & BEYOND · 7ths, borrowed, secondary</button>`;
+      h += `<button class="rk-chip tier3-toggle${showTier3 ? ' is-active' : ''}" style="min-height:calc(28px*var(--ui));margin-top:6px">${showTier3 ? '▾' : '▸'} COLOR & BEYOND · 7ths, borrowed, secondary</button>`;
       if (showTier3) {
         const add7 = sevenths;
         let r = `<div class="rk-label" style="margin-top:6px">DIATONIC 7THS</div><div class="rk-seg" style="gap:4px">`;
         add7.forEach(c => {
-          r += `<button class="smart-chip rk-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
+          r += `<button style="min-height:calc(28px*var(--ui))" class="smart-chip rk-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
         });
         r += `</div>`;
         const colorList = [...getBorrowedChords(root, keyType), ...getSecondaryDominants(root, keyType)];
         r += `<div class="rk-label" style="margin-top:6px">BORROWED & SECONDARY</div><div class="rk-seg" style="gap:4px">`;
         colorList.forEach(c => {
-          r += `<button class="smart-chip rk-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" title="${(c.why || '').replace(/"/g, '&quot;')}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
+          r += `<button style="min-height:calc(28px*var(--ui))" class="smart-chip rk-chip" data-root="${c.root}" data-q="${c.quality}" data-num="${c.numeral}" title="${(c.why || '').replace(/"/g, '&quot;')}">${c.numeral} <span style="opacity:.6">${c.root}${sfx(c.quality)}</span></button>`;
         });
         r += `</div>`;
         h += r;
       }
-      h += `<button class="rk-chip smart-clear" style="margin-top:6px;color:var(--rk-bad)">✕ clear this beat</button>`;
+      h += `<button class="rk-chip smart-clear" style="min-height:calc(28px*var(--ui));margin-top:6px;color:var(--rk-bad)">✕ clear this beat</button>`;
       h += `</div>`;
     }
 
@@ -688,7 +688,7 @@ export function buildProgressionContent(p) {
       <div class="rk-label">PRESET PROGRESSIONS <span class="rk-label-hint">tap to load into the timeline</span></div>
       <div class="rk-presets" style="flex-wrap:wrap">`;
     PROG_PRESETS.forEach(pr => {
-      h += `<button class="rk-preset prog-pr" data-pr="${pr.name}" style="font-size:calc(8px*var(--ui));min-width:auto;padding:0 8px">${pr.name}</button>`;
+      h += `<button class="rk-preset prog-pr" data-pr="${pr.name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:auto;padding:0 8px">${pr.name}</button>`;
     });
     h += `</div></div>`;
 
@@ -703,12 +703,12 @@ export function buildProgressionContent(p) {
     if (activeZone) {
       h += `<div class="rk-seg" style="margin-top:5px;gap:4px">`;
       activeZone.chords.forEach(zc => {
-        h += `<button class="rk-chip prog-zone-chord" data-num="${zc.numeral || ''}" data-root="${zc.root}" data-quality="${zc.quality}" title="Preview this voicing on the fretboard">${zc.numeral} <span style="opacity:.6">${zc.root}${sfx(zc.quality)}</span></button>`;
+        h += `<button style="min-height:calc(28px*var(--ui))" class="rk-chip prog-zone-chord" data-num="${zc.numeral || ''}" data-root="${zc.root}" data-quality="${zc.quality}" title="Preview this voicing on the fretboard">${zc.numeral} <span style="opacity:.6">${zc.root}${sfx(zc.quality)}</span></button>`;
       });
       h += `</div>`;
     }
     h += `<div style="display:flex;gap:6px;align-items:center;margin-top:6px">
-        <button class="rk-chip prog-drill${drillMode ? ' is-active' : ''}" style="flex:1">🏋️ Transition Drill ${drillMode ? 'ON' : 'OFF'}</button>
+        <button class="rk-chip prog-drill${drillMode ? ' is-active' : ''}" style="min-height:calc(28px*var(--ui));flex:1">🏋️ Transition Drill ${drillMode ? 'ON' : 'OFF'}</button>
         ${drillMode && p._progPlaying ? `<span class="mono" style="color:var(--rk-accent);font-size:calc(10px*var(--ui));font-weight:700">${drillScore.changes} changes</span>` : ''}
       </div>`;
     h += `</div>`;
@@ -717,12 +717,12 @@ export function buildProgressionContent(p) {
     h += `<div class="rk-section">
       <div class="rk-label">REAPER BRIDGE <span class="rk-label-hint">export this progression as a .mid file</span></div>
       <div style="display:flex;gap:4px;align-items:stretch">
-        <select class="prog-midi-style" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge);color:var(--rk-ink);border-radius:6px;padding:4px;font-size:calc(9px*var(--ui))">
+        <select class="prog-midi-style" style="flex:1;background:var(--rk-panel);border:1px solid var(--rk-edge);color:var(--rk-ink);border-radius:6px;padding:4px;font-size:calc(10px*var(--ui))">
           <option value="guitar" ${(s.midiStyle || 'guitar') === 'guitar' ? 'selected' : ''}>Guitar voicings (strummed)</option>
           <option value="block" ${s.midiStyle === 'block' ? 'selected' : ''}>Block chords (piano)</option>
           <option value="arp" ${s.midiStyle === 'arp' ? 'selected' : ''}>Arpeggiated 8ths</option>
         </select>
-        <button class="rk-chip prog-export-midi" title="Downloads a .mid — then run the Resonote Import action in REAPER" style="color:var(--rk-accent);border-color:var(--rk-line)">⇄ Export</button>
+        <button class="rk-chip prog-export-midi" title="Downloads a .mid — then run the Resonote Import action in REAPER" style="min-height:calc(28px*var(--ui));color:var(--rk-accent);border-color:var(--rk-line)">⇄ Export</button>
       </div>
       <div class="prog-export-msg mono" style="font-size:calc(8px*var(--ui));text-align:center;margin-top:3px;min-height:10px;color:var(--rk-accent)"></div>
     </div>`;

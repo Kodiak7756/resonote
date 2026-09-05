@@ -36,7 +36,7 @@ const playBtnCSS = stopping =>
   `background:${stopping ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};` +
   `border:1px solid ${stopping ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};border-radius:5px;` +
   `color:${stopping ? 'var(--rk-stop)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;` +
-  `font-size:calc(10px*var(--ui));padding:6px 12px;cursor:pointer`;
+  `font-size:calc(10px*var(--ui));min-height:calc(28px*var(--ui));padding:6px 12px;cursor:pointer`;
 
 // mountEl lets the Technique Workshop embed this UI as its 🧵 Voicings tab; standalone
 // use (legacy saved boards) still targets the pedal body. Settings live under p.settings.vlab
@@ -170,7 +170,7 @@ export function buildVoicingLabContent(p, mountEl) {
   // ── render ──
   function render() {
     const set = curSet(), k = keyInfo();
-    const btn = (cls, data, label, on, extra = '') => `<button class="${cls}" ${data} style="background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:5px 8px;cursor:pointer;${extra}">${label}</button>`;
+    const btn = (cls, data, label, on, extra = '') => `<button class="${cls}" ${data} style="min-height:calc(28px*var(--ui));background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:5px 8px;cursor:pointer;${extra}">${label}</button>`;
 
     // .rk is what makes the kit tokens exist inside this panel; when the Workshop
     // mounts this as its 🧵 tab the accent it reads is the Workshop's, so the tab
@@ -178,10 +178,10 @@ export function buildVoicingLabContent(p, mountEl) {
     let h = `<div class="rk" style="display:flex;flex-direction:column;gap:7px">`;
     h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">in <b style="color:var(--rk-dim)">${k.root} ${k.type}</b> (session key) · shapes live only on <b style="color:var(--rk-dim)">${set.label}</b></div>`;
 
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px">STRING SET</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px">STRING SET</div>`;
     h += `<div style="display:flex;gap:4px;flex-wrap:wrap">` + stringSets().map((ss, i) => btn('vl-set', `data-i="${i}"`, ss.label, i === s.setIdx)).join('') + `</div>`;
 
-    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px">PRACTICE</div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px">PRACTICE</div>`;
     h += `<div style="display:flex;gap:4px">`;
     h += btn('vl-mode', `data-m="ladder"`, '🪜 Inversions', s.mode === 'ladder', 'flex:1');
     h += btn('vl-mode', `data-m="diatonic"`, '🧗 Diatonic', s.mode === 'diatonic', 'flex:1');
@@ -194,7 +194,7 @@ export function buildVoicingLabContent(p, mountEl) {
     } else if (s.mode === 'diatonic') {
       h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));line-height:1.5">All seven chords of the key climbing the neck on one string set — nearest shape each time, like sliding one hand up.</div>`;
     } else {
-      h += `<select id="vlprog-${p.id}" class="mono" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-accent);border-radius:5px;padding:5px;font-size:calc(9px*var(--ui));outline:none">`;
+      h += `<select id="vlprog-${p.id}" class="mono" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-accent);border-radius:5px;padding:5px;font-size:calc(10px*var(--ui));outline:none">`;
       PROGS.forEach((pr, i) => h += `<option value="${i}" ${i === s.progIdx ? 'selected' : ''}>${pr.name}</option>`);
       h += `</select>`;
       h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));line-height:1.5">Each chord takes the grip that moves LEAST from the last one — real voice leading on your chosen strings. Plays in the 🪢 Voice-Leading view so you see holds &amp; moves.</div>`;

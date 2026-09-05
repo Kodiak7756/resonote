@@ -74,7 +74,7 @@ export function buildSongDirContent(p) {
 
     h += `<div style="display:flex;gap:3px">`;
     [['library','Library'],['saved','My Songs'],['add','+ New']].forEach(([m, label]) => {
-      h += `<button class="chord-btn sd-view" data-sv="${m}" style="flex:1;font-size:calc(8px*var(--ui));${viewMode===m?`background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}`:''}">${label}</button>`;
+      h += `<button class="chord-btn sd-view" data-sv="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${viewMode===m?`background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}`:''}">${label}</button>`;
     });
     h += `</div>`;
 
@@ -82,52 +82,52 @@ export function buildSongDirContent(p) {
       h += `<div style="display:flex;flex-direction:column;gap:4px;background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:8px">`;
       h += `<input class="sd-title" placeholder="Song title" value="${addTitle}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:4px;padding:4px 6px;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace">`;
       h += `<input class="sd-artist" placeholder="Artist" value="${addArtist}" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:4px;padding:4px 6px;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace">`;
-      h += `<div style="display:flex;gap:4px;align-items:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">KEY</span>`;
-      h += `<select class="sd-key" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:4px;padding:2px 4px;font-size:calc(9px*var(--ui));font-family:'JetBrains Mono',monospace">`;
+      h += `<div style="display:flex;gap:4px;align-items:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">KEY</span>`;
+      h += `<select class="sd-key" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:4px;padding:2px 4px;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace">`;
       NOTES.forEach(n => { h += `<option value="${n}"${addKey===n?' selected':''}>${n}</option>`; });
       h += `</select></div>`;
       h += `<textarea class="sd-prog" placeholder="Chord progression (e.g. Am C D F)" rows="2" style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);color:var(--rk-ink);border-radius:4px;padding:4px 6px;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace;resize:vertical">${addProg}</textarea>`;
-      h += `<button class="chord-btn sd-save" style="font-size:calc(9px*var(--ui));color:var(--rk-ok);border-color:color-mix(in srgb, var(--rk-ok) 40%, transparent)">Save Song</button>`;
+      h += `<button class="chord-btn sd-save" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:var(--rk-ok);border-color:color-mix(in srgb, var(--rk-ok) 40%, transparent)">Save Song</button>`;
       h += `</div>`;
     } else {
       h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-      h += `<button class="chord-btn sd-cat" data-sc="All" style="font-size:calc(7px*var(--ui));${filterCat==='All'?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">All</button>`;
+      h += `<button class="chord-btn sd-cat" data-sc="All" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));${filterCat==='All'?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">All</button>`;
       cats.forEach(c => {
-        h += `<button class="chord-btn sd-cat" data-sc="${c}" style="font-size:calc(7px*var(--ui));${filterCat===c?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">${c}</button>`;
+        h += `<button class="chord-btn sd-cat" data-sc="${c}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));${filterCat===c?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">${c}</button>`;
       });
-      if (viewMode === 'saved') h += `<button class="chord-btn sd-cat" data-sc="Custom" style="font-size:calc(7px*var(--ui));${filterCat==='Custom'?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">Custom</button>`;
+      if (viewMode === 'saved') h += `<button class="chord-btn sd-cat" data-sc="Custom" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));${filterCat==='Custom'?`background:var(--rk-soft);border-color:var(--rk-line);color:${accent}`:''}">Custom</button>`;
       h += `</div>`;
 
       h += `<div style="display:flex;flex-direction:column;gap:2px;max-height:220px;overflow-y:auto">`;
       if (!songs.length) {
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:12px">${viewMode==='saved'?'No saved songs yet':'No songs in this category'}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:12px">${viewMode==='saved'?'No saved songs yet':'No songs in this category'}</div>`;
       }
       songs.forEach((song, i) => {
         const isSel = selectedIdx === i;
         h += `<div class="sd-song" data-si="${i}" style="background:${isSel?'var(--rk-soft)':'var(--rk-panel)'};border:1px solid ${isSel?'var(--rk-line)':'var(--rk-edge-soft)'};border-radius:4px;padding:5px 6px;cursor:pointer">`;
         h += `<div style="display:flex;align-items:center;gap:4px">`;
-        h += `<span class="mono" style="color:${accent};font-size:calc(9px*var(--ui));font-weight:700;flex:1">${song.title}</span>`;
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${song.key}</span>`;
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${song.cat}</span>`;
+        h += `<span class="mono" style="color:${accent};font-size:calc(10px*var(--ui));font-weight:700;flex:1">${song.title}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${song.key}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${song.cat}</span>`;
         h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${song.artist}</div>`;
         if (isSel) {
           h += `<div style="margin-top:4px;padding-top:4px;border-top:1px solid var(--rk-edge-soft)">`;
           h += `<div class="mono" style="color:${accent};font-size:calc(9px*var(--ui));font-weight:600;margin-bottom:2px">Progression:</div>`;
           h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));line-height:1.6;word-spacing:4px">${song.prog}</div>`;
-          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-top:4px">Practice with:</div>`;
+          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-top:4px">Practice with:</div>`;
           // These four used to be painted in the DESTINATION pedals' old accents,
           // which is how a hex gets stale: recolour a pedal and its shortcut here
           // still wears last year's paint. The emoji names the destination; the
           // button wears the directory's own accent like every other control.
           h += `<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px">`;
-          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="progression" style="font-size:calc(7px*var(--ui));color:${accent};border-color:var(--rk-line)">🔁 Chords</button>`;
-          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="rhythm"      style="font-size:calc(7px*var(--ui));color:${accent};border-color:var(--rk-line)">🥁 Groove</button>`;
-          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="finger"      style="font-size:calc(7px*var(--ui));color:${accent};border-color:var(--rk-line)">🤚 Finger</button>`;
-          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="runner"      style="font-size:calc(7px*var(--ui));color:${accent};border-color:var(--rk-line)">💪 Scales</button>`;
+          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="progression" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:${accent};border-color:var(--rk-line)">🔁 Chords</button>`;
+          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="rhythm"      style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:${accent};border-color:var(--rk-line)">🥁 Groove</button>`;
+          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="finger"      style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:${accent};border-color:var(--rk-line)">🤚 Finger</button>`;
+          h += `<button class="chord-btn sd-route" data-si="${i}" data-rt="runner"      style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:${accent};border-color:var(--rk-line)">💪 Scales</button>`;
           h += `</div>`;
           h += `<div style="display:flex;gap:3px;margin-top:3px">`;
-          h += `<button class="chord-btn sd-save-practice" data-si="${i}" style="font-size:calc(7px*var(--ui));flex:1;color:var(--rk-dim);border-color:var(--rk-edge-soft)">📋 Save to Practice Library</button>`;
-          if (viewMode === 'saved') h += `<button class="chord-btn sd-del" data-di="${i}" style="font-size:calc(7px*var(--ui));color:var(--rk-bad)">✕</button>`;
+          h += `<button class="chord-btn sd-save-practice" data-si="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));flex:1;color:var(--rk-dim);border-color:var(--rk-edge-soft)">📋 Save to Practice Library</button>`;
+          if (viewMode === 'saved') h += `<button class="chord-btn sd-del" data-di="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:var(--rk-bad)">✕</button>`;
           h += `</div></div>`;
         }
         h += `</div>`;

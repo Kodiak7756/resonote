@@ -92,9 +92,17 @@ export const audio = {
 
   // Grant permission with a temporary stream so device LABELS become visible
   // (browsers hide them until access is granted), then release it. This lets the
-  // user actually SEE and pick their Focusrite before committing to connect.
+  // user actually SEE and pick their interface before committing to connect.
   async primeLabels() {
     this.error = null; this.emit();
+    // No mediaDevices at all means an INSECURE context: the app was opened over
+    // plain http on a LAN address (http://192.168.x.x:5173), which is exactly what
+    // sharing a dev server invites. Browsers hide the mic there, and the raw
+    // TypeError that follows says nothing a friend can act on. Say the real thing.
+    if (!navigator.mediaDevices) {
+      this.error = 'The mic only works on localhost or over https. Open http://localhost:5173 on this machine, or host the app with https.';
+      this.emit(); return false;
+    }
     try {
       const s = await navigator.mediaDevices.getUserMedia({ audio: true });
       const d = await navigator.mediaDevices.enumerateDevices();
@@ -130,6 +138,15 @@ export const audio = {
   async connect(did) {
     this.disconnect();
     this.connecting = true; this.error = null; this.emit();
+    // No mediaDevices at all means an INSECURE context: the app was opened over
+    // plain http on a LAN address (http://192.168.x.x:5173), which is exactly what
+    // sharing a dev server invites. Browsers hide the mic there, and the raw
+    // TypeError that follows says nothing a friend can act on. Say the real thing.
+    if (!navigator.mediaDevices) {
+      this.error = 'The mic only works on localhost or over https. Open http://localhost:5173 on this machine, or host the app with https.';
+      this.connecting = false; this.emit(); return false;
+    }
+
     // Chrome captures MONO by default, which on a 2-input interface means input 1
     // only — a guitar in input 2 is then completely inaudible to the app. `ideal`
     // asks for both channels without ever failing on a device that has one.
@@ -268,7 +285,7 @@ export const audio = {
       this.error = e.name === 'NotAllowedError'
         ? 'Microphone access is blocked. Click the 🎤 / lock icon in your browser’s address bar, allow access, then click Connect again.'
         : e.name === 'NotFoundError'
-        ? 'No audio input found. Make sure your Focusrite is plugged in and selected, then hit ⟳ Refresh.'
+        ? 'No audio input found. Make sure your interface or mic is plugged in and selected, then hit ⟳ Refresh.'
         : 'Could not connect to the input: ' + (e.message || e.name);
       this.emit();
     }

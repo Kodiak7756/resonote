@@ -292,7 +292,7 @@ export function buildFingerContent(p) {
     if (fi2 && p._fingerPlaying && stepIdx < pat.steps.length) {
       const info = getStepNoteInfo(pat.steps[stepIdx]);
       fi2.innerHTML = `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span>`
-        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
+        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">${info.desc}</span>`;
     }
   }
 
@@ -305,14 +305,14 @@ export function buildFingerContent(p) {
     // Instrument mode tabs
     h += `<div style="display:flex;gap:3px">`;
     Object.entries(FINGER_PATTERNS).forEach(([k, v]) => {
-      h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:calc(7px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${v.label}</button>`;
+      h += `<button class="chord-btn fin-inst" data-fi="${k}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${v.label}</button>`;
     });
     h += `</div>`;
 
     // Pattern selector
     h += `<div style="display:flex;flex-wrap:wrap;gap:3px">`;
     Object.keys(ipData.patterns).forEach(pn => {
-      h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`;
+      h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`;
     });
     h += `</div>`;
 
@@ -322,17 +322,17 @@ export function buildFingerContent(p) {
     // Chord context (for guitar/banjo)
     if (instMode !== 'piano') {
       h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px">`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-bottom:3px">CHORD SHAPE</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-bottom:3px">CHORD SHAPE</div>`;
       h += `<div style="display:flex;gap:2px;margin-bottom:3px">`;
       [['chord', 'Chord'], ['open', 'Open'], ['random', '🎲 Random']].forEach(([m, label]) => {
-        h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`;
+        h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`;
       });
       h += `</div>`;
       if (fChordMode === 'chord') {
         const commonChords = ['C', 'Am', 'G', 'Em', 'D', 'Dm', 'A', 'Am', 'E', 'Em', 'F', 'Fm', 'B', 'Bm', 'A7', 'D7', 'E7', 'G7', 'Am7', 'Dm7', 'Em7', 'Cmaj7', 'Fmaj7'];
         h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
         commonChords.forEach(ch => {
-          h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`;
+          h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`;
         });
         h += `</div>`;
       }
@@ -343,7 +343,7 @@ export function buildFingerContent(p) {
     if (instMode === 'piano') {
       h += `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
       NOTES.forEach(n => {
-        h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`;
+        h += `<button class="chord-btn fin-root" data-r="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`;
       });
       h += `</div>`;
     }
@@ -353,7 +353,7 @@ export function buildFingerContent(p) {
     if (p._fingerPlaying && stepIdx < pat.steps.length) {
       const info = getStepNoteInfo(pat.steps[stepIdx]);
       h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span>`
-        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
+        + `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">${info.desc}</span>`;
     }
     h += `</div>`;
 
@@ -367,10 +367,10 @@ export function buildFingerContent(p) {
       h += `<div class="finger-step" style="background:${bg};border:1.5px solid ${bc};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px;transition:all .1s">`;
       h += `<div class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${info.finger}</div>`;
       if (instMode !== 'piano') {
-        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${info.note || ''}</div>`;
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));font-weight:600">${info.note || ''}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
       } else {
-        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui))">${info.note}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${info.note}</div>`;
       }
       h += `</div>`;
     });
@@ -380,24 +380,24 @@ export function buildFingerContent(p) {
     h += `<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">`;
     if (instMode === 'guitar') {
       [['p', 'Thumb'], ['i', 'Index'], ['m', 'Middle'], ['a', 'Ring']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     } else if (instMode === 'banjo') {
       [['T', 'Thumb'], ['I', 'Index'], ['M', 'Middle']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     } else {
       [['1', 'Thumb'], ['2', 'Index'], ['3', 'Middle'], ['4', 'Ring'], ['5', 'Pinky']].forEach(([f, label]) => {
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`;
       });
     }
     h += `</div>`;
 
     // Tempo
     h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px">`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">NOTE TEMPO</span>`;
     h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span>`;
-    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span>`;
+    h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">BPM</span>`;
     h += `</div>`;
 
     // Play/Stop. One button, two jobs — and the moment it is showing STOP it stops
@@ -407,7 +407,7 @@ export function buildFingerContent(p) {
     const pc = p._fingerPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)';
     const pb = p._fingerPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)';
     const pt = p._fingerPlaying ? 'var(--rk-stop)' : 'var(--rk-accent)';
-    h += `<button class="fin-play mono" style="background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<button class="fin-play mono" style="min-height:calc(28px*var(--ui));background:${pc};border:1px solid ${pb};color:${pt};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     el.innerHTML = h;
 

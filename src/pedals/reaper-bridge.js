@@ -1,6 +1,6 @@
 // ── REAPER Bridge pedal ──────────────────────────────────────────────
 // Two-way bridge between Resonote and REAPER:
-//   OUT: quick MIDI exports (the Progression Studio & Beat Maker pedals
+//   OUT: quick MIDI exports (the Progression Studio & Backing Track pedals
 //        also carry their own ⇄ Export buttons).
 //   IN:  drop a REAPER render/recording → tempo, key & note breakdown
 //        mapped onto a fretboard — practice-analysis as a teaching tool.
@@ -103,7 +103,7 @@ export function buildReaperBridgeContent(p) {
       const isRoot = i === rootPc;
       h += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
         <div style="width:100%;height:${hh}px;background:${isRoot ? ACC : 'var(--rk-dim)'};border-radius:2px 2px 0 0"></div>
-        <span class="mono" style="font-size:calc(6px*var(--ui));color:${isRoot ? ACC : 'var(--rk-ink-mute)'}">${NOTES[i]}</span>
+        <span class="mono" style="font-size:calc(8px*var(--ui));color:${isRoot ? ACC : 'var(--rk-ink-mute)'}">${NOTES[i]}</span>
       </div>`;
     }
     return h + `</div>`;
@@ -184,15 +184,15 @@ export function buildReaperBridgeContent(p) {
     // OUT
     h += `<div class="rk-section">
       <div class="rk-label">RESONOTE → REAPER <span class="rk-label-hint">exports land in Downloads</span></div>
-      <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim);line-height:1.5">Progression Studio & Beat Maker each have a <b style="color:var(--rk-dim)">⇄ Export</b> button. In REAPER, run the <b style="color:var(--rk-dim)">Resonote Import</b> action (Actions list) to drop the newest export at the cursor.</div>
-      <button class="chord-btn rb-quicktest" style="width:100%;margin-top:5px;font-size:calc(8px*var(--ui));padding:6px;color:${ACC};border-color:var(--rk-line);background:var(--rk-soft)">⇄ Quick test: export I–IV–V–I in ${pedalBus.root || 'C'} ${pedalBus.keyType || 'Major'}</button>
+      <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim);line-height:1.5">Progression Studio & Backing Track each have a <b style="color:var(--rk-dim)">⇄ Export</b> button. In REAPER, run the <b style="color:var(--rk-dim)">Resonote Import</b> action (Actions list) to drop the newest export at the cursor.</div>
+      <button class="chord-btn rb-quicktest" style="min-height:calc(28px*var(--ui));width:100%;margin-top:5px;font-size:calc(10px*var(--ui));padding:6px;color:${ACC};border-color:var(--rk-line);background:var(--rk-soft)">⇄ Quick test: export I–IV–V–I in ${pedalBus.root || 'C'} ${pedalBus.keyType || 'Major'}</button>
       <div class="rb-msg mono" style="font-size:calc(8px*var(--ui));text-align:center;min-height:10px;margin-top:3px"></div>
     </div>`;
 
     // IN
     h += `<div class="rk-section">
       <div class="rk-label">REAPER → RESONOTE <span class="rk-label-hint">analyze a render or recording</span></div>
-      <label class="chord-btn" style="display:block;text-align:center;font-size:calc(8px*var(--ui));padding:8px;cursor:pointer;color:${ACC};border-color:var(--rk-line);background:var(--rk-soft)">
+      <label class="chord-btn" style="display:block;text-align:center;font-size:calc(10px*var(--ui));padding:8px;cursor:pointer;color:${ACC};border-color:var(--rk-line);background:var(--rk-soft)">
         ${analyzing ? '⏳ analyzing…' : '📂 Choose a WAV / MP3 (drag from REAPER render)'}
         <input type="file" class="rb-file" accept="audio/*,.wav,.mp3,.flac,.ogg" style="display:none">
       </label>`;
@@ -201,7 +201,7 @@ export function buildReaperBridgeContent(p) {
       h += `<div style="background:var(--rk-panel);border-radius:4px;height:6px;margin-top:6px;overflow:hidden">
         <div class="rb-progress-fill" style="height:100%;width:0%;background:${ACC};transition:width .2s"></div>
       </div>
-      <div class="rb-progress-label mono" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-dim);text-align:center;margin-top:2px">analyzing…</div>`;
+      <div class="rb-progress-label mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim);text-align:center;margin-top:2px">analyzing…</div>`;
     }
 
     if (analysis && !analyzing) {
@@ -209,17 +209,17 @@ export function buildReaperBridgeContent(p) {
         h += `<div class="mono" style="color:var(--rk-bad);font-size:calc(8px*var(--ui));margin-top:5px">Could not analyze: ${analysis.error}</div>`;
       } else {
         const k0 = analysis.keys[0], k1 = analysis.keys[1];
-        h += `<div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim);margin-top:5px">${fileName || 'file'} · ${analysis.duration}s · ${analysis.events.length} notes${analysis.range ? ` · ${midiName(analysis.range.lo)}–${midiName(analysis.range.hi)}` : ''}</div>`;
+        h += `<div class="mono" style="font-size:calc(10px*var(--ui));color:var(--rk-ink-dim);margin-top:5px">${fileName || 'file'} · ${analysis.duration}s · ${analysis.events.length} notes${analysis.range ? ` · ${midiName(analysis.range.lo)}–${midiName(analysis.range.hi)}` : ''}</div>`;
         h += `<div style="display:flex;gap:4px;margin-top:5px">
           <div style="flex:1;background:var(--rk-soft);border:1px solid var(--rk-edge);border-radius:6px;padding:5px;text-align:center">
-            <div class="mono" style="font-size:calc(6px*var(--ui));color:var(--rk-ink-mute)">KEY (best guesses)</div>
+            <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-mute)">KEY (best guesses)</div>
             <div class="mono" style="font-size:calc(11px*var(--ui));font-weight:700;color:${ACC}">${k0.root} ${k0.mode}</div>
-            <div class="mono" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-dim)">${k1 ? `or ${k1.root} ${k1.mode}` : ''}</div>
+            <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim)">${k1 ? `or ${k1.root} ${k1.mode}` : ''}</div>
           </div>
           <div style="flex:1;background:var(--rk-soft);border:1px solid var(--rk-edge);border-radius:6px;padding:5px;text-align:center">
-            <div class="mono" style="font-size:calc(6px*var(--ui));color:var(--rk-ink-mute)">TEMPO (feel-dependent)</div>
+            <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-mute)">TEMPO (feel-dependent)</div>
             <div class="mono" style="font-size:calc(11px*var(--ui));font-weight:700;color:${ACC}">~${analysis.bpm}</div>
-            <div class="mono" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-dim)">or ${analysis.bpmAlts[0]} / ${analysis.bpmAlts[1]}</div>
+            <div class="mono" style="font-size:calc(8px*var(--ui));color:var(--rk-ink-dim)">or ${analysis.bpmAlts[0]} / ${analysis.bpmAlts[1]}</div>
           </div>
         </div>`;
         h += `<div class="rk-label" style="margin-top:6px">NOTES USED <span class="rk-label-hint">time on each pitch class</span></div>`;
@@ -228,7 +228,7 @@ export function buildReaperBridgeContent(p) {
         h += `<canvas class="rb-roll" style="width:100%;height:60px;background:var(--rk-panel);border-radius:6px;margin-top:2px"></canvas>`;
         h += `<div class="rk-label" style="margin-top:6px">ON THE FRETBOARD <span class="rk-label-hint">where those notes live</span></div>`;
         h += fretboardHTML();
-        h += `<button class="chord-btn rb-setkey" style="width:100%;margin-top:6px;font-size:calc(8px*var(--ui));padding:5px;color:${ACC};border-color:var(--rk-line)">🔑 Set master key to ${k0.root} ${k0.mode} (drives linked pedals)</button>`;
+        h += `<button class="chord-btn rb-setkey" style="min-height:calc(28px*var(--ui));width:100%;margin-top:6px;font-size:calc(10px*var(--ui));padding:5px;color:${ACC};border-color:var(--rk-line)">🔑 Set master key to ${k0.root} ${k0.mode} (drives linked pedals)</button>`;
       }
     }
     h += `</div></div>`;

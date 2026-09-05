@@ -173,9 +173,9 @@ export function buildCircle5Content(p) {
       // the name in the middle stays NEUTRAL on purpose: it is a note name sitting
       // inside a ring of note colours, and tinting it would read as a 13th hue
       h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(20px*var(--ui));font-weight:800">${selMinor ? CIRCLE_MINOR[selKey] : CIRCLE_KEYS[selKey]}</div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${selMinor ? 'minor' : 'major'}</div></div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">${selMinor ? 'minor' : 'major'}</div></div>`;
     } else {
-      h += `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:0"><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">Select a key</div></div>`;
+      h += `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;z-index:0"><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">Select a key</div></div>`;
     }
 
     CIRCLE_KEYS.forEach((key, i) => {
@@ -205,7 +205,7 @@ export function buildCircle5Content(p) {
       const bg     = isSel ? pcColor(mroot, 70, 48)  : isNear ? pcColor(mroot, 45, 24)  : pcColor(mroot, 32, 16);
       const border = isSel ? `2px solid ${pcColor(mroot, 85, 68)}` : isNear ? `1px solid ${pcColor(mroot, 50, 38)}` : `1px solid ${pcColor(mroot, 38, 24)}`;
       const color  = isSel ? pcTextOn(mroot)         : isNear ? '#d8d8e0'              : 'rgba(220,220,228,.62)';   // spectrum foreground — see the major ring above
-      h += `<button class="c5-minor mono" data-ki="${i}" style="position:absolute;left:${bx}px;top:${by}px;width:${minS}px;height:${minS}px;border-radius:50%;background:${bg};border:${border};color:${color};font-size:calc(9px*var(--ui));font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2">${key}</button>`;
+      h += `<button class="c5-minor mono" data-ki="${i}" style="position:absolute;left:${bx}px;top:${by}px;width:${minS}px;height:${minS}px;border-radius:50%;background:${bg};border:${border};color:${color};font-size:calc(10px*var(--ui));font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;z-index:2">${key}</button>`;
     });
 
     if (selKey !== null) {
@@ -226,7 +226,7 @@ export function buildCircle5Content(p) {
     h += `<svg id="c5trace-${p.id}" style="position:absolute;top:0;left:0;width:${size}px;height:${size}px;pointer-events:none;z-index:3" viewBox="0 0 ${size} ${size}"></svg>`;
     // Lit, this button wears the trace's own gold — a toggle that does not match the
     // thing it toggles is a lie. Unlit it is ordinary chrome like every other control.
-    h += `<button id="c5tr-${p.id}" title="Trace played notes on the circle (melodies draw their path as they play)" style="position:absolute;top:0;left:0;z-index:4;background:${traceOn ? traceGold('.15') : 'var(--rk-panel2)'};border:1px solid ${traceOn ? TRACE_GOLD : 'var(--rk-edge-soft)'};color:${traceOn ? TRACE_GOLD : 'var(--rk-ink-mute)'};border-radius:5px;font-size:calc(9px*var(--ui));padding:2px 6px;cursor:pointer;font-family:'JetBrains Mono',monospace">〰 trace</button>`;
+    h += `<button id="c5tr-${p.id}" title="Trace played notes on the circle (melodies draw their path as they play)" style="min-height:calc(28px*var(--ui));position:absolute;top:0;left:0;z-index:4;background:${traceOn ? traceGold('.15') : 'var(--rk-panel2)'};border:1px solid ${traceOn ? TRACE_GOLD : 'var(--rk-edge-soft)'};color:${traceOn ? TRACE_GOLD : 'var(--rk-ink-mute)'};border-radius:5px;font-size:calc(10px*var(--ui));padding:2px 6px;cursor:pointer;font-family:'JetBrains Mono',monospace">〰 trace</button>`;
     h += `</div>`;
 
     if (selKey !== null) {
@@ -238,10 +238,10 @@ export function buildCircle5Content(p) {
       // tab row look like four products stapled together.
       const ON = 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)';
       h += `<div style="display:flex;gap:3px;width:100%">`;
-      h += `<button class="chord-btn c5v" data-c5v="harmony"  style="flex:1;font-size:calc(8px*var(--ui));${c5View==='harmony'  ? ON : ''}">🎹 Harmony</button>`;
-      h += `<button class="chord-btn c5v" data-c5v="chords"   style="flex:1;font-size:calc(8px*var(--ui));${c5View==='chords'   ? ON : ''}">🎵 Chords</button>`;
-      h += `<button class="chord-btn c5v" data-c5v="scale"    style="flex:1;font-size:calc(8px*var(--ui));${c5View==='scale'    ? ON : ''}">🎼 Scale</button>`;
-      h += `<button class="chord-btn c5v" data-c5v="arpeggio" style="flex:1;font-size:calc(8px*var(--ui));${c5View==='arpeggio' ? ON : ''}">🎶 Arp</button>`;
+      h += `<button class="chord-btn c5v" data-c5v="harmony"  style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${c5View==='harmony'  ? ON : ''}">🎹 Harmony</button>`;
+      h += `<button class="chord-btn c5v" data-c5v="chords"   style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${c5View==='chords'   ? ON : ''}">🎵 Chords</button>`;
+      h += `<button class="chord-btn c5v" data-c5v="scale"    style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${c5View==='scale'    ? ON : ''}">🎼 Scale</button>`;
+      h += `<button class="chord-btn c5v" data-c5v="arpeggio" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${c5View==='arpeggio' ? ON : ''}">🎶 Arp</button>`;
       h += `</div>`;
 
       if (c5View === 'chords' && chords.length) {
@@ -249,7 +249,7 @@ export function buildCircle5Content(p) {
         chords.forEach((ch, ci) => {
           const ql   = ch.quality === 'Major' ? '' : ch.quality === 'Minor' ? 'm' : ch.quality === 'Dim' ? '°' : ch.quality === 'Aug' ? '+' : ch.quality;
           const isSel = selChordIdx === ci;
-          h += `<button class="c5-chord" data-ci="${ci}" style="background:${isSel ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${isSel ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${isSel ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};border-radius:5px;padding:4px 8px;cursor:pointer;font-size:calc(9px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">`;
+          h += `<button class="c5-chord" data-ci="${ci}" style="min-height:calc(28px*var(--ui));background:${isSel ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${isSel ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${isSel ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};border-radius:5px;padding:4px 8px;cursor:pointer;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">`;
           h += `<span style="font-size:calc(8px*var(--ui));opacity:.6">${ch.numeral}</span> ${ch.root}${ql}`;
           h += `</button>`;
         });
@@ -266,7 +266,7 @@ export function buildCircle5Content(p) {
             // root vs the rest, carried by weight of accent rather than by two hues
             h += `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--rk-soft);border:1px solid var(--rk-edge-soft);border-radius:4px;padding:2px 6px">`;
             h += `<span style="width:8px;height:8px;border-radius:50%;background:${isR ? 'var(--rk-accent)' : 'var(--rk-dim)'}"></span>`;
-            h += `<span class="mono" style="color:${isR ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};font-size:calc(9px*var(--ui));font-weight:600">${showIntervals ? intervalLabel(ki.keyRoot, n) : n}</span>`;
+            h += `<span class="mono" style="color:${isR ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};font-size:calc(10px*var(--ui));font-weight:600">${showIntervals ? intervalLabel(ki.keyRoot, n) : n}</span>`;
             h += `</span>`;
           });
           h += `</div>`;
@@ -275,12 +275,12 @@ export function buildCircle5Content(p) {
       }
 
       if (c5View === 'arpeggio') {
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-bottom:2px">Select a chord arpeggio</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-bottom:2px">Select a chord arpeggio</div>`;
         h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">`;
         chords.forEach((ch, ci) => {
           const ql   = ch.quality === 'Major' ? '' : ch.quality === 'Minor' ? 'm' : ch.quality === 'Dim' ? '°' : ch.quality === 'Aug' ? '+' : ch.quality;
           const isSel = selChordIdx === ci;
-          h += `<button class="c5-arp" data-ci="${ci}" style="background:${isSel ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${isSel ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${isSel ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};border-radius:5px;padding:4px 8px;cursor:pointer;font-size:calc(9px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">`;
+          h += `<button class="c5-arp" data-ci="${ci}" style="min-height:calc(28px*var(--ui));background:${isSel ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${isSel ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${isSel ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};border-radius:5px;padding:4px 8px;cursor:pointer;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600">`;
           h += `<span style="font-size:calc(8px*var(--ui));opacity:.6">${ch.numeral}</span> ${ch.root}${ql}`;
           h += `</button>`;
         });
@@ -296,14 +296,14 @@ export function buildCircle5Content(p) {
         harmLists = { dia, sec, bor };
 
         h += `<div style="display:flex;gap:4px;width:100%">`;
-        h += `<button class="harm7" data-h7="0" style="flex:1;font-size:calc(8px*var(--ui));padding:3px;border-radius:4px;border:1px solid ${!harm7?'var(--rk-line)':'var(--rk-edge-soft)'};background:${!harm7?'var(--rk-soft)':'transparent'};color:${!harm7?'var(--rk-accent)':'var(--rk-ink-mute)'};cursor:pointer">Triads</button>`;
-        h += `<button class="harm7" data-h7="1" style="flex:1;font-size:calc(8px*var(--ui));padding:3px;border-radius:4px;border:1px solid ${harm7?'var(--rk-line)':'var(--rk-edge-soft)'};background:${harm7?'var(--rk-soft)':'transparent'};color:${harm7?'var(--rk-accent)':'var(--rk-ink-mute)'};cursor:pointer">7ths</button>`;
+        h += `<button class="harm7" data-h7="0" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:3px;border-radius:4px;border:1px solid ${!harm7?'var(--rk-line)':'var(--rk-edge-soft)'};background:${!harm7?'var(--rk-soft)':'transparent'};color:${!harm7?'var(--rk-accent)':'var(--rk-ink-mute)'};cursor:pointer">Triads</button>`;
+        h += `<button class="harm7" data-h7="1" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:3px;border-radius:4px;border:1px solid ${harm7?'var(--rk-line)':'var(--rk-edge-soft)'};background:${harm7?'var(--rk-soft)':'transparent'};color:${harm7?'var(--rk-accent)':'var(--rk-ink-mute)'};cursor:pointer">7ths</button>`;
         h += `</div>`;
 
-        const rowLabel = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1px;width:100%;margin-top:2px">${t}</div>`;
+        const rowLabel = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1px;width:100%;margin-top:2px">${t}</div>`;
         const chip = (c, kind, i) => {
           const sel = selHarm && selHarm.kind === kind && selHarm.idx === i;
-          return `<button class="harm-chip" data-hk="${kind}" data-hi="${i}" style="background:${sel?'var(--rk-soft2)':'var(--rk-panel2)'};border:1px solid ${sel?'var(--rk-line)':'var(--rk-edge-soft)'};color:${sel?'var(--rk-accent)':'var(--rk-ink-dim)'};border-radius:5px;padding:3px 6px;cursor:pointer;font-size:calc(9px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600"><span style="font-size:calc(7px*var(--ui));opacity:.7">${c.numeral}</span> ${c.root}${qualSuffix(c.type)}</button>`;
+          return `<button class="harm-chip" data-hk="${kind}" data-hi="${i}" style="min-height:calc(28px*var(--ui));background:${sel?'var(--rk-soft2)':'var(--rk-panel2)'};border:1px solid ${sel?'var(--rk-line)':'var(--rk-edge-soft)'};color:${sel?'var(--rk-accent)':'var(--rk-ink-dim)'};border-radius:5px;padding:3px 6px;cursor:pointer;font-size:calc(10px*var(--ui));font-family:'JetBrains Mono',monospace;font-weight:600"><span style="font-size:calc(8px*var(--ui));opacity:.7">${c.numeral}</span> ${c.root}${qualSuffix(c.type)}</button>`;
         };
         const row = (list, kind) => `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;width:100%">${list.map((c, i) => chip(c, kind, i)).join('')}</div>`;
 
@@ -317,7 +317,7 @@ export function buildCircle5Content(p) {
         if (selHarm && harmLists[selHarm.kind] && harmLists[selHarm.kind][selHarm.idx]) {
           const c = harmLists[selHarm.kind][selHarm.idx];
           h += `<div style="font-size:calc(9px*var(--ui));line-height:1.5;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-line);padding:5px 7px;border-radius:4px;width:100%;margin-top:2px">${c.numeral} · ${c.root}${qualSuffix(c.type)} — ${c.why}</div>`;
-          h += `<button class="harm-addprog" style="width:100%;font-size:calc(8px*var(--ui));border:1px solid var(--rk-line);background:var(--rk-soft);color:var(--rk-accent);border-radius:5px;padding:5px;cursor:pointer;margin-top:2px">＋ Add to Progression Builder</button>`;
+          h += `<button class="harm-addprog" style="min-height:calc(28px*var(--ui));width:100%;font-size:calc(10px*var(--ui));border:1px solid var(--rk-line);background:var(--rk-soft);color:var(--rk-accent);border-radius:5px;padding:5px;cursor:pointer;margin-top:2px">＋ Add to Progression Builder</button>`;
         } else {
           h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-top:2px;line-height:1.4">Tap any chord to hear it, light it on the fretboard &amp; send it to the Chord Directory</div>`;
         }
@@ -325,7 +325,7 @@ export function buildCircle5Content(p) {
 
       const prev = CIRCLE_KEYS[(selKey + 11) % 12], next = CIRCLE_KEYS[(selKey + 1) % 12];
       const rel  = selMinor ? CIRCLE_KEYS[selKey] : CIRCLE_MINOR[selKey];
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-top:2px">Related: <span style="color:var(--rk-dim)">${prev}</span> · <span style="color:var(--rk-dim)">${next}</span> · <span style="color:var(--rk-dim)">${rel}</span></div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-top:2px">Related: <span style="color:var(--rk-dim)">${prev}</span> · <span style="color:var(--rk-dim)">${next}</span> · <span style="color:var(--rk-dim)">${rel}</span></div>`;
     }
     h += theoryPanelHTML('circle', CIRCLE_THEORY);
     h += `</div>`;

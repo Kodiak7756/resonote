@@ -10,6 +10,7 @@
 // stack thirds inside the scale for each chord, and name the one note that
 // distinguishes this mode from the plain major or minor it is a bend of.
 import { NOTES, SCALE_TYPES, toSharp, intervalLabel } from '../core/music-theory.js';
+import { read, write, KEYS } from '../core/store.js';
 import { pickGrip, TRIAD_QUALITIES } from '../core/voicings.js';
 import { setChordHighlight, clearChordHighlight, clearGhostHighlight, metroClock } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
@@ -168,14 +169,14 @@ export function buildWriteItContent(p) {
     const c = card();
     // The vamp's home chord and the chord that moves are the same accent at two
     // weights — the difference is which one you are leaving, not two products.
-    const chip = (txt, primary) => `<span class="mono" style="display:inline-block;padding:3px 7px;border-radius:5px;border:1px solid ${primary ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${primary ? 'var(--rk-soft2)' : 'var(--rk-soft)'};color:${primary ? 'var(--rk-accent)' : 'var(--rk-dim)'};font-size:calc(9px*var(--ui));font-weight:700">${txt}</span>`;
-    const btn = (id, lab, on, extra = '') => `<button id="${id}" class="mono" style="background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:6px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};font-size:calc(10px*var(--ui));padding:6px 11px;cursor:pointer;${extra}">${lab}</button>`;
+    const chip = (txt, primary) => `<span class="mono" style="display:inline-block;padding:3px 7px;border-radius:5px;border:1px solid ${primary ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${primary ? 'var(--rk-soft2)' : 'var(--rk-soft)'};color:${primary ? 'var(--rk-accent)' : 'var(--rk-dim)'};font-size:calc(10px*var(--ui));font-weight:700">${txt}</span>`;
+    const btn = (id, lab, on, extra = '') => `<button id="${id}" class="mono" style="min-height:calc(28px*var(--ui));background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:6px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};font-size:calc(10px*var(--ui));padding:6px 11px;cursor:pointer;${extra}">${lab}</button>`;
     const gripOf = ch => {
       const g = pickGrip(ch.root, ch.notes, ch.quality, 'open', 0);
       if (!g) return '<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">no grip</span>';
       const per = {};
       (g.positions || g).forEach(q => { if (q.fret >= 0) per[q.si] = q.fret; });
-      return `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">` +
+      return `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">` +
         [0, 1, 2, 3, 4, 5].map(si => per[si] === undefined ? '·' : per[si]).reverse().join(' ') + `</span>`;
     };
 
@@ -195,11 +196,11 @@ export function buildWriteItContent(p) {
       <!-- the recipe, in one line you could repeat to someone -->
       <div style="background:var(--rk-panel);border:1px solid var(--rk-edge);border-radius:9px;padding:8px 10px;line-height:1.65">
         <div class="mono" style="color:var(--rk-ink);font-size:calc(11px*var(--ui));font-weight:700">${s.wRoot} ${s.wMode} — ${r.blurb}.</div>
-        <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));margin-top:3px">
+        <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));margin-top:3px">
           The tell: your <b style="color:var(--rk-dim)">${r.tellDegName}</b> chord is
           <b style="color:var(--rk-dim)">${r.tell.quality === 'Major' ? 'MAJOR' : r.tell.quality === 'Minor' ? 'MINOR' : r.tell.quality.toUpperCase()}</b> (${r.tell.label}).
         </div>
-        <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui))">
+        <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">
           Colour note: <b style="color:${pcColor(r.charNote, 80, 70)}">${r.charSpelled}</b> — the <b style="color:var(--rk-dim)">${r.charLabel}</b>
           (${r.charDegName} degree${r.charSpelled !== r.charNote ? `, ${r.charNote} on the fretboard` : ''}).
           Land <i>on</i> it, don't pass through it.
@@ -210,8 +211,8 @@ export function buildWriteItContent(p) {
       <div class="rk-section">
         <div class="rk-label">BACKING <span class="rk-label-hint">a genre is a groove, a mode and a chord move</span></div>
         <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px">
-          <button class="wi-gen" data-g="" style="padding:4px 8px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));font-weight:700;background:${!s.wGenre ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${!s.wGenre ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${!s.wGenre ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'}">just the mode</button>
-          ${Object.keys(GENRES).map(g => `<button class="wi-gen" data-g="${g}" style="padding:4px 8px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));font-weight:700;background:${s.wGenre === g ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${s.wGenre === g ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${s.wGenre === g ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'}">${g}</button>`).join('')}
+          <button class="wi-gen" data-g="" style="min-height:calc(28px*var(--ui));padding:4px 8px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;background:${!s.wGenre ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${!s.wGenre ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${!s.wGenre ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'}">just the mode</button>
+          ${Object.keys(GENRES).map(g => `<button class="wi-gen" data-g="${g}" style="min-height:calc(28px*var(--ui));padding:4px 8px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;background:${s.wGenre === g ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${s.wGenre === g ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};color:${s.wGenre === g ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'}">${g}</button>`).join('')}
         </div>
         ${s.wGenre ? `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));line-height:1.55;margin-bottom:6px">${GENRES[s.wGenre].why}</div>` : ''}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -223,7 +224,7 @@ export function buildWriteItContent(p) {
         <div style="display:flex;gap:6px;align-items:center;margin-top:7px">
           ${btn(`wi-vamp-${p.id}`, p._wVamp ? '⏹ Stop' : (s.wGenre ? '▶ Backing + drums' : '▶ Loop vamp'), !!p._wVamp,
                 p._wVamp ? 'background:var(--rk-stop-soft);border-color:var(--rk-stop-edge);color:var(--rk-stop)' : '')}
-          <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">grips low→high · · = don't play${s.wGenre ? ' · drums come from the 🥁 Beat Maker' : ''}</span>
+          <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">grips low→high · · = don't play${s.wGenre ? ' · drums come from the 🥁 Backing Track' : ''}</span>
         </div>
       </div>
 
@@ -233,7 +234,7 @@ export function buildWriteItContent(p) {
           <div class="rk-label" style="flex:1">THE CARD</div>
           ${btn(`wi-deal-${p.id}`, '🎲 Re-deal', false, 'padding:4px 9px')}
         </div>
-        <table class="mono" style="width:100%;font-size:calc(9px*var(--ui));color:var(--rk-ink-dim);border-collapse:collapse;line-height:1.6">
+        <table class="mono" style="width:100%;font-size:calc(10px*var(--ui));color:var(--rk-ink-dim);border-collapse:collapse;line-height:1.6">
           <tr><td style="width:58px;color:var(--rk-ink-mute)">start on</td><td><b style="color:var(--rk-dim)">${r.spell[c.start]}</b> — the ${r.degLabelAt(c.start)}. Starting on the root announces the key and kills the float.</td></tr>
           <tr><td style="color:var(--rk-ink-mute)">end on</td><td><b style="color:var(--rk-dim)">${r.spell[c.end]}</b> — the ${r.degLabelAt(c.end)}. ${c.end === MODE_INFO[s.wMode].char ? 'That is the colour note: it leaves the phrase hanging open.' : 'Not the root — save that for when you actually want to land.'}</td></tr>
           <tr><td style="color:var(--rk-ink-mute)">use</td><td><b style="color:var(--rk-dim)">${c.budget} different pitches</b>, no more. Scarcity is what makes a melody memorable — and it stops you noodling.</td></tr>
@@ -255,7 +256,7 @@ export function buildWriteItContent(p) {
           ${r.ints.map((_, i) => {
             const isChar = i === MODE_INFO[s.wMode].char;
             return `<button class="wi-deg" data-d="${i}" title="${r.spell[i]}"
-              style="flex:1;min-width:34px;padding:5px 2px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;
+              style="min-height:calc(28px*var(--ui));flex:1;min-width:34px;padding:5px 2px;border-radius:5px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;
                      background:${isChar ? pcColor(r.scale[i], 55, 24) : 'var(--rk-panel2)'};
                      border:1px solid ${isChar ? pcColor(r.scale[i], 70, 55) : 'var(--rk-edge-soft)'};
                      color:${isChar ? pcColor(r.scale[i], 90, 80) : 'var(--rk-ink-dim)'}">${r.degLabelAt(i)}<br>
@@ -346,7 +347,7 @@ export function buildWriteItContent(p) {
     const r = recipe(s.wRoot, s.wMode);
     box.innerHTML = s.answer.length
       // show the SPELLED name (B♯, not C) — the spelling is half the lesson
-      ? s.answer.map(n => `<span class="mono" style="padding:3px 6px;border-radius:5px;font-size:calc(9px*var(--ui));font-weight:700;background:${pcColor(n.note, 60, 26)};border:1px solid ${pcColor(n.note, 70, 52)};color:${pcColor(n.note, 90, 82)}">${n.disp || n.note}</span>`).join('')
+      ? s.answer.map(n => `<span class="mono" style="padding:3px 6px;border-radius:5px;font-size:calc(10px*var(--ui));font-weight:700;background:${pcColor(n.note, 60, 26)};border:1px solid ${pcColor(n.note, 70, 52)};color:${pcColor(n.note, 90, 82)}">${n.disp || n.note}</span>`).join('')
       : `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">arm ✍️ and tap the neck — every note you tap lands here</span>`;
     // the only feedback that matters: are you keeping your own rules?
     const st = document.getElementById(`wi-stat-${p.id}`);
@@ -408,7 +409,7 @@ export function buildWriteItContent(p) {
       // used to unshift and keep the first 60 — the opposite end of an oppositely
       // ordered list — so once the library passed 60 entries a single Keep here
       // would silently delete the NEWEST pieces, which are the ones you just wrote.
-      const lib = JSON.parse(localStorage.getItem('rn-sketch-lib') || '[]');
+      const lib = (() => { const v = read(KEYS.pieces, []); return Array.isArray(v) ? v : []; })();
       lib.push({
         name: `${s.wRoot} ${s.wMode} — written ${new Date().toISOString().slice(0, 10)}`,
         bpm: metroClock.bpm || 100, tsig: 4,
@@ -416,9 +417,9 @@ export function buildWriteItContent(p) {
         sections: [{ at: 0, name: s.wMode, note: `${r.blurb}. The ${r.tellDegName} chord is ${r.tell.quality}.` }],
         steps: s.answer.map(n => ({ notes: [{ si: n.si, fret: n.fret }], dur: 1 })),
       });
-      localStorage.setItem('rn-sketch-lib', JSON.stringify(lib.slice(-100)));
+      write(KEYS.pieces, lib);
       const st = document.getElementById(`wi-stat-${p.id}`);
-      if (st) st.innerHTML = `<b style="color:var(--rk-ok)">Kept.</b> It is in the Sketchpad Library and the TAB page's song list.`;
+      if (st) st.innerHTML = `<b style="color:var(--rk-ok)">Kept.</b> It is in the Practice Manager's Songbook and the TAB page's song list.`;
     } catch (e) { /* storage full — the phrase is still on screen */ }
   }
 

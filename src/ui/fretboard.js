@@ -1,4 +1,5 @@
 import { NOTES, intervalLabel, DEGREE_COLORS, KEY_PATTERNS, SCALE_TYPES, toSharp } from '../core/music-theory.js';
+import { INTERVAL_COLORS, INTERVAL_TEXT, INTERVAL_LABELS } from '../core/colors.js';
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
 import { applyLook, pianoKeyColor } from '../core/looks.js';
 import { renderVocalsDisplay, destroyVocalsDisplay } from '../pedals/vocals.js';
@@ -501,7 +502,7 @@ export function mapKey() {
 // Change the session key and an in-key map is instantly a map of somewhere else —
 // so it has to follow the bus, not wait for the next thing that happens to redraw.
 // Degree labels depend on the root too, even at whole-neck scope.
-pedalBus.on(() => { if (showNoteMap && (mapScope === 'key' || showIntervals)) updateOverlays(); });
+pedalBus.on(() => { if ((showNoteMap && (mapScope === 'key' || showIntervals)) || fretboardView === 'intervals') updateOverlays(); });
 
 function updateKeyboardOverlays() {
   const g = pianoGeo();
@@ -642,12 +643,19 @@ export function updateOverlays() {
       const rs2 = colors?.rootStroke || '#aa99ee', ts2 = colors?.toneStroke || '#7766bb';
       // Fretboard view modes: recolour each dot by function / tension / chord-tone
       // / the note spectrum (🌈 needs no key root — colour IS the note's identity).
-      const viewOn = fretboardView !== 'standard' && fretboardView !== 'interval' && (fretboardView === 'spectrum' || !!rn);
-      const degOf  = note => ((NOTES.indexOf(note) - NOTES.indexOf(rn)) % 12 + 12) % 12;
+      // ⟡ Intervals is KEY-relative, not chord-relative: light an Em in C and the E
+      // must read as the 3rd, not as a root — that is what "changes with the key"
+      // means. So its root is the session key when one is set, and only falls back
+      // to the highlight's own root when there is no key to measure against.
+      const kr = toSharp((pedalBus.masterKey && pedalBus.masterKey.root) || pedalBus.root || '') || null;
+      const ivRoot = fretboardView === 'intervals' ? (kr || rn) : rn;
+      const viewOn = fretboardView !== 'standard' && fretboardView !== 'interval' && (fretboardView === 'spectrum' || !!ivRoot);
+      const degOf  = note => ((NOTES.indexOf(note) - NOTES.indexOf(ivRoot)) % 12 + 12) % 12;
       const degCol = note => {
         if (!viewOn) return null;
         if (fretboardView === 'spectrum')  return pcColor(note, 82, 48);
         const d = degOf(note);
+        if (fretboardView === 'intervals') return INTERVAL_COLORS[d];
         if (fretboardView === 'function')  return DEGREE_COLORS[d];
         if (fretboardView === 'tension')   { const t = TENSION_W[d]; return `rgb(${Math.round(70+t*185)},${Math.round(205-t*155)},${Math.round(120-t*70)})`; }
         if (fretboardView === 'chordtone') return CHORD_TONE_DEGS.includes(d) ? DEGREE_COLORS[d] : '#2c3836';
@@ -656,6 +664,7 @@ export function updateOverlays() {
       const degTxt = note => {
         if (!viewOn) return null;
         if (fretboardView === 'spectrum')  return pcTextOn(note);
+        if (fretboardView === 'intervals') return INTERVAL_TEXT[degOf(note)];
         if (fretboardView === 'chordtone') return CHORD_TONE_DEGS.includes(degOf(note)) ? '#15140d' : 'rgba(220,235,235,.4)';
         return '#15140d';
       };
@@ -784,11 +793,24 @@ export function updateOverlays() {
     if (!lg && fbo2 && fbo2.parentElement) {
       lg = document.createElement('div');
       lg.id = 'pc-legend';
-      lg.title = 'The note spectrum — colours run in fifths, so the notes of one key sit next to each other';
       lg.style.cssText = 'display:flex;justify-content:center;gap:3px;padding:2px 8px 3px';
-      lg.innerHTML = FIFTHS.map(n =>
-        `<span class="mono" style="font-size:calc(7.5px*var(--ui));font-weight:800;min-width:17px;text-align:center;border-radius:4px;padding:1px 0;background:${pcColor(n, 62, 40)};color:${pcTextOn(n)};opacity:.85">${n}</span>`).join('');
       fbo2.parentElement.insertBefore(lg, fbo2);
+    }
+    // The legend teaches whichever code the neck is wearing. Two codes, two
+    // legends: the spectrum's twelve notes in fifths, or the interval ladder's
+    // twelve rungs from R to 7. Rebuilt only when the view actually changes.
+    const mode = fretboardView === 'intervals' ? 'intervals' : 'spectrum';
+    if (lg && lg.dataset.mode !== mode) {
+      lg.dataset.mode = mode;
+      if (mode === 'intervals') {
+        lg.title = 'The interval ladder — what each note is doing in the session key: gold is home, warm is stable, cool pulls back toward it';
+        lg.innerHTML = INTERVAL_LABELS.map((lab, d) =>
+          `<span class="mono" style="font-size:calc(7.5px*var(--ui));font-weight:800;min-width:17px;text-align:center;border-radius:4px;padding:1px 0;background:${INTERVAL_COLORS[d]};color:${INTERVAL_TEXT[d]};opacity:.9">${lab}</span>`).join('');
+      } else {
+        lg.title = 'The note spectrum — colours run in fifths, so the notes of one key sit next to each other';
+        lg.innerHTML = FIFTHS.map(n =>
+          `<span class="mono" style="font-size:calc(7.5px*var(--ui));font-weight:800;min-width:17px;text-align:center;border-radius:4px;padding:1px 0;background:${pcColor(n, 62, 40)};color:${pcTextOn(n)};opacity:.85">${n}</span>`).join('');
+      }
     }
     if (lg && fbo2) lg.style.display = fbo2.style.display === 'none' ? 'none' : 'flex';
   }

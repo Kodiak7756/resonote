@@ -35,7 +35,7 @@ export function buildAudioContent(p) {
   function render() {
     // INPUT and TUNER are two views of ONE pedal, so the tab only says which is
     // active — it does not repaint the enclosure. Both wear the card's accent.
-    const tabBtn = (v, label) => `<button class="ai-view mono" data-v="${v}" style="flex:1;padding:5px;border-radius:6px;border:1px solid ${view === v ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${view === v ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};color:${view === v ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(9px*var(--ui));font-weight:700;letter-spacing:1px;cursor:pointer">${label}</button>`;
+    const tabBtn = (v, label) => `<button class="ai-view mono" data-v="${v}" style="min-height:calc(28px*var(--ui));flex:1;padding:5px;border-radius:6px;border:1px solid ${view === v ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};background:${view === v ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};color:${view === v ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(10px*var(--ui));font-weight:700;letter-spacing:1px;cursor:pointer">${label}</button>`;
     const tabs = `<div style="display:flex;gap:5px;margin-bottom:8px">${tabBtn('input', '🎛 INPUT')}${tabBtn('tuner', '🎯 TUNER')}</div>`;
 
     if (view === 'tuner') {
@@ -72,28 +72,28 @@ export function buildAudioContent(p) {
         <div class="rk-label">INPUT DEVICE</div>
         <div style="display:flex;gap:6px">
           <select id="dev-${p.id}" style="flex:1;min-width:0"></select>
-          <button id="find-${p.id}" class="mono" title="Allow mic access & list your devices by name" style="border-radius:8px;padding:0 10px;cursor:pointer;font-size:calc(13px*var(--ui));background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink)">⟳</button>
+          <button id="find-${p.id}" class="mono" title="Allow mic access & list your devices by name" style="min-height:calc(28px*var(--ui));border-radius:8px;padding:0 10px;cursor:pointer;font-size:calc(13px*var(--ui));background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);color:var(--rk-ink)">⟳</button>
         </div>
         <div id="hint-${p.id}" class="mono" style="font-size:calc(9px*var(--ui));color:var(--rk-ink-dim);margin-top:5px;line-height:1.4"></div>
       </div>
-      <button id="conn-${p.id}" class="mono" style="border-radius:8px;padding:8px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%"></button>
+      <button id="conn-${p.id}" class="mono" style="min-height:calc(28px*var(--ui));border-radius:8px;padding:8px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%"></button>
       <div id="err-${p.id}" class="mono" style="display:none;font-size:calc(10px*var(--ui));line-height:1.45;padding:7px 9px;border-radius:7px;background:color-mix(in srgb, var(--rk-bad) 12%, transparent);border:1px solid color-mix(in srgb, var(--rk-bad) 45%, transparent);color:var(--rk-bad)"></div>
       <div id="sil-${p.id}" style="display:none;font-size:calc(10px*var(--ui));line-height:1.55;padding:8px 10px;border-radius:7px;background:color-mix(in srgb, var(--rk-bad) 8%, transparent);border:1px solid color-mix(in srgb, var(--rk-bad) 38%, transparent);color:var(--rk-ink)"></div>
       <div style="display:flex;align-items:center;gap:8px">
-        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));width:30px">LVL</span>
+        <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));width:30px">LVL</span>
         <div style="flex:1;height:9px;background:var(--rk-panel);border-radius:5px;border:1px solid var(--rk-edge-soft);position:relative;overflow:hidden">
           <div id="lvl-${p.id}" style="height:100%;width:0%;border-radius:5px;transition:width .05s"></div>
           <!-- −12 dBFS: aim the loudest strum just under this -->
           <div style="position:absolute;top:0;bottom:0;left:80%;width:1px;background:var(--rk-edge)"></div>
           <div id="pk-${p.id}" style="display:none;position:absolute;top:0;bottom:0;width:2px;background:var(--rk-ink)"></div>
         </div>
-        <span id="db-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));width:56px;text-align:right">— dB</span>
+        <span id="db-${p.id}" class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));width:56px;text-align:right">— dB</span>
       </div>
       <div style="display:flex;gap:20px;justify-content:center">
         <div id="kg-${p.id}"></div>
         <div id="kgt-${p.id}"></div>
       </div>
-      <div id="units-${p.id}" class="mono" style="text-align:center;color:var(--rk-ink-dim);font-size:calc(9px*var(--ui))"></div>
+      <div id="units-${p.id}" class="mono" style="text-align:center;color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))"></div>
       <div id="diag-${p.id}" class="mono" style="display:none;font-size:calc(9px*var(--ui));color:var(--rk-ink-mute);line-height:1.6;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:7px;padding:6px 8px"></div>
       <div id="st-${p.id}" class="mono" style="text-align:center;padding:4px 0;color:var(--rk-ink-mute);font-size:calc(11px*var(--ui))">Connect your guitar</div>
       ${theoryPanelHTML('audio', AUDIO_THEORY)}
@@ -193,10 +193,10 @@ export function buildAudioContent(p) {
             ? `⚠ Open on <b style="color:var(--rk-ink)">${on}</b> — but nothing is coming through it. Wrong input? Pick another above; it switches instantly.`
             : !audio._everHeard
               ? `Open on <b style="color:var(--rk-ink)">${on}</b> — waiting for signal. Play something.`
-              : `✓ Live on <b style="color:var(--rk-ink)">${on}</b>. Wrong one? Pick your Focusrite above — it switches instantly.`)
+              : `✓ Live on <b style="color:var(--rk-ink)">${on}</b>. Wrong one? Pick your interface or mic above — it switches instantly.`)
         : !hasLabels
-          ? `Tap <b style="color:var(--rk-ink)">⟳</b> to allow mic access — your devices will then show by name so you can pick the <b style="color:var(--rk-ink)">Focusrite</b>.`
-          : `Pick your <b style="color:var(--rk-ink)">Focusrite</b> from the list, then hit Connect.`;
+          ? `Tap <b style="color:var(--rk-ink)">⟳</b> to allow mic access — your devices will then show by name so you can pick the <b style="color:var(--rk-ink)">your interface</b>.`
+          : `Pick your <b style="color:var(--rk-ink)">your interface</b> from the list, then hit Connect.`;
     }
     const err = document.getElementById(`err-${p.id}`);
     if (err) {

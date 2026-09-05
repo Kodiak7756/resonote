@@ -35,6 +35,9 @@ import { SONG_LIBRARY } from './song-directory.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { playPlan } from '../curriculum/drill-runner.js';
 import { parseAsciiTab } from './tab.js';
+// The written library goes through the store, not raw localStorage: the cap and the
+// append-at-the-end convention live there, once, and this file stops carrying its own.
+import { read, write, KEYS } from '../core/store.js';
 
 // The one hex left in this file, and the reason is structural: these are the FRETBOARD's
 // dot colours, handed to setChordHighlight and painted into the neck SVG — which lives
@@ -4657,8 +4660,8 @@ export const REF_SKETCHES = [
     ],
   },
 ];
-export function loadSketchLib() { try { return JSON.parse(localStorage.getItem('rn-sketch-lib') || '[]'); } catch (e) { return []; } }
-function saveSketchLib(lib) { try { localStorage.setItem('rn-sketch-lib', JSON.stringify(lib.slice(-100))); } catch (e) { /* full/private */ } }
+export function loadSketchLib() { const v = read(KEYS.pieces, []); return Array.isArray(v) ? v : []; }
+function saveSketchLib(lib) { return write(KEYS.pieces, lib); }   // the store applies the cap
 // Append a piece to the library from OUTSIDE the Sketchpad.
 //
 // The Studio's ⤓ KEEP has to write a card without the Songbook being open, and
@@ -4688,6 +4691,147 @@ export function keepPieceToLib(piece) {
   if (at >= 0) lib[at] = entry; else lib.push(entry);
   saveSketchLib(lib);
   return entry;
+}
+
+// ── library file: ⬇ Export / ⬆ Import ─────────────────────────────────
+// The written library is the one thing in this app that cannot be regenerated, and
+// it lived only in localStorage until a preview-browser restart wiped it. A file on
+// disk is the control that makes that impossible again — and it is how a piece gets
+// from Kevin's machine to a friend's. Everything between here and the closing rule
+// is pure (no DOM, no storage) so a plain node script can lift it out and test it.
+//
+// THE FILE: { app:'resonote', kind:'library', version:1, exportedAt, pieces:[...] }
+// A piece is what 📥 Save writes: { id, name, steps:[{notes:[{si,fret}], dur}], bpm?,
+// tsig?, sections?, about?, date?, ladder?, takeId? }. si 0 = the highest string.
+export const LIB_FILE_VERSION = 1;
+
+// Anything that is not a well-formed piece is dropped, never "repaired" into one:
+// a step with a bad note would play as silence and read as a bug in the piece, not
+// in the file. Copies field by field so a stray key in the file cannot ride in.
+export function cleanPiece(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  if (typeof raw.name !== 'string' || !raw.name.trim()) return null;
+  if (!Array.isArray(raw.steps) || !raw.steps.length) return null;
+  const steps = [];
+  for (const st of raw.steps) {
+    if (!st || typeof st !== 'object' || !Array.isArray(st.notes)) return null;
+    const dur = Number(st.dur);
+    if (!Number.isFinite(dur) || dur <= 0) return null;
+    const notes = [];
+    for (const n of st.notes) {
+      const si = Number(n && n.si), fret = Number(n && n.fret);
+      if (!Number.isInteger(si) || !Number.isInteger(fret) || si < 0 || fret < 0) return null;
+      notes.push({ si, fret });
+    }
+    steps.push({ notes, dur });
+  }
+  const bpm  = Number(raw.bpm), tsig = Number(raw.tsig);
+  const out = {
+    id:       typeof raw.id === 'string' && raw.id ? raw.id : null,
+    name:     raw.name.trim(),
+    steps,
+    bpm:      Number.isFinite(bpm) && bpm > 0 ? bpm : 90,
+    tsig:     Number.isInteger(tsig) && tsig > 0 && tsig <= 12 ? tsig : 4,
+    sections: (Array.isArray(raw.sections) ? raw.sections : [])
+                .filter(x => x && Number.isInteger(x.at) && x.at >= 0 && typeof x.name === 'string')
+                .map(x => typeof x.note === 'string' ? { at: x.at, name: x.name, note: x.note } : { at: x.at, name: x.name }),
+    about:    typeof raw.about === 'string' ? raw.about : '',
+  };
+  if (typeof raw.date === 'string' && Number.isFinite(Date.parse(raw.date))) out.date = raw.date;
+  if (raw.ladder && typeof raw.ladder === 'object' && !Array.isArray(raw.ladder)) out.ladder = { ...raw.ladder };
+  if (typeof raw.takeId === 'string' && raw.takeId) out.takeId = raw.takeId;
+  return out;
+}
+
+// What a file has to be before its pieces are looked at. A bare array is accepted
+// too — that is exactly what `rn-sketch-lib` holds, so a copy pasted straight out of
+// devtools imports as well as an export does.
+export function parseLibraryFile(text) {
+  let doc;
+  try { doc = JSON.parse(text); } catch (e) { return { error: 'Not a JSON file.' }; }
+  if (Array.isArray(doc)) return { pieces: doc };
+  if (!doc || typeof doc !== 'object') return { error: 'Not a Resonote library file.' };
+  if (doc.kind && doc.kind !== 'library') return { error: `This is a Resonote ${doc.kind} file, not a library.` };
+  if (!Array.isArray(doc.pieces)) return { error: 'No pieces[] in this file.' };
+  return { pieces: doc.pieces };
+}
+
+// Two pieces are the same piece when they would sound and read the same — id and
+// date are bookkeeping, not music. Re-importing your own export is the common case,
+// and it must land as "skipped", not as a shelf full of " (imported)" twins.
+const pieceSig = x => { const c = cleanPiece(x) || x || {}; return JSON.stringify([c.name, c.steps, c.sections, c.bpm, c.tsig, c.about]); };
+const pieceTs  = x => { const t = Date.parse(x && x.date); return Number.isFinite(t) ? t : null; };
+
+// MERGE, never replace. An import can only add — it cannot delete OR overwrite,
+// because the store keeps no history for the library: a piece written over in place
+// is gone for good. So what is here always stays exactly where it is, and a piece that
+// differs comes in beside it. By id:
+//   • no id, or an id nobody here has  → added (fresh id minted if it had none)
+//   • same id, same music              → skipped
+//   • same id, theirs dated older      → skipped (that is your own old backup; you have
+//                                        edited since — the edit is the one to keep)
+//   • same id, otherwise               → keep ours, add theirs as "name (imported)"
+// Dates decide only skip-vs-add, never who wins: 📥 Save restamps `date` with whatever
+// clock did the saving, so "newer" says who saved last, not whose arrangement is right.
+export function mergeLibrary(existing, incoming) {
+  const lib  = (Array.isArray(existing) ? existing : []).filter(Boolean);
+  const byId = new Map(); lib.forEach((x, i) => { if (x.id) byId.set(x.id, i); });
+  const used = new Set(byId.keys());
+  const fresh = () => { let id; do { id = newLibId(); } while (used.has(id)); used.add(id); return id; };
+  let added = 0, skipped = 0;
+  for (const raw of (Array.isArray(incoming) ? incoming : [])) {
+    const pc = cleanPiece(raw);
+    if (!pc) { skipped++; continue; }
+    if (!pc.id || !byId.has(pc.id)) {
+      if (!pc.id) pc.id = fresh(); else used.add(pc.id);
+      lib.push(pc); byId.set(pc.id, lib.length - 1); added++; continue;
+    }
+    const cur = lib[byId.get(pc.id)];
+    if (pieceSig(cur) === pieceSig(pc)) { skipped++; continue; }
+    const tc = pieceTs(cur), ti = pieceTs(pc);
+    if (tc != null && ti != null && ti <= tc) { skipped++; continue; }
+    pc.id = fresh(); pc.name += ' (imported)'; lib.push(pc); added++;
+  }
+  return { library: lib, added, skipped };
+}
+
+export function libraryFile(pieces) {
+  return { app: 'resonote', kind: 'library', version: LIB_FILE_VERSION, exportedAt: new Date().toISOString(), pieces };
+}
+export const libraryFileName = (d = new Date()) =>
+  `resonote-library-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}.json`;
+// ── /library file ──────────────────────────────────────────────────────
+
+// Hand the whole library to the browser as a download. Returns how many went.
+function exportLibraryToDisk() {
+  const pieces = loadSketchLib();
+  const blob = new Blob([JSON.stringify(libraryFile(pieces), null, 1)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = libraryFileName();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  return pieces.length;
+}
+
+// Merge a file into the library and say what happened, in words the shelf can show.
+// The store caps the list; if a merge would push past the cap the store keeps the
+// LAST N, which would drop the oldest of what is already here. That is the one thing
+// an import must never do — so on a truncated write, write back ours in full and only
+// as many of the new ones as fit, and say so.
+function importLibraryText(text) {
+  const parsed = parseLibraryFile(text);
+  if (parsed.error) return { error: parsed.error };
+  const mine = loadSketchLib();
+  const { library, added, skipped } = mergeLibrary(mine, parsed.pieces);
+  if (!saveSketchLib(library)) return { error: 'Could not save — storage is full.' };
+  const back = loadSketchLib();
+  let notKept = 0;
+  if (back.length < library.length) {
+    const room = Math.max(0, back.length - mine.length);
+    notKept = library.length - mine.length - room;
+    saveSketchLib(library.slice(0, mine.length + room));
+  }
+  return { added: added - notKept, skipped, notKept };
 }
 
 export function loadTextSongs() { try { return JSON.parse(localStorage.getItem('resonote-songs') || '[]'); } catch (e) { return []; } }
@@ -4820,6 +4964,7 @@ export function buildSketchpadContent(p) {
                                // host re-render cannot silently bin a pasted-but-unloaded tab.
   let playIdx = null;          // step currently sounding during playback (for the NOW/NEXT readout)
   let stripView = 'steps';     // 'steps' = editable chips · 'breakdown' = chord/arpeggio/melody analysis
+  let libMsg = '';             // what the last ⬇ Export / ⬆ Import did — shown on the shelf, not alert()ed
 
   // ── bars & sections ──
   // bar index at the START of each step, from cumulative beats vs beats-per-bar
@@ -5054,6 +5199,7 @@ export function buildSketchpadContent(p) {
   function loadPiece(e2) {
     if (!e2) return;
     stopPlay();
+    libMsg = '';                 // the shelf's import/export report is stale once you leave it
     s.steps    = JSON.parse(JSON.stringify(e2.steps || []));
     s.name     = e2.name || '';
     s.sections = JSON.parse(JSON.stringify(e2.sections || []));
@@ -5082,9 +5228,18 @@ export function buildSketchpadContent(p) {
       <span style="flex:1;min-width:0"><span class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</span>
       <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${sub}</span></span>
       <span class="mono" style="color:var(--rk-accent);font-size:calc(9px*var(--ui));font-weight:700">▶ Load</span></button>`;
+    // ⬇ Export / ⬆ Import sit on the shelf itself, next to the list they act on. Same
+    // chip idiom as every other shelf control; the report ("3 added, 1 skipped…") is a
+    // span in this row rather than an alert, and it lives in the closure so the
+    // re-render that shows the new rows does not also erase the news.
+    const chip = (id, label, title) => `<button id="${id}-${p.id}" class="rk-chip" title="${title}" style="font-size:calc(9px*var(--ui));padding:5px 8px;white-space:nowrap">${label}</button>`;
     let h = `<div class="rk" style="display:flex;flex-direction:column;gap:6px;height:100%;min-height:0">`;
-    h += `<div style="display:flex;gap:5px;align-items:center">
+    h += `<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
       <button id="back-${p.id}" class="rk-btn is-active" style="font-size:calc(9px*var(--ui));padding:5px 9px;letter-spacing:0">✏️ ${s.steps.length ? 'Back to sketch' : 'New sketch'}</button>
+      ${chip('lexp', '⬇ Export', 'Save every written piece to a .json file on disk — a copy no browser can wipe')}
+      ${chip('limp', '⬆ Import', 'Bring pieces in from a Resonote library file — merges into what is here, never replaces it')}
+      <input id="impf-${p.id}" type="file" accept=".json,application/json" style="display:none">
+      <span id="libmsg-${p.id}" class="mono" style="color:var(--rk-accent);font-size:calc(8px*var(--ui))">${esc(libMsg)}</span>
       <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-left:auto">📖 LIBRARY — loads into the timeline</span></div>`;
     h += `<div style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:140px;overflow-y:auto;padding-right:2px">`;
     // The host gets FIRST slot: the Practice Manager's own saved rows belong on the same
@@ -5099,6 +5254,24 @@ export function buildSketchpadContent(p) {
     h += `</div></div>`;
     el.innerHTML = h;
     document.getElementById(`back-${p.id}`)?.addEventListener('click', () => { s.smode = 'sketch'; render(); preview(); });
+    const say = t => { libMsg = t; const m = document.getElementById(`libmsg-${p.id}`); if (m) m.textContent = t; };
+    document.getElementById(`lexp-${p.id}`)?.addEventListener('click', () => {
+      const n = exportLibraryToDisk();
+      say(n ? `⬇ ${n} piece${n === 1 ? '' : 's'} → ${libraryFileName()}` : 'Nothing written yet — the file would be empty.');
+    });
+    const fileIn = document.getElementById(`impf-${p.id}`);
+    document.getElementById(`limp-${p.id}`)?.addEventListener('click', () => { if (fileIn) { fileIn.value = ''; fileIn.click(); } });
+    fileIn?.addEventListener('change', async () => {
+      const f = fileIn.files && fileIn.files[0]; if (!f) return;
+      let text = '';
+      try { text = await f.text(); } catch (e) { say('Could not read that file.'); return; }
+      const r = importLibraryText(text);
+      if (r.error) { say('⚠ ' + r.error); return; }
+      const parts = [`${r.added} added`, `${r.skipped} skipped`];
+      if (r.notKept) parts.push(`${r.notKept} not kept — library full`);
+      libMsg = '⬆ ' + parts.join(', ');
+      render();                        // the shelf shows the new rows, the message survives (closure)
+    });
     el.querySelectorAll('.sk-lib').forEach(b => b.addEventListener('click', () => {
       const kind = b.dataset.kind, i = +b.dataset.i;
       if (kind === 'sk') {

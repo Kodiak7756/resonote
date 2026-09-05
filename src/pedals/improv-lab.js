@@ -316,7 +316,7 @@ export function buildImprovLabContent(p) {
   }
 
   // ── render ──────────────────────────────────────────────────────────
-  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
+  const chip = (cls, data, lab, on, extra = '') => `<button class="${cls} mono" ${data} style="min-height:calc(28px*var(--ui));background:${on ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${on ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:5px;color:${on ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};font-size:calc(10px*var(--ui));padding:4px 7px;cursor:pointer;${extra}">${lab}</button>`;
 
   function render() {
     // class="rk" puts the whole pedal inside the kit's token scope, so Call &
@@ -324,22 +324,22 @@ export function buildImprovLabContent(p) {
     let h = `<div class="rk" style="display:flex;flex-direction:column;gap:8px">`;
     // mode tabs
     h += `<div style="display:flex;gap:5px">`;
-    h += chip('il-mode', 'data-m="call"', '🗣️ Call &amp; Response', s.mode === 'call', 'flex:1;font-size:calc(9px*var(--ui));padding:6px 0');
-    h += chip('il-mode', 'data-m="jam"', '🎸 Jam', s.mode === 'jam', 'flex:1;font-size:calc(9px*var(--ui));padding:6px 0');
+    h += chip('il-mode', 'data-m="call"', '🗣️ Call &amp; Response', s.mode === 'call', 'flex:1;font-size:calc(10px*var(--ui));padding:6px 0');
+    h += chip('il-mode', 'data-m="jam"', '🎸 Jam', s.mode === 'jam', 'flex:1;font-size:calc(10px*var(--ui));padding:6px 0');
     h += `</div>`;
     // key + feel (shared)
-    h += `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">KEY</span>`;
+    h += `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">KEY</span>`;
     NOTES.forEach(n => h += chip('il-key', `data-n="${n}"`, n, s.key === n, 'padding:3px 4px;min-width:15px'));
     h += `</div>`;
 
     if (s.mode === 'call') {
-      h += `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">FEEL</span>`;
+      h += `<div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">FEEL</span>`;
       FEELS.forEach(f => h += chip('il-feel', `data-f="${f.id}"`, f.name, s.feel === f.id));
       h += `</div>`;
       // level
       h += `<div style="display:flex;gap:4px">`;
       [['echo', '① Echo', 'play it back'], ['answer', '② Answer', 'copy a model reply'], ['create', '③ Create', 'improvise a reply']].forEach(([v, l, sub]) =>
-        h += `<button class="il-level" data-v="${v}" style="flex:1;background:${s.level === v ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${s.level === v ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:6px;color:${s.level === v ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};padding:5px 3px;cursor:pointer;font-family:'JetBrains Mono',monospace"><div style="font-size:calc(9px*var(--ui));font-weight:700">${l}</div><div style="font-size:calc(6.5px*var(--ui));opacity:.7">${sub}</div></button>`);
+        h += `<button class="il-level" data-v="${v}" style="min-height:calc(28px*var(--ui));flex:1;background:${s.level === v ? 'var(--rk-soft2)' : 'var(--rk-panel2)'};border:1px solid ${s.level === v ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};border-radius:6px;color:${s.level === v ? 'var(--rk-accent)' : 'var(--rk-ink-mute)'};padding:5px 3px;cursor:pointer;font-family:'JetBrains Mono',monospace"><div style="font-size:calc(10px*var(--ui));font-weight:700">${l}</div><div style="font-size:calc(8px*var(--ui));opacity:.7">${sub}</div></button>`);
       h += `</div>`;
       // stage
       h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-edge);border-radius:8px;padding:10px;min-height:96px;display:flex;flex-direction:column;gap:6px">`;
@@ -347,19 +347,19 @@ export function buildImprovLabContent(p) {
         h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));text-align:center;line-height:1.5">Press <b style="color:var(--rk-accent)">▶ Play the call</b>.<br>The app plays a short phrase that asks a question — then it's your turn to answer.</div>`;
       } else {
         const a = analyse(cr.callLaid, s.key);
-        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px">THE CALL</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px">THE CALL</div>`;
         h += `<div class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${cr.callLaid.map(z => z.note).join(' · ')}</div>`;
-        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));line-height:1.5">Shape: <b>${a.contour}</b> · ${a.endText}</div>`;
+        h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));line-height:1.5">Shape: <b>${a.contour}</b> · ${a.endText}</div>`;
         if (cr.phase === 'yourturn') {
           if (s.level === 'create') {
             const homePcs = feel().home.map(semi => NOTES[(NOTES.indexOf(toSharp(s.key)) + semi) % 12]);
             h += `<div class="mono" style="color:var(--rk-ok);font-size:calc(10px*var(--ui));font-weight:700">🎤 Your turn — answer it, and resolve.</div>`;
-            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">End on <b style="color:var(--rk-dim)">${homePcs.join(' · ')}</b> to bring it home. ${audio.connected ? 'Listening…' : ''}</div>`;
+            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">End on <b style="color:var(--rk-dim)">${homePcs.join(' · ')}</b> to bring it home. ${audio.connected ? 'Listening…' : ''}</div>`;
           } else {
             h += `<div class="mono" style="color:var(--rk-ok);font-size:calc(10px*var(--ui));font-weight:700">🎤 Your turn — ${s.level === 'echo' ? 'play the call back' : 'play the model answer'}.</div>`;
             // The cursor gold below is the app-wide "now" of the step strip and the
             // fretboard — cross-pedal language, so it stays literal here too.
-            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui))">Target: ${cr.target.map((z, i) => `<span style="color:${i < cr.idx ? 'var(--rk-ok)' : i === cr.idx ? '#ffd23f' : 'var(--rk-ink-mute)'}">${z.note}${i < cr.idx ? '✓' : ''}</span>`).join(' · ')}</div>`;
+            h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Target: ${cr.target.map((z, i) => `<span style="color:${i < cr.idx ? 'var(--rk-ok)' : i === cr.idx ? '#ffd23f' : 'var(--rk-ink-mute)'}">${z.note}${i < cr.idx ? '✓' : ''}</span>`).join(' · ')}</div>`;
           }
         } else if (cr.phase === 'graded') {
           h += cr.grade.resolved
@@ -372,13 +372,13 @@ export function buildImprovLabContent(p) {
       h += `</div>`;
       // transport
       h += `<div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">`;
-      h += `<button id="il-play" style="flex:1;background:var(--rk-soft2);border:1px solid var(--rk-accent);border-radius:6px;color:var(--rk-accent);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;padding:7px;cursor:pointer">▶ Play the call</button>`;
+      h += `<button id="il-play" style="min-height:calc(28px*var(--ui));flex:1;background:var(--rk-soft2);border:1px solid var(--rk-accent);border-radius:6px;color:var(--rk-accent);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));font-weight:700;padding:7px;cursor:pointer">▶ Play the call</button>`;
       if (cr.phase !== 'idle' && cr.phase !== 'calling') h += chip('il-again', '', '🔊 Hear call', false, 'padding:7px 9px');
       if (s.level !== 'echo' && cr.phase !== 'idle') h += chip('il-model', '', '🔊 Model answer', false, 'padding:7px 9px');
       h += `</div>`;
-      if (!audio.connected) h += `<button id="il-mic" class="mono" style="background:var(--rk-panel2);border:1px dashed var(--rk-edge-soft);border-radius:6px;color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));padding:5px;cursor:pointer">🎤 Connect your guitar to play answers back (or just listen &amp; learn)</button>`;
+      if (!audio.connected) h += `<button id="il-mic" class="mono" style="min-height:calc(28px*var(--ui));background:var(--rk-panel2);border:1px dashed var(--rk-edge-soft);border-radius:6px;color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));padding:5px;cursor:pointer">🎤 Connect your guitar to play answers back (or just listen &amp; learn)</button>`;
       // grammar card
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));line-height:1.7;border-top:1px solid var(--rk-edge-soft);padding-top:6px">
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));line-height:1.7;border-top:1px solid var(--rk-edge-soft);padding-top:6px">
         <b style="color:var(--rk-ink)">Ways to answer a call:</b><br>
         • <b style="color:var(--rk-dim)">Repeat</b> — echo it exactly (Echo mode).<br>
         • <b style="color:var(--rk-dim)">Rhythmic echo</b> — same rhythm, new notes.<br>
@@ -387,15 +387,15 @@ export function buildImprovLabContent(p) {
     } else {
       // ── JAM ──
       const pr = jamPreset();
-      h += `<div style="display:flex;align-items:center;gap:4px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BACKING</span>
-        <select id="il-preset" style="flex:1;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:6px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(9px*var(--ui));padding:4px">`;
+      h += `<div style="display:flex;align-items:center;gap:4px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">BACKING</span>
+        <select id="il-preset" style="flex:1;background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:6px;color:var(--rk-ink);font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:4px">`;
       JAM_PRESETS.forEach((pp, i) => h += `<option value="${i}" ${i === s.jamIdx ? 'selected' : ''}>${pp.title}</option>`);
       h += `</select></div>`;
       // the progression, transposed to the chosen key
       const delta = ((NOTES.indexOf(toSharp(s.key)) - NOTES.indexOf(toSharp(pr.scale.root))) % 12 + 12) % 12;
       const progTxt = pr.backing.progression.map(c => `${c.numeral || ''} ${NOTES[(NOTES.indexOf(toSharp(c.root)) + delta) % 12]}${isMinorQual(c.quality) ? 'm' : ''}`).join('  ');
-      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(9px*var(--ui));background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px 8px">${progTxt}</div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));line-height:1.5">Play <b style="color:var(--rk-dim)">${s.key} ${pr.scale.scaleName}</b> over it. The bright dots are the current chord's tones — your safe landing notes. Aim for the <b style="color:var(--rk-dim)">3rd</b> when the chord changes.</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px 8px">${progTxt}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));line-height:1.5">Play <b style="color:var(--rk-dim)">${s.key} ${pr.scale.scaleName}</b> over it. The bright dots are the current chord's tones — your safe landing notes. Aim for the <b style="color:var(--rk-dim)">3rd</b> when the chord changes.</div>`;
       // tempo + drums — the shared master control, so the jam runs at the same
       // tempo as the Metronome and every other open pedal
       h += `<div class="rk">`;
@@ -408,8 +408,8 @@ export function buildImprovLabContent(p) {
       // the guitar, so it has to be found without being read. Hue 345 keeps it
       // off C. The lit chord tones and the banner stay on the accent: those only
       // report that the jam is running, and running is not stopping.
-      h += `<button id="il-jam" style="background:${jam ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${jam ? 'var(--rk-stop-edge)' : 'var(--rk-accent)'};border-radius:6px;color:${jam ? 'var(--rk-stop)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;font-size:calc(11px*var(--ui));font-weight:700;padding:8px;cursor:pointer">${jam ? '⏹ Stop jam' : '▶ Start jam'}</button>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">${pr.prompt ? pr.prompt.slice(0, 120) : ''}</div>`;
+      h += `<button id="il-jam" style="min-height:calc(28px*var(--ui));background:${jam ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${jam ? 'var(--rk-stop-edge)' : 'var(--rk-accent)'};border-radius:6px;color:${jam ? 'var(--rk-stop)' : 'var(--rk-accent)'};font-family:'JetBrains Mono',monospace;font-size:calc(11px*var(--ui));font-weight:700;padding:8px;cursor:pointer">${jam ? '⏹ Stop jam' : '▶ Start jam'}</button>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${pr.prompt ? pr.prompt.slice(0, 120) : ''}</div>`;
     }
     h += `</div>`;
     el.innerHTML = h;

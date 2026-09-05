@@ -393,11 +393,11 @@ export function buildPracticeContent(p) {
   // builder, which is more than it could do before (previously it only had a ✕).
   // These rows sit on the SAME shelf as the sketch rows, so they are built from the same
   // tokens the sketch uses — panel2 button on an edge-soft border, panel row, accent stripe.
-  const SB_BTN = `background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:calc(7px*var(--ui));padding:3px 4px;cursor:pointer;`;
+  const SB_BTN = `background:var(--rk-panel2);border:1px solid var(--rk-edge-soft);border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));min-height:calc(28px*var(--ui));padding:3px 4px;cursor:pointer;`;
   const SB_ROW = `background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-left:3px solid var(--rk-accent);border-radius:5px;padding:6px 8px`;
   const sbEsc  = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   function songbookRowsHTML() {
-    const head = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1.5px;margin-top:4px">${t}</div>`;
+    const head = t => `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px;margin-top:4px">${t}</div>`;
     const dstr = d => d ? ' · ' + new Date(d).toLocaleDateString() : '';
     // Partition so EVERY entry lands in exactly one list — an unreachable row is a lost row.
     const songs = [], plans = [];
@@ -414,7 +414,7 @@ export function buildPracticeContent(p) {
         <button class="pm-plan-use" data-li="${i}" style="${SB_BTN}color:var(--rk-accent);border-color:var(--rk-line)">▶ Use</button>
         <button class="pm-lib-del"  data-li="${i}" style="${SB_BTN}color:var(--rk-stop);border-color:var(--rk-stop-edge)">✕</button></div>`;
     });
-    if (!plans.length) x += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));padding:3px 2px">No saved plans yet.</div>`;
+    if (!plans.length) x += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));padding:3px 2px">No saved plans yet.</div>`;
     x += `<button class="pm-save-session" style="${SB_BTN}width:100%;padding:5px;color:var(--rk-accent);border-color:var(--rk-line)">💾 Save the current session as a plan</button>`;
 
     if (songs.length) {
@@ -427,15 +427,15 @@ export function buildPracticeContent(p) {
         x += `<div style="${SB_ROW}">
           <div style="display:flex;align-items:center;gap:5px">
             <span class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sbEsc(it.title || 'Untitled')}</span>
-            ${it.key ? `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${sbEsc(it.key)}</span>` : ''}
-            <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${n} chord${n === 1 ? '' : 's'}${dstr(it.date)}</span></div>
+            ${it.key ? `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${sbEsc(it.key)}</span>` : ''}
+            <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${n} chord${n === 1 ? '' : 's'}${dstr(it.date)}</span></div>
           ${it.artist ? `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui))">${sbEsc(it.artist)}</div>` : ''}
-          <div class="mono" style="color:var(--rk-dim);font-size:calc(7px*var(--ui));margin-top:2px;word-spacing:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sbEsc(it.prog)}</div>
+          <div class="mono" style="color:var(--rk-dim);font-size:calc(8px*var(--ui));margin-top:2px;word-spacing:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sbEsc(it.prog)}</div>
           <div style="display:flex;gap:3px;margin-top:4px">
-            <button class="pm-song-load"   data-li="${i}" style="flex:1;${SB_BTN}color:var(--rk-accent);border-color:var(--rk-line)">▶ Timeline</button>
-            <button class="pm-song-chords" data-li="${i}" style="flex:1;${SB_BTN}color:var(--rk-ink-dim)">🔁 Chords</button>
-            <button class="pm-song-groove" data-li="${i}" style="flex:1;${SB_BTN}color:var(--rk-ink-dim)">🥁 Groove</button>
-            <button class="pm-song-finger" data-li="${i}" style="flex:1;${SB_BTN}color:var(--rk-ink-dim)">🤚 Finger</button>
+            <button class="pm-song-load"   data-li="${i}" style="min-height:calc(28px*var(--ui));flex:1;${SB_BTN}color:var(--rk-accent);border-color:var(--rk-line)">▶ Timeline</button>
+            <button class="pm-song-chords" data-li="${i}" style="min-height:calc(28px*var(--ui));flex:1;${SB_BTN}color:var(--rk-ink-dim)">🔁 Chords</button>
+            <button class="pm-song-groove" data-li="${i}" style="min-height:calc(28px*var(--ui));flex:1;${SB_BTN}color:var(--rk-ink-dim)">🥁 Groove</button>
+            <button class="pm-song-finger" data-li="${i}" style="min-height:calc(28px*var(--ui));flex:1;${SB_BTN}color:var(--rk-ink-dim)">🤚 Finger</button>
             <button class="pm-lib-del"     data-li="${i}" style="${SB_BTN}color:var(--rk-stop);border-color:var(--rk-stop-edge)">✕</button>
           </div></div>`;
       });
@@ -615,12 +615,12 @@ export function buildPracticeContent(p) {
 
     if (!sessionActive) {
       h += `<div class="rk-seg" style="gap:3px;flex-wrap:nowrap">`;
-      h += `<button class="rk-seg-btn pm-view${pmView==='session'?' is-active':''}" data-pv="session" style="flex:1;font-size:calc(8px*var(--ui))">Session</button>`;
-      h += `<button class="rk-seg-btn pm-view${pmView==='theory'?' is-active':''}" data-pv="theory" style="flex:1;font-size:calc(8px*var(--ui))">🎓 Theory</button>`;
+      h += `<button class="rk-seg-btn pm-view${pmView==='session'?' is-active':''}" data-pv="session" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">Session</button>`;
+      h += `<button class="rk-seg-btn pm-view${pmView==='theory'?' is-active':''}" data-pv="theory" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">🎓 Theory</button>`;
       // No longer a list of saved practices — it is the whole Song Sketchpad: your pieces,
       // the reference songs, the timeline, the 🧩 Breakdown, and your saved plans on the
       // same shelf. 'Songbook' is what that is.
-      h += `<button class="rk-seg-btn pm-view${pmView==='library'?' is-active':''}" data-pv="library" style="flex:1;font-size:calc(8px*var(--ui))">📖 Songbook</button>`;
+      h += `<button class="rk-seg-btn pm-view${pmView==='library'?' is-active':''}" data-pv="library" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">📖 Songbook</button>`;
       h += `</div>`;
     }
 
@@ -639,8 +639,8 @@ export function buildPracticeContent(p) {
       // One token, not three inline rules: .rk-btn.is-active draws its text, rim and
       // wash from --rk-accent, so re-pointing that single variable on the button
       // reddens the whole thing together while it is showing ⏹.
-      foot += `<button class="th-toggle rk-btn is-active" style="font-size:calc(10px*var(--ui));padding:6px 12px;letter-spacing:.5px${running ? ';--rk-accent:var(--rk-stop);--rk-line:var(--rk-stop-edge)' : ''}">${running ? '⏹ Stop' : '▶ Play'}</button>`;
-      foot += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));flex:1;min-width:0">Loops until you stop it — follow the gold chip, and tap any chip to hear that step.</span>`;
+      foot += `<button class="th-toggle rk-btn is-active" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:6px 12px;letter-spacing:.5px${running ? ';--rk-accent:var(--rk-stop);--rk-line:var(--rk-stop-edge)' : ''}">${running ? '⏹ Stop' : '▶ Play'}</button>`;
+      foot += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));flex:1;min-width:0">Loops until you stop it — follow the gold chip, and tap any chip to hear that step.</span>`;
       foot += `</div>`;
       h += exerciseViewHTML(p.id, {
         back: { label: '← Drills', title: 'Back to the theory shelf' },
@@ -650,8 +650,8 @@ export function buildPracticeContent(p) {
         now: theoryDesc(theoryStripI), next: theoryDesc(theoryStripI + 1),
         tempo: { min: 30, max: 280 },
         // RUNNING is the lamp turned up — the pedal's own accent, brighter. Not a second colour.
-        metaLeft: `<span class="mono" style="color:${running ? 'var(--rk-hot)' : 'var(--rk-ink-mute)'};font-size:calc(7px*var(--ui));letter-spacing:1px;flex-shrink:0">${running ? '▶ RUNNING' : '■ LAST RUN'}</span>`
-                + `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${theoryStrip.title}</span>`,
+        metaLeft: `<span class="mono" style="color:${running ? 'var(--rk-hot)' : 'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));letter-spacing:1px;flex-shrink:0">${running ? '▶ RUNNING' : '■ LAST RUN'}</span>`
+                + `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${theoryStrip.title}</span>`,
         metaRight: `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${theoryStrip.steps.length} step${theoryStrip.steps.length === 1 ? '' : 's'}</span>`,
         strip: stripMarkup(),
         teach: drillTeachHTML(thLesson),
@@ -687,10 +687,10 @@ export function buildPracticeContent(p) {
               style="background:${isPlaying?'var(--rk-soft2)':'var(--rk-panel2)'};border:1px solid ${isPlaying?'var(--rk-line)':'var(--rk-edge-soft)'};border-radius:5px;padding:5px 7px;display:flex;align-items:center;gap:6px;cursor:pointer">
               <div style="flex:1;min-width:0">
                 <div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:600">${l.title}</div>
-                <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎯 ${l.drill.focus || l.drill.title}</div>
+                <div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🎯 ${l.drill.focus || l.drill.title}</div>
               </div>
               <button class="th-play mono" data-ui="${ui}" data-li="${li}" title="${isPlaying?'Stop':'Start this drill'}"
-                style="background:${isPlaying?'var(--rk-stop-soft)':'var(--rk-soft)'};border:1px solid ${isPlaying?'var(--rk-stop-edge)':'var(--rk-line)'};color:${isPlaying?'var(--rk-stop)':'var(--rk-accent)'};border-radius:6px;padding:5px 11px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700">${isPlaying?'■':'▶'}</button>
+                style="min-height:calc(28px*var(--ui));background:${isPlaying?'var(--rk-stop-soft)':'var(--rk-soft)'};border:1px solid ${isPlaying?'var(--rk-stop-edge)':'var(--rk-line)'};color:${isPlaying?'var(--rk-stop)':'var(--rk-accent)'};border-radius:6px;padding:5px 11px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700">${isPlaying?'■':'▶'}</button>
             </div>`;
           });
           h += `</div>`;
@@ -708,7 +708,7 @@ export function buildPracticeContent(p) {
     } else if (!sessionActive) {
       h += `<div class="rk-seg" style="gap:3px">`;
       PRACTICE_PRESETS.forEach(pr => {
-        h += `<button class="rk-seg-btn prac-pr${presetName === pr.name ? ' is-active' : ''}" data-pr="${pr.name}" style="font-size:calc(8px*var(--ui))">${pr.name}</button>`;
+        h += `<button class="rk-seg-btn prac-pr${presetName === pr.name ? ' is-active' : ''}" data-pr="${pr.name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui))">${pr.name}</button>`;
       });
       h += `</div>`;
 
@@ -726,31 +726,31 @@ export function buildPracticeContent(p) {
         h += `<span class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));flex:1">${b.label}</span>`;
         // A chosen key/scale is the block's headline, a 🎲 is the absence of one — accent
         // against ink-mute says that without a second hue.
-        if (specific) h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(8px*var(--ui))">${specLabel}</span>`;
-        else if (b.cat !== 'free') h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">🎲 random</span>`;
+        if (specific) h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(10px*var(--ui))">${specLabel}</span>`;
+        else if (b.cat !== 'free') h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">🎲 random</span>`;
         h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(10px*var(--ui));font-weight:700">${b.mins}m</span>`;
         h += `</div>`;
         if (isEdit) {
           h += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--rk-edge-soft)">`;
           h += `<div class="rk-seg" style="gap:3px;margin-bottom:4px;flex-wrap:nowrap">`;
           ['scales','chords','arps','rhythm','finger','ear','free'].forEach(cat => {
-            h += `<button class="rk-chip edit-cat${b.cat===cat?' is-active':''}" data-cat="${cat}" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 2px">${catLabels[cat]}</button>`;
+            h += `<button class="rk-chip edit-cat${b.cat===cat?' is-active':''}" data-cat="${cat}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 2px">${catLabels[cat]}</button>`;
           });
           h += `</div>`;
-          h += `<div style="display:flex;gap:3px;align-items:center;margin-bottom:4px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">MINS</span>`;
+          h += `<div style="display:flex;gap:3px;align-items:center;margin-bottom:4px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">MINS</span>`;
           [3,5,8,10,15].forEach(m => {
-            h += `<button class="rk-chip edit-mins${b.mins===m?' is-active':''}" data-mins="${m}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:4px 5px">${m}</button>`;
+            h += `<button class="rk-chip edit-mins${b.mins===m?' is-active':''}" data-mins="${m}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:22px;padding:4px 5px">${m}</button>`;
           });
           h += `</div>`;
           if (b.cat && b.cat !== 'free') {
             h += `<div style="display:flex;gap:3px;margin-bottom:4px">`;
-            h += `<button class="rk-chip edit-rand${b.random?' is-active':''}" data-rand="1" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 5px">🎲 Random</button>`;
-            h += `<button class="rk-chip edit-rand${!b.random?' is-active':''}" data-rand="0" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 5px">Choose</button>`;
+            h += `<button class="rk-chip edit-rand${b.random?' is-active':''}" data-rand="1" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 5px">🎲 Random</button>`;
+            h += `<button class="rk-chip edit-rand${!b.random?' is-active':''}" data-rand="0" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 5px">Choose</button>`;
             h += `</div>`;
             if (!b.random) {
               h += `<div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:3px">`;
               NOTES.forEach(n => {
-                h += `<button class="rk-chip edit-root${(b.root||'C')===n?' is-active':''}" data-r="${n}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:2px 4px">${n}</button>`;
+                h += `<button class="rk-chip edit-root${(b.root||'C')===n?' is-active':''}" data-r="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:22px;padding:2px 4px">${n}</button>`;
               });
               h += `</div>`;
               const types = b.cat === 'scales' ? SCALE_TYPES : b.cat === 'arps' ? ARP_TYPES : null;
@@ -759,31 +759,31 @@ export function buildPracticeContent(p) {
                 Object.entries(types).forEach(([cat2, items]) => {
                   Object.keys(items).forEach(name => {
                     const act = b.typeName === name && b.typeCat === cat2;
-                    h += `<button class="rk-chip edit-type${act?' is-active':''}" data-tn="${name}" data-tc="${cat2}" style="font-size:calc(6px*var(--ui));padding:2px 4px">${name}</button>`;
+                    h += `<button class="rk-chip edit-type${act?' is-active':''}" data-tn="${name}" data-tc="${cat2}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 4px">${name}</button>`;
                   });
                 });
                 h += `</div>`;
               } else if (b.cat === 'chords') {
                 h += `<div style="display:flex;gap:3px">`;
                 ['Major','Minor','Dorian'].forEach(kt => {
-                  h += `<button class="rk-chip edit-type${b.typeName===kt?' is-active':''}" data-tn="${kt}" data-tc="key" style="flex:1;font-size:calc(7px*var(--ui));padding:4px 5px">${kt}</button>`;
+                  h += `<button class="rk-chip edit-type${b.typeName===kt?' is-active':''}" data-tn="${kt}" data-tc="key" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:4px 5px">${kt}</button>`;
                 });
                 h += `</div>`;
               }
             }
           }
           h += `<div style="display:flex;gap:3px;margin-top:4px">`;
-          if (i > 0)              h += `<button class="rk-chip edit-move" data-dir="-1" style="font-size:calc(8px*var(--ui));padding:2px 6px">▲</button>`;
-          if (i < blocks.length - 1) h += `<button class="rk-chip edit-move" data-dir="1" style="font-size:calc(8px*var(--ui));padding:2px 6px">▼</button>`;
-          h += `<button class="rk-chip edit-remove" style="font-size:calc(7px*var(--ui));color:var(--rk-stop);margin-left:auto">✕ Remove</button>`;
+          if (i > 0)              h += `<button class="rk-chip edit-move" data-dir="-1" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">▲</button>`;
+          if (i < blocks.length - 1) h += `<button class="rk-chip edit-move" data-dir="1" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">▼</button>`;
+          h += `<button class="rk-chip edit-remove" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:var(--rk-stop);margin-left:auto">✕ Remove</button>`;
           h += `</div></div>`;
         }
         h += `</div>`;
       });
       h += `</div>`;
-      h += `<button class="rk-btn prac-add" style="font-size:calc(8px*var(--ui));width:100%;padding:6px 10px;color:var(--rk-accent);border-color:var(--rk-line)">+ Add block</button>`;
+      h += `<button class="rk-btn prac-add" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));width:100%;padding:6px 10px;color:var(--rk-accent);border-color:var(--rk-line)">+ Add block</button>`;
       h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">Total: ${totalMins} min · Tap a block to customize</div>`;
-      h += `<button class="prac-start rk-btn is-active mono" style="border-radius:8px;padding:8px 20px;font-size:calc(12px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">▶ START SESSION</button>`;
+      h += `<button class="prac-start rk-btn is-active mono" style="min-height:calc(28px*var(--ui));border-radius:8px;padding:8px 20px;font-size:calc(12px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">▶ START SESSION</button>`;
 
     } else {
       const blk = blocks[activeBlock];
@@ -799,11 +799,11 @@ export function buildPracticeContent(p) {
       if (blk.assignment) {
         h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin:2px 0">`;
         h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(13px*var(--ui));font-weight:700">${blk.assignment}</span>`;
-        if (blk.random) h += `<button class="prac-reroll mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:var(--rk-accent);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:calc(8px*var(--ui));font-weight:700">🎲</button>`;
+        if (blk.random) h += `<button class="prac-reroll mono" style="min-height:calc(28px*var(--ui));background:var(--rk-soft);border:1px solid var(--rk-line);color:var(--rk-accent);border-radius:4px;padding:2px 6px;cursor:pointer;font-size:calc(10px*var(--ui));font-weight:700">🎲</button>`;
         h += `</div>`;
       }
       h += `<div class="mono" style="color:var(--rk-accent);font-size:calc(28px*var(--ui));font-weight:900">${fmtTime(remaining)}</div>`;
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">Session: ${fmtTime(totalTime)}</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">Session: ${fmtTime(totalTime)}</div>`;
       h += `</div>`;
       h += `<div style="display:flex;flex-direction:column;gap:2px">`;
       blocks.forEach((b, i) => {
@@ -811,25 +811,25 @@ export function buildPracticeContent(p) {
         const bg    = done ? 'var(--rk-soft2)' : current ? 'var(--rk-soft)' : 'var(--rk-panel2)';
         const color = done ? 'var(--rk-dim)' : current ? 'var(--rk-hot)' : 'var(--rk-ink-mute)';
         h += `<div style="display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:4px;background:${bg}">`;
-        h += `<span class="mono" style="color:${color};font-size:calc(8px*var(--ui));font-weight:700">${done?'✓ ':''}${b.label}</span>`;
-        if (b.assignment) h += `<span class="mono" style="color:${done?'var(--rk-dim)':current?'var(--rk-accent)':'var(--rk-ink-mute)'};font-size:calc(7px*var(--ui));margin-left:4px">${b.assignment}</span>`;
+        h += `<span class="mono" style="color:${color};font-size:calc(10px*var(--ui));font-weight:700">${done?'✓ ':''}${b.label}</span>`;
+        if (b.assignment) h += `<span class="mono" style="color:${done?'var(--rk-dim)':current?'var(--rk-accent)':'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));margin-left:4px">${b.assignment}</span>`;
         h += `<span class="mono" style="color:${color};font-size:calc(8px*var(--ui));margin-left:auto">${b.mins}m</span>`;
         h += `</div>`;
       });
       h += `</div>`;
-      h += `<button class="prac-stop mono" style="background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:6px 20px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">■ END SESSION</button>`;
+      h += `<button class="prac-stop mono" style="min-height:calc(28px*var(--ui));background:var(--rk-stop-soft);border:1px solid var(--rk-stop-edge);color:var(--rk-stop);border-radius:8px;padding:6px 20px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">■ END SESSION</button>`;
     }
 
     if (history.length && !sessionActive && pmView === 'session') {
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:1px;text-transform:uppercase;margin-top:4px">Recent</div>`;
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1px;text-transform:uppercase;margin-top:4px">Recent</div>`;
       history.slice(-3).reverse().forEach(entry => {
         const d = new Date(entry.date);
         const dateStr = `${d.getMonth()+1}/${d.getDate()}`;
         const mins = Math.round(entry.duration / 60);
         h += `<div style="display:flex;align-items:center;gap:4px;padding:1px 0">`;
-        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${dateStr}</span>`;
-        h += `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));flex:1">${entry.preset||''}${entry.partial?' · partial':''}</span>`;
-        h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(7px*var(--ui));font-weight:700">${mins}m</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${dateStr}</span>`;
+        h += `<span class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));flex:1">${entry.preset||''}${entry.partial?' · partial':''}</span>`;
+        h += `<span class="mono" style="color:var(--rk-accent);font-size:calc(8px*var(--ui));font-weight:700">${mins}m</span>`;
         h += `</div>`;
       });
     }

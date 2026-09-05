@@ -19,6 +19,7 @@ import { pcColor } from '../core/colors.js';
 import { REF_SKETCHES, songToSteps, loadSketchLib, loadTextSongs } from '../pedals/sketchpad.js';
 import { SONG_LIBRARY } from '../pedals/song-directory.js';
 import { parseAsciiTab } from '../pedals/tab.js';
+import { read, write, KEYS } from '../core/store.js';
 
 const ACC = '#e8b84a';
 const ACC_INK = '#ffe0a0', ACC_WASH = 'rgba(232,184,74,.18)';   // the page's lit label + lit fill
@@ -193,11 +194,13 @@ function blankSong(name = 'Untitled') {
 }
 
 // ── the saved-pieces library ──────────────────────────────────────────
-// One place that writes `rn-sketch-lib`, so the TAB page and the Sketchpad cannot
-// disagree about its shape. Entries get an id the first time they are touched —
+// Read and write go through the store so the TAB page and the Sketchpad cannot
+// disagree about the library's shape OR its size — the keep-last cap lives in
+// core/store.js, once, and a cap hard-coded here would silently trim a library
+// the ⬆ Import just grew. Entries get an id the first time they are touched —
 // that is what makes "save" mean UPDATE rather than "add another copy".
-const readLib  = () => { try { return JSON.parse(localStorage.getItem('rn-sketch-lib') || '[]'); } catch (e) { return []; } };
-const writeLib = lib => { try { localStorage.setItem('rn-sketch-lib', JSON.stringify(lib.slice(-100))); return true; } catch (e) { return false; } };
+const readLib  = () => { const v = read(KEYS.pieces, []); return Array.isArray(v) ? v : []; };
+const writeLib = lib => write(KEYS.pieces, lib);
 const newLibId = () => 'p' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
 
 function keepPiece() {
@@ -491,8 +494,8 @@ function refreshListenStrip() {
     const got = T.heard?.has(n);
     h += `<span class="mono" style="font-size:calc(11px*var(--ui));font-weight:700;padding:3px 9px;border-radius:6px;border:1px solid ${got ? pcColor(n, 90, 60) : '#332b1b'};background:${got ? pcColor(n, 80, 26) : 'transparent'};color:${got ? pcColor(n, 95, 80) : '#7a6b4a'}">${n}${got ? ' ✓' : ''}</span>`;
   });
-  h += `<span class="mono" style="color:#3f3626;font-size:calc(8px*var(--ui));margin-left:auto">step ${T.playIdx + 1}${audio.connected ? '' : ' · mic not connected'}</span>`;
-  if (!audio.connected) h += `<button id="tabp-mic" class="mono" style="background:rgba(232,184,74,.16);border:1px solid ${ACC};border-radius:6px;color:#ffe0a0;font-size:calc(9px*var(--ui));padding:4px 10px;cursor:pointer">🎤 Connect mic</button>`;
+  h += `<span class="mono" style="color:#3f3626;font-size:calc(10px*var(--ui));margin-left:auto">step ${T.playIdx + 1}${audio.connected ? '' : ' · mic not connected'}</span>`;
+  if (!audio.connected) h += `<button id="tabp-mic" class="mono" style="min-height:calc(28px*var(--ui));background:rgba(232,184,74,.16);border:1px solid ${ACC};border-radius:6px;color:#ffe0a0;font-size:calc(10px*var(--ui));padding:4px 10px;cursor:pointer">🎤 Connect mic</button>`;
   el2.innerHTML = h;
   document.getElementById('tabp-mic')?.addEventListener('click', async () => { try { await audio.connect(); } catch (e) { /* denied */ } refreshListenStrip(); });
 }
@@ -777,7 +780,7 @@ function midiLabels(yOff = 0) {
   let h = '';
   for (let m = r.lo; m <= r.hi; m++) {
     if (((m % 12) + 12) % 12 !== 0) continue;
-    h += `<span class="mono" style="position:absolute;left:0;width:26px;text-align:center;top:${yOff + (r.hi - m) * MIDI_ROW - 3}px;font-size:calc(7px*var(--ui));color:#5a4f38">C${Math.floor(m / 12) - 1}</span>`;
+    h += `<span class="mono" style="position:absolute;left:0;width:26px;text-align:center;top:${yOff + (r.hi - m) * MIDI_ROW - 3}px;font-size:calc(8px*var(--ui));color:#5a4f38">C${Math.floor(m / 12) - 1}</span>`;
   }
   return h;
 }
@@ -973,7 +976,7 @@ function applyNeck() {
 function render() {
   const el = document.getElementById('tab-mode');
   if (!el) return;
-  const btn = (id, lab, on, extra = '') => `<button id="${id}" class="mono" style="background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px solid ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(10px*var(--ui));padding:6px 12px;cursor:pointer;letter-spacing:.5px;${extra}">${lab}</button>`;
+  const btn = (id, lab, on, extra = '') => `<button id="${id}" class="mono" style="min-height:calc(28px*var(--ui));background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px solid ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(10px*var(--ui));padding:6px 12px;cursor:pointer;letter-spacing:.5px;${extra}">${lab}</button>`;
 
   let h = `<div style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">`;
   // header row
@@ -1034,11 +1037,11 @@ function render() {
       h += `<span class="mono" title="${T.song.libId ? 'in your Library' : 'unsaved'}" style="color:${T.song.libId ? '#7ec98f' : '#5a4f38'};font-size:calc(8px*var(--ui))">${T.song.libId ? '● saved' : '○ unsaved'}</span>`;
       NOTE_VALUES.forEach(v => {
         const on = T.dur === v.beats;
-        h += `<button class="tabp-dur mono" data-b="${v.beats}" title="${v.name}" style="min-width:30px;background:${on ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${on ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${on ? '#cfeaff' : '#a89468'};font-size:calc(14px*var(--ui));line-height:1;padding:4px 7px;cursor:pointer">${v.glyph}</button>`;
+        h += `<button class="tabp-dur mono" data-b="${v.beats}" title="${v.name}" style="min-height:calc(28px*var(--ui));min-width:30px;background:${on ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${on ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${on ? '#cfeaff' : '#a89468'};font-size:calc(14px*var(--ui));line-height:1;padding:4px 7px;cursor:pointer">${v.glyph}</button>`;
       });
-      h += `<button id="tabp-dot" class="mono" title="dotted — one and a half times the value" style="background:${T.dotted ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${T.dotted ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${T.dotted ? '#cfeaff' : '#a89468'};font-size:calc(13px*var(--ui));padding:4px 9px;cursor:pointer">·</button>`;
-      h += `<button id="tabp-trip" class="mono" title="triplet — three in the time of two" style="background:${T.triplet ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${T.triplet ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${T.triplet ? '#cfeaff' : '#a89468'};font-size:calc(11px*var(--ui));font-weight:700;padding:5px 8px;cursor:pointer">3</button>`;
-      h += `<span class="mono" style="color:#5a4f38;font-size:calc(8px*var(--ui))">= ${pendingDur()} beat${pendingDur() === 1 ? '' : 's'}</span>`;
+      h += `<button id="tabp-dot" class="mono" title="dotted — one and a half times the value" style="min-height:calc(28px*var(--ui));background:${T.dotted ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${T.dotted ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${T.dotted ? '#cfeaff' : '#a89468'};font-size:calc(13px*var(--ui));padding:4px 9px;cursor:pointer">·</button>`;
+      h += `<button id="tabp-trip" class="mono" title="triplet — three in the time of two" style="min-height:calc(28px*var(--ui));background:${T.triplet ? 'rgba(110,198,255,.22)' : '#17130c'};border:1px solid ${T.triplet ? '#6ec6ff' : '#332b1b'};border-radius:6px;color:${T.triplet ? '#cfeaff' : '#a89468'};font-size:calc(11px*var(--ui));font-weight:700;padding:5px 8px;cursor:pointer">3</button>`;
+      h += `<span class="mono" style="color:#5a4f38;font-size:calc(10px*var(--ui))">= ${pendingDur()} beat${pendingDur() === 1 ? '' : 's'}</span>`;
       h += `<span style="width:1px;height:16px;background:#332b1b"></span>`;
       h += btn('tabp-lock', '✓ Lock beat', true, 'font-size:calc(11px*var(--ui))');
       h += btn('tabp-fromneck', '⤓ Lock chord', !!(neckGrip().length || T.lastGrip?.length), 'font-size:calc(11px*var(--ui))');
@@ -1064,7 +1067,7 @@ function render() {
       h += `<select id="tabp-tsig" title="beats per bar" style="background:#17130c;border:1px solid #332b1b;border-radius:5px;color:#ffe0a0;font-family:'JetBrains Mono',monospace;font-size:calc(10px*var(--ui));padding:3px">
               ${[2,3,4,5,6,7].map(n => `<option value="${n}" ${(T.song.tsig || 4) === n ? 'selected' : ''}>${n}/4</option>`).join('')}
             </select>`;
-      h += `<span class="mono" style="color:#6ec6ff;font-size:calc(9px*var(--ui))">beat <b>${T.caret + 1}</b>/${T.song.steps.length} · bar ${bar} · ${(st.notes || []).length ? (st.notes || []).map(n => posOf(n.si, n.fret).note).join(' ') : 'empty'}</span>`;
+      h += `<span class="mono" style="color:#6ec6ff;font-size:calc(10px*var(--ui))">beat <b>${T.caret + 1}</b>/${T.song.steps.length} · bar ${bar} · ${(st.notes || []).length ? (st.notes || []).map(n => posOf(n.si, n.fret).note).join(' ') : 'empty'}</span>`;
       h += `</div>`;
       h += `<div class="mono" style="color:#3f3626;font-size:calc(8px*var(--ui))">pick a note value, then tap the neck — tap again to remove. Notes stack into a chord; SPACE or ✓ locks the beat and moves on. <b style="color:#5a4f38">⤓ From neck</b> drops whatever a pedal has lit on the fretboard (Chord Directory, Chord Lab…) straight onto this beat. <b style="color:#5a4f38">⤴</b> spreads the chord on this beat into its notes, over the same length.</div>`;
     }
@@ -1086,7 +1089,7 @@ function render() {
     [50, 75, 90, 100].forEach(pc => {
       const on = pctOf === pc;
       const at = Math.round(orig * pc / 100);
-      h += `<button class="tabp-pct mono" data-p="${pc}" title="${at} BPM · ${tempoTerm(at)}" style="background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px solid ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(9px*var(--ui));padding:4px 8px;cursor:pointer">${pc}%</button>`;
+      h += `<button class="tabp-pct mono" data-p="${pc}" title="${at} BPM · ${tempoTerm(at)}" style="min-height:calc(28px*var(--ui));background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px solid ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(10px*var(--ui));padding:4px 8px;cursor:pointer">${pc}%</button>`;
     });
     h += `</div>`;
     // loop-range row: whole song · sections · exact range from the selected step
@@ -1096,13 +1099,13 @@ function render() {
     secs.forEach((s2, k) => {
       const to = secs[k + 1] ? secs[k + 1].at - 1 : T.song.steps.length - 1;
       const on = T.range && T.range[0] === s2.at && T.range[1] === to;
-      h += `<button class="tabp-sec mono" data-a="${s2.at}" data-b="${to}" style="background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px dashed ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(9px*var(--ui));padding:5px 9px;cursor:pointer">§ ${s2.name}</button>`;
+      h += `<button class="tabp-sec mono" data-a="${s2.at}" data-b="${to}" style="min-height:calc(28px*var(--ui));background:${on ? 'rgba(232,184,74,.18)' : '#17130c'};border:1px dashed ${on ? ACC : '#332b1b'};border-radius:6px;color:${on ? '#ffe0a0' : '#a89468'};font-size:calc(10px*var(--ui));padding:5px 9px;cursor:pointer">§ ${s2.name}</button>`;
     });
     h += `<span style="flex:1"></span>`;
     h += `<span class="mono" style="color:#5a4f38;font-size:calc(8px*var(--ui))">EXACT · tap a step, then</span>`;
     h += btn('tabp-ra', '⟦ start here', false);
     h += btn('tabp-rb', 'end here ⟧', false);
-    if (T.range) h += `<span class="mono" style="color:#ffe0a0;font-size:calc(9px*var(--ui));border:1px solid ${ACC}55;border-radius:6px;padding:4px 8px">steps ${T.range[0] + 1}–${T.range[1] + 1}</span>`;
+    if (T.range) h += `<span class="mono" style="color:#ffe0a0;font-size:calc(10px*var(--ui));border:1px solid ${ACC}55;border-radius:6px;padding:4px 8px">steps ${T.range[0] + 1}–${T.range[1] + 1}</span>`;
     h += `</div>`;
     // ── 〜 audio row: line the recording up with the grid ──
     if (T.wave || T.waveErr) {
@@ -1111,7 +1114,7 @@ function render() {
       if (T.waveErr) h += `<span class="mono" style="color:#c8724a;font-size:calc(9px*var(--ui))">couldn't read that file — ${T.waveErr}</span>`;
       else {
         h += `<span class="mono" style="color:#ffe0a0;font-size:calc(10px*var(--ui));max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${T.wave.name}</span>`;
-        h += `<span class="mono" style="color:#7a6b4a;font-size:calc(9px*var(--ui))">${fmtDur(T.wave.duration)}</span>`;
+        h += `<span class="mono" style="color:#7a6b4a;font-size:calc(10px*var(--ui))">${fmtDur(T.wave.duration)}</span>`;
         h += `<span class="mono" style="color:#5a4f38;font-size:calc(8px*var(--ui));margin-left:6px">OFFSET</span>`;
         h += btn('tabp-woff-m50', '−50', false, 'padding:5px 8px') + btn('tabp-woff-m5', '−5', false, 'padding:5px 8px');
         h += `<input id="tabp-woff" type="number" step="5" value="${Math.round(T.waveOff * 1000)}" title="Slide the recording against beat 1"
@@ -1135,7 +1138,7 @@ function render() {
     h += `<div style="flex:0 0 26px;display:flex;flex-direction:column;padding-top:${tabTop() - 6}px;background:#131009;border-right:1px solid #2a2419;position:relative">`;
     // the clef stays pinned while the lanes scroll — the small 8 is the octave-down mark
     if (m) h += `<div style="position:absolute;left:0;top:${m.top - 6}px;width:26px;height:${4 * STAFF_GAP + 24}px;display:flex;align-items:center;justify-content:center;font-size:calc(40px*var(--ui));line-height:1;color:#8a7850;font-family:'Segoe UI Symbol','Noto Music','Apple Symbols',serif">𝄞</div>`
-           + `<span class="mono" style="position:absolute;left:8px;top:${m.bottom + 2}px;font-size:calc(7px*var(--ui));color:#5a4f38">8vb</span>`;
+           + `<span class="mono" style="position:absolute;left:8px;top:${m.bottom + 2}px;font-size:calc(8px*var(--ui));color:#5a4f38">8vb</span>`;
     for (let si = 0; si < ns; si++) h += `<span class="mono" style="color:#7a6b4a;font-size:calc(9px*var(--ui));height:${LINE_GAP}px;line-height:12px;text-align:center">${customTuning[si].label || customTuning[si].note}</span>`;
     if (showGrid) h += midiLabels(laneH());
     if (showWave) h += `<span class="mono" style="position:absolute;left:0;width:26px;text-align:center;top:${laneH() + (showGrid ? midiH() : 0) + WAVE_H / 2 - 5}px;font-size:calc(9px*var(--ui));color:#7a6b4a">〜</span>`;

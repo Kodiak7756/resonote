@@ -8,6 +8,13 @@
 // Tour step shape: { target: '#arm-$ID' | '#body-$ID .cls', text, advance: 'click'|'next' }
 // '$ID' is replaced with the live pedal's id at runtime. Targets are re-resolved
 // continuously, so pedals that rebuild their innerHTML never strand the halo.
+//
+// A target that no longer matches anything fails SILENTLY — the halo just never
+// appears — which is worse than no tour for a friend on day one. So every target
+// below is a class or id the pedal actually renders TODAY, and each tour walks the
+// pedal from its home view in the order its views actually appear: a step that
+// clicks into a sub-view must not be followed by a target that only exists in the
+// view it just left. Re-audit these whenever a pedal is restructured.
 
 const ACC = '#5ad1c0';                 // coach teal — distinct from the pedals' ambers
 const DONE_KEY = 'rn-coach-done';
@@ -29,7 +36,18 @@ export const TOURS = {
     { target: '#body-$ID .ws-tab', advance: 'next', text: 'Five tools in one — these tabs switch between Positions, Groove, Finger, Technique and Voicings.' },
     { target: '#body-$ID .ws-tab[data-tab="voicings"]', advance: 'click', text: 'Tap <b>🧵 VOICINGS</b> — the string-set voicing lab lives here.' },
     { target: '#ws-body-$ID', advance: 'next', text: 'Each tab keeps its own controls in this body — set what to practice and ▶ run it; drills follow the session KEY and TEMPO.' },
-    { target: '#body-$ID .ws-tab[data-tab="positions"]', advance: 'next', text: 'The 📖 strip at the bottom of each tab links it to its Theory Path lesson — theory and reps stay connected.' },
+    { target: '#body-$ID .rk-theory-head', advance: 'next', text: 'The <b>💡 THEORY</b> panel under each tab says what you’re drilling and why — <b>Learn the theory →</b> opens the matching lesson on the LEARN page, so theory and reps stay connected.' },
+  ]},
+  // Reading happens on the LEARN page; the pedal is the launcher + progress card.
+  // The 📖 click in step 3 switches to that page, and the page MINIMISES the pedal
+  // cards (display:none) — so the last two steps point at #body-learn, the page
+  // mount, not at the pedal; a #body-$ID target there would halo nothing.
+  theory: { title: 'Theory Path', steps: [
+    { target: '#body-$ID .tp-find', advance: 'next', text: '<b>🎯 Find My Level</b> asks a few quick questions and places you on the path. Nothing is locked — the whole course stays open.' },
+    { target: '#body-$ID .tp-lesson.rec, #body-$ID .tp-lesson', advance: 'click', text: 'Each unit lists its lessons, easiest first. <b>▶</b> marks the one recommended next — tap a lesson to open it.' },
+    { target: '#body-$ID .tp-readpage', advance: 'click', text: 'The pedal is a compact launcher. <b>📖 Open as page</b> puts the lesson on the LEARN page, where it has room to read.' },
+    { target: '#body-learn .tp-demo', advance: 'click', text: '<b>▶ Hear &amp; see it</b> plays the idea on the neck above — every teach card lights the real notes, so you hear what you just read.' },
+    { target: '#body-learn .tp-ex', advance: 'next', text: 'Then the <b>EXERCISE</b>: identify by ear, build the notes, or play it on your guitar. Right or wrong, it explains why — finish them all and the lesson ticks off on the path.' },
   ]},
   practice: { title: 'Practice Manager', steps: [
     { target: '#body-$ID .pm-view[data-pv="session"]', advance: 'next', text: 'Three views: <b>Session</b> builds a timed practice, <b>🎓 Theory</b> loops curriculum drills, <b>📋 Library</b> stores saved routines.' },
@@ -38,17 +56,21 @@ export const TOURS = {
     { target: '#body-$ID .th-play', advance: 'click', text: '<b>▶</b> loops that lesson’s drill on the neck — the − / + TEMPO buttons re-time it live.' },
     { target: '#body-$ID .pm-view[data-pv="session"]', advance: 'next', text: 'Back in <b>Session</b> view you can build timed practice blocks and track streaks — 💾 saves a session for reuse.' },
   ]},
+  // Order matters here: BARS / ADVANCE / ＋ New live on the grid, and tapping a card
+  // swaps the grid for that workout's options panel — so the grid-only controls come
+  // first and the card tap comes last, landing on the panel's ▶ START.
   workouts: { title: 'Workouts', steps: [
-    { target: '#body-$ID .wo-card', advance: 'click', text: 'Tap any workout card to start — try <b>🎲 Open Chords</b>: a random grip lights the neck and changes on the bar.' },
-    { target: '#body-$ID .wo-bars[data-b="4"]', advance: 'next', text: '<b>BARS</b> sets how long each item stays. <b>ROOTS</b> keeps triads in the session key or opens all 12.' },
-    { target: '#body-$ID .wo-adv[data-v="listen"]', advance: 'next', text: '<b>🎤 Listen</b> mode waits until your mic hears every note of the grip before showing the next one.' },
+    { target: '#body-$ID .wo-bars[data-b="4"]', advance: 'next', text: '<b>BARS</b> sets how long each item stays on the neck before the next one lands. These controls follow you into every workout.' },
+    { target: '#body-$ID .wo-adv[data-v="listen"]', advance: 'next', text: '<b>ADVANCE</b>: <b>⏱ Auto</b> moves on the bar; <b>🎤 Listen</b> waits until your mic hears every note of the grip before showing the next one.' },
     { target: '#wonew-$ID', advance: 'next', text: '<b>＋ New</b> (PRO) builds your own workout — choose the chord pool or string set, bars per item, and an optional tempo ramp.' },
+    { target: '#body-$ID .wo-card', advance: 'click', text: 'Tap any workout card to open it — try <b>🎲 Open Chords</b>: a random grip lights the neck and changes on the bar.' },
+    { target: '#wostart-$ID', advance: 'click', text: 'Each workout has its own options — KEY keeps it in the session key or opens all 12 roots. <b>▶ START</b> runs it; ⏹ stops it from either view.' },
   ]},
   improvlab: { title: 'Improv Lab', steps: [
     { target: '#body-$ID .il-mode[data-m="call"]', advance: 'next', text: 'Two modes: <b>🗣️ Call &amp; Response</b> teaches the conversation of music; <b>🎸 Jam</b> lets you solo over a backing track.' },
     { target: '#body-$ID .il-key', advance: 'next', text: 'Set the <b>KEY</b> and <b>FEEL</b> (the scale). Everything transposes — practice the same idea in every key.' },
     { target: '#body-$ID .il-level', advance: 'next', text: 'The ladder: <b>① Echo</b> play the call back · <b>② Answer</b> copy a model reply · <b>③ Create</b> improvise your own resolving answer.' },
-    { target: '#il-play-$ID, #body-$ID #il-play', advance: 'click', text: 'Press <b>▶ Play the call</b> — a short phrase plays and asks a question. Then it\'s your turn to answer it.' },
+    { target: '#body-$ID #il-play', advance: 'click', text: 'Press <b>▶ Play the call</b> — a short phrase plays and asks a question. Then it\'s your turn to answer it.' },
     { target: '#body-$ID .il-mode[data-m="jam"]', advance: 'next', text: 'Switch to <b>🎸 Jam</b> for backing-track soloing — the neck shows the scale, the current chord\'s arpeggio, and the 3rd to target through the changes.' },
   ]},
   ear: { title: 'Functional Ear Trainer', steps: [

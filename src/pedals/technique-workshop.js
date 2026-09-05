@@ -305,40 +305,40 @@ function createPositionsTab(p, refresh) {
 
     // SCALES / ARPEGGIOS
     h += `<div style="display:flex;gap:4px">
-      <button class="chord-btn run-mode" data-rm="scales" style="flex:1;font-size:calc(9px*var(--ui));${mode === 'scales' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎼 SCALES</button>
-      <button class="chord-btn run-mode" data-rm="arps" style="flex:1;font-size:calc(9px*var(--ui));${mode === 'arps' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎶 ARPEGGIOS</button></div>`;
+      <button class="chord-btn run-mode" data-rm="scales" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${mode === 'scales' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎼 SCALES</button>
+      <button class="chord-btn run-mode" data-rm="arps" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${mode === 'arps' ? `background:var(--rk-soft2);border-color:${A};color:${A};font-weight:800` : ''}">🎶 ARPEGGIOS</button></div>`;
 
     // FINGERING — CAGED boxes vs notes-per-string runs (scales only; arpeggios always use CAGED)
     if (mode === 'scales') {
       const fingNote = { caged: 'The five CAGED shapes across the neck', '3nps': 'Three notes on every string — smooth legato runs', '4nps': 'Four notes per string — wide stretch runs up the neck' }[fingering];
       h += `<div>${lbl('FINGERING')}<div style="display:flex;gap:4px">`;
       [['caged', '⬚ CAGED'], ['3nps', '3 / STRING'], ['4nps', '4 / STRING']].forEach(([fm, label]) =>
-        h += `<button class="chord-btn run-fing" data-fm="${fm}" style="flex:1;font-size:calc(8px*var(--ui));${fingering === fm ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
-      h += `</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center;margin-top:2px">${fingNote}</div></div>`;
+        h += `<button class="chord-btn run-fing" data-fm="${fm}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${fingering === fm ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
+      h += `</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;margin-top:2px">${fingNote}</div></div>`;
     }
 
     // ROOT
     h += `<div>${lbl('ROOT')}<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
-    NOTES.forEach(n => { const a = n === root; h += `<button class="chord-btn run-root" data-r="${n}" style="min-width:24px;font-size:calc(8px*var(--ui));padding:3px 5px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${n}</button>`; });
+    NOTES.forEach(n => { const a = n === root; h += `<button class="chord-btn run-root" data-r="${n}" style="min-height:calc(28px*var(--ui));min-width:24px;font-size:calc(10px*var(--ui));padding:3px 5px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${n}</button>`; });
     h += `</div></div>`;
 
     // TYPE — grouped by category for readability
     h += `<div>${lbl(mode === 'scales' ? 'SCALE TYPE' : 'ARPEGGIO TYPE')}`;
     Object.entries(types).forEach(([cat, items]) => {
-      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));letter-spacing:.5px;margin:3px 0 1px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:2px">`;
-      Object.keys(items).forEach(name => { const a = name === curName && cat === curCat; h += `<button class="chord-btn run-type" data-tn="${name}" data-tc="${cat}" style="font-size:calc(8px*var(--ui));padding:3px 6px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A};font-weight:700` : ''}">${name}</button>`; });
+      h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:.5px;margin:3px 0 1px">${cat}</div><div style="display:flex;flex-wrap:wrap;gap:2px">`;
+      Object.keys(items).forEach(name => { const a = name === curName && cat === curCat; h += `<button class="chord-btn run-type" data-tn="${name}" data-tc="${cat}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:3px 6px;${a ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A};font-weight:700` : ''}">${name}</button>`; });
       h += `</div>`;
     });
-    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center;margin-top:4px">${getLabel()}: <span style="color:${A};font-weight:700">${curNotes.join('  ')}</span></div></div>`;
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));text-align:center;margin-top:4px">${getLabel()}: <span style="color:${A};font-weight:700">${curNotes.join('  ')}</span></div></div>`;
 
     // DIRECTION
     h += `<div>${lbl('DIRECTION')}<div style="display:flex;gap:3px">`;
-    [['asc', '↑ Up'], ['desc', '↓ Down'], ['cycle', '↕ Up & Down']].forEach(([d, label]) => h += `<button class="chord-btn run-dir" data-dir="${d}" style="flex:1;font-size:calc(8px*var(--ui));${direction === d ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
+    [['asc', '↑ Up'], ['desc', '↓ Down'], ['cycle', '↕ Up & Down']].forEach(([d, label]) => h += `<button class="chord-btn run-dir" data-dir="${d}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${direction === d ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
 
     // SEQUENCE — straight vs broken intervals vs string-skip (classic technique drills)
     h += `<div>${lbl('SEQUENCE')}<div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    [['straight', 'Straight'], ['broken3', 'Broken 3rds'], ['broken4', 'Broken 4ths'], ['skip', 'String Skip']].forEach(([pp, label]) => h += `<button class="chord-btn run-pat" data-pat="${pp}" style="flex:1;min-width:62px;font-size:calc(8px*var(--ui));${patternSeq === pp ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
+    [['straight', 'Straight'], ['broken3', 'Broken 3rds'], ['broken4', 'Broken 4ths'], ['skip', 'String Skip']].forEach(([pp, label]) => h += `<button class="chord-btn run-pat" data-pat="${pp}" style="min-height:calc(28px*var(--ui));flex:1;min-width:62px;font-size:calc(10px*var(--ui));${patternSeq === pp ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
 
     // POSITION — box / run selector (always shown; lock one shape or cycle ALL)
@@ -346,41 +346,41 @@ function createPositionsTab(p, refresh) {
       h += `<div>${lbl('POSITION')}`;
       if (boxes.length) {
         h += `<div style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;align-items:center;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:5px">`;
-        h += `<button class="chord-btn run-lock-all" style="font-size:calc(7px*var(--ui));padding:2px 6px;min-width:28px;${lockedPos === null ? `background:var(--rk-soft2);border-color:${A};color:${A}` : 'border-color:var(--rk-edge-soft);color:var(--rk-ink-mute)'}">ALL</button>`;
+        h += `<button class="chord-btn run-lock-all" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px;min-width:28px;${lockedPos === null ? `background:var(--rk-soft2);border-color:${A};color:${A}` : 'border-color:var(--rk-edge-soft);color:var(--rk-ink-mute)'}">ALL</button>`;
         boxes.forEach((box, bi) => {
           const isLocked = lockedPos === bi, isCurrent = p._running && posSequence.length && posSequence[posIdx]?.idx === bi;
           const sk = posSkin(isLocked, isCurrent);
-          h += `<button class="chord-btn runner-pos run-lock" data-li="${bi}" style="background:${sk.bg};border:1.5px solid ${sk.border};border-radius:4px;padding:3px 6px;min-width:28px;cursor:pointer"><span class="mono" style="color:${sk.ink};font-size:calc(9px*var(--ui));font-weight:700">${isLocked ? '🔒 ' : ''}${box.label}</span></button>`;
+          h += `<button class="chord-btn runner-pos run-lock" data-li="${bi}" style="min-height:calc(28px*var(--ui));background:${sk.bg};border:1.5px solid ${sk.border};border-radius:4px;padding:3px 6px;min-width:28px;cursor:pointer"><span class="mono" style="color:${sk.ink};font-size:calc(10px*var(--ui));font-weight:700">${isLocked ? '🔒 ' : ''}${box.label}</span></button>`;
         });
         h += `</div>`;
-      } else h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));text-align:center;padding:8px">No positions found</div>`;
+      } else h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:8px">No positions found</div>`;
       h += `</div>`;
     }
     h += `<div style="display:flex;gap:6px;align-items:center;justify-content:center;flex-wrap:wrap">`;
     if (advanceMode === 'tap') {
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span></div>`;
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BARS</span>`;
-      [1, 2, 4].forEach(b => h += `<button class="chord-btn run-bars" data-bars="${b}" style="font-size:calc(7px*var(--ui));min-width:20px;padding:2px 4px;${barsPerPos === b ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${b}</button>`);
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span></div>`;
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">BARS</span>`;
+      [1, 2, 4].forEach(b => h += `<button class="chord-btn run-bars" data-bars="${b}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:20px;padding:2px 4px;${barsPerPos === b ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${b}</button>`);
       h += `</div>`;
     } else if (advanceMode === 'auto') {
-      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
+      h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:${A};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
     }
-    h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">ADVANCE</span>`;
-    [['auto', 'Auto'], ['tap', 'Tap'], ['listen', '🎤 Listen']].forEach(([m, label]) => h += `<button class="chord-btn run-adv" data-adv="${m}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${advanceMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
+    h += `<div style="display:flex;align-items:center;gap:3px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">ADVANCE</span>`;
+    [['auto', 'Auto'], ['tap', 'Tap'], ['listen', '🎤 Listen']].forEach(([m, label]) => h += `<button class="chord-btn run-adv" data-adv="${m}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${advanceMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${A}` : ''}">${label}</button>`);
     h += `</div></div>`;
     // Listen mode is only as good as the mic behind it, so the line reports the
     // mic itself rather than pointing at an app-wide switch: when it is shut it
     // IS the connect control, which is also the retry if the prompt was declined.
     if (advanceMode === 'listen') h += audio.connected
-      ? `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">🎤 listening — play the lit note${listenFeedback === 'correct' ? ' · <span style="color:var(--rk-ok)">✓</span>' : ''}</div>`
-      : `<button class="run-mic mono" style="background:none;border:none;padding:0;width:100%;cursor:pointer;color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));text-align:center">🎤 mic not connected — tap to connect</button>`;
+      ? `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">🎤 listening — play the lit note${listenFeedback === 'correct' ? ' · <span style="color:var(--rk-ok)">✓</span>' : ''}</div>`
+      : `<button class="run-mic mono" style="min-height:calc(28px*var(--ui));background:none;border:none;padding:0;width:100%;cursor:pointer;color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center">🎤 mic not connected — tap to connect</button>`;
     h += `<div style="display:flex;gap:4px">`;
     // While it reads STOP this button is no longer the pedal's, it is the app's: stop
     // is a reflex you hit mid-phrase without reading it, so all four tabs here wear the
     // same --rk-stop as every other transport. The lamp argument still holds for LIVE
     // (--rk-hot, above) — that says "running", not "press me to halt".
-    h += `<button class="run-play mono" style="background:${p._running ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._running ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._running ? 'var(--rk-stop)' : A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;flex:1">${p._running ? '■ STOP' : '▶ RUN'}</button>`;
-    if (p._running && advanceMode === 'tap') h += `<button class="run-next mono" style="background:var(--rk-soft);border:1px solid var(--rk-line);color:${A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px">NEXT ▸</button>`;
+    h += `<button class="run-play mono" style="min-height:calc(28px*var(--ui));background:${p._running ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._running ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._running ? 'var(--rk-stop)' : A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;flex:1">${p._running ? '■ STOP' : '▶ RUN'}</button>`;
+    if (p._running && advanceMode === 'tap') h += `<button class="run-next mono" style="min-height:calc(28px*var(--ui));background:var(--rk-soft);border:1px solid var(--rk-line);color:${A};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px">NEXT ▸</button>`;
     h += `</div></div>`;
     bodyEl.innerHTML = h;
 
@@ -536,24 +536,24 @@ function createGrooveTab(p, refresh) {
     const useBpm = metroClock.bpm || 120, accent = 'var(--rk-accent)', stepsPerBeat = pat.steps.length / pat.beats;
     let h = `<div style="display:flex;flex-direction:column;gap:4px">`;
     h += `<div style="display:flex;gap:2px">`;
-    Object.keys(RHYTHM_PATTERNS).forEach(c => h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="flex:1;font-size:calc(7px*var(--ui));${cat === c ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${c}</button>`);
+    Object.keys(RHYTHM_PATTERNS).forEach(c => h += `<button class="chord-btn rhy-cat" data-rc="${c}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${cat === c ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${c}</button>`);
     h += `</div>`;
     const pats = RHYTHM_PATTERNS[cat] || {};
     h += `<div style="display:flex;flex-wrap:wrap;gap:2px">`;
-    Object.keys(pats).forEach(pn => h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="font-size:calc(6px*var(--ui));padding:2px 4px;${patName === pn ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${pn}</button>`);
+    Object.keys(pats).forEach(pn => h += `<button class="chord-btn rhy-pat" data-rp="${pn}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 4px;${patName === pn ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${pn}</button>`);
     h += `</div>`;
-    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));text-align:center">${pat.desc}</div>`;
-    h += `<div style="display:flex;gap:2px;align-items:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">CHORDS</span>`;
-    [['uniform','Same'],['per-step','Per Beat'],['random','🎲']].forEach(([m, label]) => h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${chordMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${label}</button>`);
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${pat.desc}</div>`;
+    h += `<div style="display:flex;gap:2px;align-items:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">CHORDS</span>`;
+    [['uniform','Same'],['per-step','Per Beat'],['random','🎲']].forEach(([m, label]) => h += `<button class="chord-btn rhy-cm" data-cm="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${chordMode === m ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${label}</button>`);
     h += `</div>`;
     if (chordMode === 'uniform') {
       h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${uniformChord === ch ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
+      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-uc" data-uc="${ch}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 3px;${uniformChord === ch ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
       h += `</div>`;
     }
     h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:5px;overflow-x:auto">`;
     h += `<div style="display:flex;gap:1px;margin-bottom:2px">`;
-    for (let b = 0; b < pat.beats; b++) h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${b + 1}</span></div>`;
+    for (let b = 0; b < pat.beats; b++) h += `<div style="flex:${stepsPerBeat};text-align:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${b + 1}</span></div>`;
     h += `</div><div style="display:flex;gap:1px">`;
     pat.steps.forEach((st, si) => {
       const isCur = p._rhythmPlaying && si === stepIdx, isDownbeat = si % stepsPerBeat === 0;
@@ -562,7 +562,7 @@ function createGrooveTab(p, refresh) {
       // an accent is lit. Four hues here would read as four different pedals
       // sitting inside one bar of rhythm.
       const glyph = { 'D':accent,'U':'var(--rk-dim)','↓':accent,'↑':'var(--rk-dim)','A':'var(--rk-hot)','x':'var(--rk-ink-mute)','g':'var(--rk-ink-mute)','·':'transparent' };
-      h += `<div class="rhythm-step" style="flex:1;min-width:16px;height:22px;background:${stepBg(isCur, st)};border:1px solid ${stepBd(isCur)};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center"><span class="mono" style="color:${glyph[st] || 'var(--rk-ink-mute)'};font-size:${st === '·' ? 7 : 9}px;font-weight:700">${st}</span></div>`;
+      h += `<div class="rhythm-step" style="flex:1;min-width:16px;height:22px;background:${stepBg(isCur, st)};border:1px solid ${stepBd(isCur)};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center"><span class="mono" style="color:${glyph[st] || 'var(--rk-ink-mute)'};font-size:calc(${st === '·' ? 8 : 10}px*var(--ui));font-weight:700">${st}</span></div>`;
     });
     h += `</div>`;
     if (chordMode === 'per-step' || chordMode === 'random') {
@@ -570,21 +570,21 @@ function createGrooveTab(p, refresh) {
       pat.steps.forEach((st, si) => {
         const ch = stepChords[si], isEdit = editStep === si, isDownbeat = si % stepsPerBeat === 0;
         const bg = isEdit ? 'var(--rk-soft2)' : ch ? 'var(--rk-soft)' : 'var(--rk-panel)';
-        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? 'var(--rk-accent)' : 'var(--rk-edge-soft)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="mono" style="color:${ch ? accent : 'var(--rk-ink-mute)'};font-size:calc(6px*var(--ui));font-weight:${ch ? 700 : 400}">${ch || ''}</span></div>`;
+        h += `<div class="rhy-step-ch" data-rsi="${si}" style="flex:1;min-width:16px;height:18px;background:${bg};border:1px solid ${isEdit ? 'var(--rk-accent)' : 'var(--rk-edge-soft)'};${isDownbeat ? 'border-left-width:2px;' : ''}border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:pointer"><span class="mono" style="color:${ch ? accent : 'var(--rk-ink-mute)'};font-size:calc(8px*var(--ui));font-weight:${ch ? 700 : 400}">${ch || ''}</span></div>`;
       });
       h += `</div>`;
     }
     h += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:3px;justify-content:center">`;
     const legendItems = cat === 'Picking' ? [['↓','Down'],['↑','Up'],['·','Rest']] : cat === 'Rhythm Feel' ? [['A','Accent'],['g','Ghost'],['·','Rest']] : [['D','Down'],['U','Up'],['x','Mute'],['·','Rest']];
-    legendItems.forEach(([sym, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))"><span style="color:${accent}">${sym}</span> ${label}</span>`);
+    legendItems.forEach(([sym, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))"><span style="color:${accent}">${sym}</span> ${label}</span>`);
     h += `</div></div>`;
     if (editStep !== null && (chordMode === 'per-step' || chordMode === 'random')) {
-      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));margin-bottom:3px">Step ${editStep + 1} chord:</div><div style="display:flex;gap:2px;flex-wrap:wrap">`;
-      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 3px;${stepChords[editStep] === ch ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
-      h += `</div><div style="display:flex;gap:3px;margin-top:3px"><button class="chord-btn rhy-pick-clear" style="font-size:calc(7px*var(--ui));color:var(--rk-ink-dim);flex:1">Clear (inherit)</button><button class="chord-btn rhy-pick-done" style="font-size:calc(7px*var(--ui));flex:1">Done</button></div></div>`;
+      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));margin-bottom:3px">Step ${editStep + 1} chord:</div><div style="display:flex;gap:2px;flex-wrap:wrap">`;
+      COMMON_CHORDS.forEach(ch => h += `<button class="chord-btn rhy-pick" data-rpc="${ch}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 3px;${stepChords[editStep] === ch ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${ch}</button>`);
+      h += `</div><div style="display:flex;gap:3px;margin-top:3px"><button class="chord-btn rhy-pick-clear" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));color:var(--rk-ink-dim);flex:1">Clear (inherit)</button><button class="chord-btn rhy-pick-done" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));flex:1">Done</button></div></div>`;
     }
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${pat.sub}</span></div>`;
-    h += `<button class="rhy-play mono" style="background:${p._rhythmPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._rhythmPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._rhythmPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">${pat.sub}</span></div>`;
+    h += `<button class="rhy-play mono" style="min-height:calc(28px*var(--ui));background:${p._rhythmPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._rhythmPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._rhythmPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._rhythmPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
 
@@ -693,7 +693,7 @@ function createFingerTab(p, refresh) {
   // here and a lit cell always falls back to the fill it started with.
   const fStepBg = isCur => isCur ? 'var(--rk-soft2)'  : 'var(--rk-panel2)';
   const fStepBd = isCur => isCur ? 'var(--rk-accent)' : 'var(--rk-edge-soft)';
-  const fingerReadout = info => `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${info.desc}</span>`;
+  const fingerReadout = info => `<span class="mono" style="color:var(--rk-accent);font-size:calc(18px*var(--ui));font-weight:900">${info.finger}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui))">${info.desc}</span>`;
   function updateFingerDisplay() {
     const pat = getPat();
     document.querySelectorAll(`#body-${p.id} .finger-step`).forEach((c, i) => {
@@ -735,25 +735,25 @@ function createFingerTab(p, refresh) {
     const pat = getPat(), useBpm = metroClock.bpm || 100, ipData = FINGER_PATTERNS[instMode];
     let h = `<div style="display:flex;flex-direction:column;gap:6px">`;
     h += `<div style="display:flex;gap:3px">`;
-    Object.entries(FINGER_PATTERNS).forEach(([k, v]) => h += `<button class="chord-btn fin-inst" data-fi="${k}" style="flex:1;font-size:calc(7px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent);font-weight:800' : ''}">${v.label}</button>`);
+    Object.entries(FINGER_PATTERNS).forEach(([k, v]) => h += `<button class="chord-btn fin-inst" data-fi="${k}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${instMode === k ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent);font-weight:800' : ''}">${v.label}</button>`);
     h += `</div><div style="display:flex;flex-wrap:wrap;gap:3px">`;
-    Object.keys(ipData.patterns).forEach(pn => h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`);
+    Object.keys(ipData.patterns).forEach(pn => h += `<button class="chord-btn fin-pat" data-fp="${pn}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${patName === pn ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${pn}</button>`);
     h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${pat.desc}</div>`;
     if (instMode !== 'piano') {
-      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui));margin-bottom:3px">CHORD SHAPE</div><div style="display:flex;gap:2px;margin-bottom:3px">`;
-      [['chord','Chord'],['open','Open'],['random','🎲 Random']].forEach(([m, label]) => h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="flex:1;font-size:calc(7px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`);
+      h += `<div style="background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:5px;padding:5px"><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));margin-bottom:3px">CHORD SHAPE</div><div style="display:flex;gap:2px;margin-bottom:3px">`;
+      [['chord','Chord'],['open','Open'],['random','🎲 Random']].forEach(([m, label]) => h += `<button class="chord-btn fin-cm" data-fcm="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${fChordMode === m ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${label}</button>`);
       h += `</div>`;
       if (fChordMode === 'chord') {
         const commonChords = ['C','Am','G','Em','D','Dm','A','Am','E','Em','F','Fm','B','Bm','A7','D7','E7','G7','Am7','Dm7','Em7','Cmaj7','Fmaj7'];
         h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-        commonChords.forEach(ch => h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="font-size:calc(6px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`);
+        commonChords.forEach(ch => h += `<button class="chord-btn fin-chord" data-fch="${ch}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:1px 4px;${fChordRoot === ch ? 'background:var(--rk-soft);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${ch}</button>`);
         h += `</div>`;
       }
       h += `</div>`;
     }
     if (instMode === 'piano') {
       h += `<div style="display:flex;flex-wrap:wrap;gap:2px;justify-content:center">`;
-      NOTES.forEach(n => h += `<button class="chord-btn fin-root" data-r="${n}" style="font-size:calc(7px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`);
+      NOTES.forEach(n => h += `<button class="chord-btn fin-root" data-r="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:22px;padding:2px 4px;${root === n ? 'background:var(--rk-soft2);border-color:var(--rk-line);color:var(--rk-accent)' : ''}">${n}</button>`);
       h += `</div>`;
     }
     h += `<div id="finger-ind-${p.id}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:28px">`;
@@ -763,17 +763,17 @@ function createFingerTab(p, refresh) {
     pat.steps.forEach((st, si) => {
       const isCur = p._fingerPlaying && si === stepIdx, info = getStepNoteInfo(st);
       h += `<div class="finger-step" style="background:${fStepBg(isCur)};border:1.5px solid ${fStepBd(isCur)};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${info.finger}</div>`;
-      if (instMode !== 'piano') h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${info.note || ''}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
-      else h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui))">${info.note}</div>`;
+      if (instMode !== 'piano') h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));font-weight:600">${info.note || ''}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">s${st.s + 1}${info.fret ? ' f' + info.fret : ''}</div>`;
+      else h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${info.note}</div>`;
       h += `</div>`;
     });
     h += `</div>`;
     h += `<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap">`;
     const legend = instMode === 'guitar' ? [['p','Thumb'],['i','Index'],['m','Middle'],['a','Ring']] : instMode === 'banjo' ? [['T','Thumb'],['I','Index'],['M','Middle']] : [['1','Thumb'],['2','Index'],['3','Middle'],['4','Ring'],['5','Pinky']];
-    legend.forEach(([f, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`);
+    legend.forEach(([f, label]) => h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))"><span style="color:var(--rk-accent);font-weight:700">${f}</span> ${label}</span>`);
     h += `</div>`;
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
-    h += `<button class="fin-play mono" style="background:${p._fingerPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._fingerPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._fingerPlaying ? 'var(--rk-stop)' : 'var(--rk-accent)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">NOTE TEMPO</span><span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
+    h += `<button class="fin-play mono" style="min-height:calc(28px*var(--ui));background:${p._fingerPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._fingerPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._fingerPlaying ? 'var(--rk-stop)' : 'var(--rk-accent)'};border-radius:8px;padding:7px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._fingerPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
 
@@ -898,14 +898,14 @@ function createTechniqueTab(p, refresh) {
     const ex = getEx(), accent = 'var(--rk-accent)', useBpm = metroClock.bpm || 80;
     let h = `<div style="display:flex;flex-direction:column;gap:5px">`;
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-    Object.keys(TECHNIQUE_EXERCISES).forEach(tc => h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="flex:1;font-size:calc(7px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${TECHNIQUE_EXERCISES[tc].symbol} ${tc}</button>`);
-    h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
+    Object.keys(TECHNIQUE_EXERCISES).forEach(tc => h += `<button class="chord-btn tech-cat" data-tc="${tc}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));${techCat === tc ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent};font-weight:800` : ''}">${TECHNIQUE_EXERCISES[tc].symbol} ${tc}</button>`);
+    h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${TECHNIQUE_EXERCISES[techCat]?.desc || ''}</div>`;
     const exs = TECHNIQUE_EXERCISES[techCat]?.exercises || [];
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap">`;
-    exs.forEach(e => h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="font-size:calc(7px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`);
+    exs.forEach(e => h += `<button class="chord-btn tech-ex" data-te="${e.name}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px;${exName === e.name ? `background:var(--rk-soft2);border-color:var(--rk-line);color:${accent}` : ''}">${e.name}</button>`);
     h += `</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">${ex.desc}</div>`;
-    h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">START STRING</span>`;
-    customTuning.forEach((_, i) => h += `<button class="chord-btn tech-str" data-ts="${i}" style="font-size:calc(7px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`);
+    h += `<div style="display:flex;gap:2px;align-items:center;justify-content:center"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">START STRING</span>`;
+    customTuning.forEach((_, i) => h += `<button class="chord-btn tech-str" data-ts="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:18px;${stringOffset === i ? `background:var(--rk-soft);border-color:var(--rk-line);color:${accent}` : ''}">${i + 1}</button>`);
     h += `</div>`;
     h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:6px;padding:6px">`;
     ex.steps.forEach((step, si) => {
@@ -914,11 +914,11 @@ function createTechniqueTab(p, refresh) {
       const actionLabel = { pick:'♩', H:'H', P:'P', '/':'/', '\\':'\\', 'b½':'b½', b1:'b1', r:'rel', pb:'pre', '~':'~', '~s':'~s', '~f':'~f' }[step[2]] || step[2];
       // A picked note is the full accent; an articulation (H·P·slide·bend) is
       // the quiet one — the difference is attack, so it reads as value.
-      h += `<div class="tech-step" style="background:${tStepBg(isCur)};border:1.5px solid ${tStepBd(isCur)};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:${step[2] === 'pick' ? accent : 'var(--rk-dim)'};font-size:calc(11px*var(--ui));font-weight:800">${actionLabel}</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(7px*var(--ui));font-weight:600">${note}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(6px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div></div>`;
+      h += `<div class="tech-step" style="background:${tStepBg(isCur)};border:1.5px solid ${tStepBd(isCur)};border-radius:4px;padding:3px 5px;text-align:center;min-width:30px"><div class="mono" style="color:${step[2] === 'pick' ? accent : 'var(--rk-dim)'};font-size:calc(11px*var(--ui));font-weight:800">${actionLabel}</div><div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));font-weight:600">${note}</div><div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">s${adj[0] + 1} f${adj[1]}</div></div>`;
     });
     h += `</div>`;
-    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
-    h += `<button class="tech-play mono" style="background:${p._techPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._techPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._techPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
+    h += `<div style="display:flex;align-items:center;justify-content:center;gap:6px"><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">TEMPO</span><span class="mono" style="color:${accent};font-size:calc(11px*var(--ui));font-weight:700">${useBpm}</span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(7px*var(--ui))">BPM</span></div>`;
+    h += `<button class="tech-play mono" style="min-height:calc(28px*var(--ui));background:${p._techPlaying ? 'var(--rk-stop-soft)' : 'var(--rk-soft)'};border:1px solid ${p._techPlaying ? 'var(--rk-stop-edge)' : 'var(--rk-line)'};color:${p._techPlaying ? 'var(--rk-stop)' : accent};border-radius:8px;padding:6px 16px;cursor:pointer;font-size:calc(11px*var(--ui));font-weight:700;letter-spacing:1px;width:100%">${p._techPlaying ? '■ STOP' : '▶ PLAY'}</button>`;
     h += `</div>`;
     bodyEl.innerHTML = h;
     bodyEl.querySelectorAll('.tech-cat').forEach(b => b.onclick = e => { e.stopPropagation(); techCat = b.dataset.tc; exName = TECHNIQUE_EXERCISES[techCat]?.exercises?.[0]?.name || ''; if (p._techPlaying) { stopTech(); startTech(); } else refresh(); });
@@ -1000,7 +1000,7 @@ export function buildWorkshopContent(p) {
       // Which tab you are on is now carried by an underline and heavier type
       // — the job the five different accents used to do.
       const lit = k === activeTab ? ';font-weight:800;box-shadow:inset 0 -2px 0 var(--rk-accent)' : '';
-      h += `<button class="rk-seg-btn ws-tab${k === activeTab ? ' is-active' : ''}" data-tab="${k}" style="flex:1;font-size:calc(8.5px*var(--ui));padding:6px 2px${lit}">${m.label}</button>`;
+      h += `<button class="rk-seg-btn ws-tab${k === activeTab ? ' is-active' : ''}" data-tab="${k}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:6px 2px${lit}">${m.label}</button>`;
     });
     h += `</div>`;
     h += `<div style="font-size:calc(9.5px*var(--ui));line-height:1.45;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:6px 8px;border-radius:4px">${meta.blurb}</div>`;

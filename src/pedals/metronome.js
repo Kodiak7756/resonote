@@ -305,7 +305,7 @@ export function buildMetronomeContent(p) {
       const lit = on || open;
       out += `<button class="rk-beat metro-beat${on ? ' is-on' : ''}" data-bi="${i}"
         title="Beat ${i+1}: ${def.label} — tap to change its sound"
-        style="background:${lit ? def.bg : 'var(--rk-panel2)'};
+        style="min-height:calc(28px*var(--ui));background:${lit ? def.bg : 'var(--rk-panel2)'};
           border-color:${lit ? def.color : 'var(--rk-edge-soft)'};color:${def.color};
           ${on && type !== 'rest' ? 'box-shadow:0 0 14px var(--rk-glow)' : ''}">${def.short}</button>`;
     }
@@ -351,11 +351,11 @@ export function buildMetronomeContent(p) {
     const btns = Object.entries(BEAT_TYPES).map(([type, def]) =>
       `<button class="dot-pick mono" data-bi="${i}" data-type="${type}"
         title="${def.label}"
-        style="display:flex;align-items:center;gap:5px;
+        style="min-height:calc(28px*var(--ui));display:flex;align-items:center;gap:5px;
           background:${current===type ? def.bg : 'var(--rk-panel2)'};
           border:1.5px solid ${current===type ? def.color : 'var(--rk-edge-soft)'};
           color:${current===type ? def.color : 'var(--rk-ink-dim)'};border-radius:7px;padding:5px 9px;
-          cursor:pointer;font-size:calc(8.5px*var(--ui));font-weight:800">
+          cursor:pointer;font-size:calc(10px*var(--ui));font-weight:800">
         <span style="width:13px;height:13px;border-radius:50%;
           background:${def.bg};border:1px solid ${def.color};color:${def.color};
           display:inline-flex;align-items:center;justify-content:center;
@@ -364,7 +364,7 @@ export function buildMetronomeContent(p) {
     ).join('');
     return `<div style="display:flex;flex-direction:column;gap:6px;
         background:var(--rk-panel);border:1px solid var(--rk-edge-soft);border-radius:9px;padding:8px">
-      <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(7.5px*var(--ui));text-align:center;letter-spacing:1.4px">${label.toUpperCase()} · CHOOSE SOUND</div>
+      <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center;letter-spacing:1.4px">${label.toUpperCase()} · CHOOSE SOUND</div>
       <div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">${btns}</div>
     </div>`;
   }
@@ -400,13 +400,13 @@ export function buildMetronomeContent(p) {
       const hot   = saved && pr.bpm===bpm && pr.ts===ts && pr.unit===unit && JSON.stringify(pr.pattern)===JSON.stringify(pattern);
       return `<button class="rk-preset metro-preset${hot ? ' is-hot' : ''}" data-pi="${i}"
         title="${savePresetMode ? 'Save current settings to this slot' : saved ? `Load ${pr.bpm} BPM ${pr.ts}/${pr.unit}` : 'Empty slot'}"
-        style="${saved ? '' : 'opacity:.5'}">P${i+1}</button>`;
+        style="min-height:calc(28px*var(--ui));${saved ? '' : 'opacity:.5'}">P${i+1}</button>`;
     }).join('');
 
     const tsPresets = TS_PRESETS.map(([pTs, pUnit, label]) => {
       const active = ts===pTs && unit===pUnit;
       return `<button class="rk-seg-btn tsb${active ? ' is-active' : ''}" data-ts="${pTs}" data-unit="${pUnit}"
-        style="padding:6px 9px">${label}</button>`;
+        style="min-height:calc(28px*var(--ui));padding:6px 9px">${label}</button>`;
     }).join('');
 
     const subdivBtns = [
@@ -415,7 +415,7 @@ export function buildMetronomeContent(p) {
       ['triplet','3','3','Triplets — three even pulses per beat'],
       ['16th',   '♬','4','Sixteenth notes — four even pulses per beat'],
     ].map(([sv, icon, count, title]) =>
-      `<button class="rk-seg-btn sub-btn${subdiv===sv ? ' is-active' : ''}" data-sv="${sv}" title="${title}" style="min-width:48px">
+      `<button class="rk-seg-btn sub-btn${subdiv===sv ? ' is-active' : ''}" data-sv="${sv}" title="${title}" style="min-height:calc(28px*var(--ui));min-width:48px">
         <span style="font-size:calc(13px*var(--ui));line-height:1">${icon}</span>
         <span style="display:flex;gap:3px">
           ${Array.from({length:Number(count)},(_,i)=>`<i style="display:block;width:4px;height:4px;border-radius:50%;background:${i===0?'var(--rk-accent)':'var(--rk-edge-soft)'}"></i>`).join('')}
@@ -428,13 +428,13 @@ export function buildMetronomeContent(p) {
       const active = lengthCount === n;
       return `<button class="rk-seg-btn len-btn${active ? ' is-active' : ''}" data-len="${n}"
         title="${n ? `Stop after ${qty(n)}` : 'Keep going until you press stop'}"
-        style="padding:6px 9px;min-width:32px">${n || '∞'}</button>`;
+        style="min-height:calc(28px*var(--ui));padding:6px 9px;min-width:32px">${n || '∞'}</button>`;
     }).join('');
 
     const lenUnitBtns = [['beats','BEATS','Count the set in beats'], ['bars','BARS','Count the set in bars']]
       .map(([u, label, title]) =>
         `<button class="rk-seg-btn len-unit${lengthUnit === u ? ' is-active' : ''}" data-lu="${u}"
-          title="${title}" style="padding:6px 9px">${label}</button>`).join('');
+          title="${title}" style="min-height:calc(28px*var(--ui));padding:6px 9px">${label}</button>`).join('');
 
     // Anything not on the preset row lives in the typed box.
     const customLen = lengthCount && !lenPresets.includes(lengthCount) ? lengthCount : '';
@@ -460,7 +460,7 @@ export function buildMetronomeContent(p) {
                radial-gradient. It is scoped to the button, so the accent-lamp beat
                dots beside it are untouched. -->
           <button id="mt-${p.id}" class="rk-play${live ? ' is-playing' : ''}" title="${live ? 'Stop' : 'Start'}"
-                  style="${live ? '--rk-hot:var(--rk-stop)' : ''}">${live ? '◼' : '▶'}</button>
+                  style="min-height:calc(28px*var(--ui));${live ? '--rk-hot:var(--rk-stop)' : ''}">${live ? '◼' : '▶'}</button>
           <div class="rk-readout">
             <div class="rk-readout-num">${bpmDisplay}</div>
             <div class="rk-readout-sub">BPM · <b>${tempoTerm(bpm)}</b></div>
@@ -505,20 +505,20 @@ export function buildMetronomeContent(p) {
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div class="rk-seg" style="gap:4px">${lenUnitBtns}</div>
             <span class="mono" id="metro-len-read-${p.id}"
-              style="flex:1;min-width:120px;text-align:right;color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));line-height:1.4">${lengthReadHTML()}</span>
+              style="flex:1;min-width:120px;text-align:right;color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));line-height:1.4">${lengthReadHTML()}</span>
           </div>
           <div class="rk-seg">
             ${lenBtns}
             <input id="metro-len-input-${p.id}" class="len-input mono" type="number" min="1" max="999"
               value="${customLen}" placeholder="…" title="Type any number of ${unitWord()} (1–999)"
-              style="width:48px;padding:6px 4px;text-align:center;font-size:calc(9.5px*var(--ui));font-weight:700;
+              style="width:48px;padding:6px 4px;text-align:center;font-size:calc(10px*var(--ui));font-weight:700;
                 background:var(--rk-panel2);border:1.5px solid ${customLen ? 'var(--rk-line)' : 'var(--rk-edge-soft)'};
                 border-radius:7px;color:${customLen ? 'var(--rk-accent)' : 'var(--rk-ink-dim)'};outline:none">
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <button class="len-loop rk-chip${loopSet ? ' is-active' : ''}"
               title="Play the set again after one bar of rest"
-              style="${lengthCount ? '' : 'opacity:.45'}">LOOP THE SET</button>
+              style="min-height:calc(28px*var(--ui));${lengthCount ? '' : 'opacity:.45'}">LOOP THE SET</button>
             <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));flex:1;line-height:1.4">
               ${!lengthCount
                 ? 'runs until you press stop'
@@ -534,7 +534,7 @@ export function buildMetronomeContent(p) {
         <div class="rk-section">
           <div class="rk-label">PRACTICE</div>
           <div style="display:flex;gap:8px;align-items:center">
-            <button class="spd-toggle rk-chip${speedTrainer.enabled ? ' is-active' : ''}">SPEED TRAINER · +${speedTrainer.increment}</button>
+            <button style="min-height:calc(28px*var(--ui))" class="spd-toggle rk-chip${speedTrainer.enabled ? ' is-active' : ''}">SPEED TRAINER · +${speedTrainer.increment}</button>
             <span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));flex:1;line-height:1.4">
               ${speedTrainer.enabled
                 ? `+${speedTrainer.increment} BPM every ${speedTrainer.everyBars} bars → ${speedTrainer.targetBpm}`
@@ -545,8 +545,8 @@ export function buildMetronomeContent(p) {
 
         <!-- Presets -->
         <div class="rk-presets">
-          <button class="rk-chip metro-reset" title="Reset to 120 BPM 4/4">RESET</button>
-          <button class="rk-chip metro-save-mode${savePresetMode ? ' is-active' : ''}" title="Toggle save-to-slot mode">${savePresetMode ? 'SAVING…' : 'SAVE'}</button>
+          <button style="min-height:calc(28px*var(--ui))" class="rk-chip metro-reset" title="Reset to 120 BPM 4/4">RESET</button>
+          <button style="min-height:calc(28px*var(--ui))" class="rk-chip metro-save-mode${savePresetMode ? ' is-active' : ''}" title="Toggle save-to-slot mode">${savePresetMode ? 'SAVING…' : 'SAVE'}</button>
           <div style="width:1px;height:18px;background:var(--rk-edge-soft);margin:0 2px"></div>
           ${presetRow}
         </div>

@@ -59,12 +59,10 @@ export function kevinLibrary() {
     'Triad March ' + SET_NAME[k],
     marchSteps(M[k]),
     `Every diatonic triad of C major through every inversion up ${SET_NAME[k].split('').join('-')}, one voice moving per step. ` +
-    (M[k].verbatim
-      ? 'Recovered verbatim from the original.'
-      : 'REBUILT from the rule proven exact against the GBe and EAD marches — worth checking against how you played it.')
+    'Move one voice at a time and every chord in the key appears in every inversion.'
   ));
   out.push(piece('kv-base-scale', 'Base Scale - Cmaj', scaleSteps(SEED),
-    'Two octaves of C major, 8th position, no open strings. THE SEED: every note run and broken-interval exercise is derived from this fingering, so re-finger it and they all follow.'));
+    'Two octaves of C major in 8th position, no open strings. Every note run and broken-interval exercise is built from this fingering — re-finger it and they all follow.'));
   return out;
 }
 
