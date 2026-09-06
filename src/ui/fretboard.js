@@ -3,13 +3,14 @@ import { INTERVAL_COLORS, INTERVAL_TEXT, INTERVAL_LABELS } from '../core/colors.
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
 import { applyLook, pianoKeyColor } from '../core/looks.js';
 import { renderVocalsDisplay, destroyVocalsDisplay } from '../pedals/vocals.js';
-import { customTuning, getInst, getNoteAtFret, TUNING_PRESETS, applyTuning, getTuningOptions, currentInstrument } from '../core/tuning.js';
+import { customTuning, getInst, getNoteAtFret, TUNING_PRESETS, applyTuning, getTuningOptions, currentInstrument,
+         HEX_LAYOUTS, hexLayout, setHexLayout, hexAxial, hexMidi, midiToNote } from '../core/tuning.js';
 import { showIntervals, showNoteMap, chordHighlight, ghostHighlight, positionIsolation, fretboardView, conceptInfo, nowBanner, pedalBus } from '../core/state.js';
 
 // Tension weight (0 restful … 1 max tension) per interval — drives the heatmap view.
 const TENSION_W = [0,.95,.55,.35,.30,.40,1,.10,.55,.35,.55,.85];
 const CHORD_TONE_DEGS = [0,3,4,7,10,11];   // R · 3 · 5 · 7 (the harmonic skeleton)
-import { audio } from '../core/audio.js';
+import { audio, playClickedNote } from '../core/audio.js';
 
 // ── Fret geometry ────────────────────────────────────────────────────
 const scaleLen = 1600;
@@ -21,7 +22,9 @@ const DOUBLE_DOTS = [12,24];
 
 export function geo() {
   const inst = getInst(), nf = inst.frets || 24;
-  const ns = inst.renderer === 'keyboard' ? 6 : customTuning.length;
+  // keyless renderers have no strings; a guitar-sized stand-in keeps the shared
+  // maths (tuning bar %, splitter) finite
+  const ns = (inst.renderer === 'keyboard' || inst.renderer === 'hex') ? 6 : customTuning.length;
   const tw = fretX[nf] + 12, lw = 50, nx = lw;
   const sh = 110 + 36 * ns, bt = 44, bb = sh - 50, bh = bb - bt, ss = bh / (ns + 1);
   return {
@@ -53,7 +56,7 @@ export const THEME_GHOST = {
 
 export const INST_DEFAULT_THEME = {
   guitar6:'gibson', guitar8:'ibanez', bass4:'fender',
-  banjo5:'banjo', mandolin:'mandolin', piano:'gibson', vocals:'moon'
+  banjo5:'banjo', mandolin:'mandolin', piano:'gibson', lumatone:'moon', vocals:'moon'
 };
 
 export let currentTheme = INST_DEFAULT_THEME[currentInstrument] || 'gibson';
@@ -202,8 +205,14 @@ export function setBoardRenderH(h) {
   fbRenderH = h > 0 ? Math.round(h) : 0;
   const svg = document.getElementById('fb-svg');
   if (!svg) return;
-  const g = getInst().renderer === 'keyboard' ? pianoGeo() : geo();
+  const g = boardGeo();
   capBoardSize(g, svg);
+}
+// The geometry the current renderer draws with — every caller that only needs
+// sw/sh (splitter, size cap) goes through here instead of re-branching.
+function boardGeo() {
+  const r = getInst().renderer;
+  return r === 'keyboard' ? pianoGeo() : r === 'hex' ? hexGeo() : geo();
 }
 export function persistBoardRenderH() {
   try { fbRenderH ? localStorage.setItem('rn-board-h', String(fbRenderH)) : localStorage.removeItem('rn-board-h'); } catch (e) { /* private mode */ }
@@ -340,6 +349,227 @@ export function buildKeyboardSVG() {
   svg.innerHTML = h;
 }
 
+// ── Lumatone hex renderer ────────────────────────────────────────────
+// Pointy-top hexes in horizontal rows, each row shifted half a key from the
+// last. Pointy-top rather than flat-top because it makes the three directions
+// the layouts are described in — right, up-right, up-left — all real
+// neighbours; flat-top would put a key straight UP instead, and no layout
+// talks about "up". Row 0 is the BOTTOM row so pitch rises as the eye climbs,
+// the way it does on a stave.
+export function hexGeo() {
+  const inst = getInst(), cols = inst.columns || 28, rows = inst.rows || 10;
+  // circumradius 22 → keys ~38 wide, so 28 columns land near the neck's
+  // viewBox width and each key is a comfortable click at the default board size
+  const size = 22, w = Math.sqrt(3) * size, rowH = 1.5 * size;
+  const padX = 24, padY = 16;
+  const sw = padX * 2 + w * (cols + 0.5), sh = padY * 2 + rowH * (rows - 1) + 2 * size;
+  const cells = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const { q } = hexAxial(c, r), midi = hexMidi(q, r), { note, octave } = midiToNote(midi);
+    // A grid wide enough to keep the isomorphism whole runs past both ends of a
+    // piano (Wicki-Hayden: MIDI 1..110). Those corners stay drawn, so a shape
+    // still reads the same everywhere, but they are OFF: dimmed, and a tap on
+    // one plays nothing rather than a 9 Hz thump.
+    const off = midi < 21 || midi > 108;
+    cells.push({ c, r, q, midi, note, octave, off, sharp: note.includes('#'),
+      x: padX + w / 2 + w * (c + (r & 1) * 0.5),
+      y: sh - padY - size - rowH * r });
+  }
+  const poly = (x, y, s) => [0, 1, 2, 3, 4, 5].map(k => {
+    const a = Math.PI / 6 + k * Math.PI / 3;
+    return `${(x + s * Math.cos(a)).toFixed(1)},${(y + s * Math.sin(a)).toFixed(1)}`;
+  }).join(' ');
+  return { inst, cols, rows, size, w, rowH, sw, sh, cells, poly,
+    // a pitch lives in several hexes at once — that redundancy IS the
+    // isomorphism, so anything that lights a note lights all of them
+    find: (note, octave) => cells.filter(k => k.note === note && (octave == null || k.octave === octave)) };
+}
+
+// Sharps wear the sharp sign; the letter alone is the label, the octave is
+// the readout's job
+const hexLabel = note => note.replace('#', '♯');
+
+// What colour a hex wears is the DISPLAY question, answered exactly as the
+// neck and the keys answer it — the same two codes, no palette of its own.
+// Standard mode is neutral keys with accidentals a shade darker so the grid
+// still reads as an instrument at a glance (the piano's black keys, without
+// the piano).
+function hexKeyStyle(cell, keyRoot) {
+  if (fretboardView === 'spectrum') return { fill: pcColor(cell.note, 70, 58), text: pcTextOn(cell.note), stroke: 'rgba(0,0,0,.35)' };
+  if (fretboardView === 'intervals' && keyRoot) {
+    const d = ((NOTES.indexOf(cell.note) - NOTES.indexOf(keyRoot)) % 12 + 12) % 12;
+    return { fill: INTERVAL_COLORS[d], text: INTERVAL_TEXT[d], stroke: 'rgba(0,0,0,.35)' };
+  }
+  return cell.sharp
+    ? { fill: '#22242b', text: '#b9b5aa', stroke: '#3a3d46' }
+    : { fill: '#34373f', text: '#e2ddd0', stroke: '#4a4e58' };
+}
+
+export function buildHexSVG() {
+  const g = hexGeo(), svg = document.getElementById('fb-svg'), t = getTheme();
+  if (!svg) return;
+  svg.setAttribute('viewBox', `0 0 ${g.sw} ${g.sh}`);
+  capBoardSize(g, svg);
+
+  let h = `<defs>
+    <filter id="ngf" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="cgf" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  h += `<rect x="4" y="4" width="${g.sw-8}" height="${g.sh-8}" rx="10" fill="${t.bg}" stroke="${t.border}" stroke-width="1"/>`;
+  h += `<g id="hex-keys">`;
+  g.cells.forEach((k, i) => {
+    h += `<g class="hex-key" data-i="${i}" style="cursor:pointer"><polygon points="${g.poly(k.x, k.y, g.size * 0.93)}" stroke-width="1"/>`
+       + `<text x="${k.x}" y="${k.y+3.5}" text-anchor="middle" font-size="10" font-family="'JetBrains Mono',monospace" font-weight="700" style="pointer-events:none">${hexLabel(k.note)}</text></g>`;
+  });
+  h += `</g><g id="names-ov"></g><g id="chord-ov"></g><g id="note-ov"></g>`;
+  svg.innerHTML = h;
+
+  // Taps are NOT wired here: main.js's fretboard click handler reads the
+  // .hex-key's data-i and dispatches through the same path a fret or a piano
+  // key takes, so pedals' click hooks and the interval picker see hex taps too.
+  paintHexKeys(g);
+}
+
+// Recolours the keys in place for the current DISPLAY mode and the 🗺 MAP —
+// a view change only calls updateOverlays(), so the base keys have to follow
+// from there rather than waiting for a rebuild. The keys ARE the map here:
+// degrees replace the letters, and an in-key map fades everything outside the
+// session key instead of drawing a second layer of labels on top.
+function paintHexKeys(g) {
+  const svg = document.getElementById('fb-svg');
+  if (!svg) return;
+  const key = mapKey();
+  svg.querySelectorAll('.hex-key').forEach(el => {
+    const k = g.cells[+el.dataset.i];
+    if (!k) return;
+    const st = hexKeyStyle(k, key.root);
+    const out = showNoteMap && mapScope === 'key' && !key.pcs.has(k.note);
+    const isTonic = showNoteMap && k.note === key.root;
+    const poly = el.querySelector('polygon'), txt = el.querySelector('text');
+    poly.setAttribute('fill', st.fill);
+    poly.setAttribute('stroke', isTonic ? 'rgba(255,255,255,.85)' : st.stroke);
+    poly.setAttribute('stroke-width', isTonic ? '2' : '1');
+    txt.setAttribute('fill', st.text);
+    txt.setAttribute('font-weight', isTonic ? '900' : '700');
+    txt.textContent = showNoteMap && showIntervals ? intervalLabel(key.root, k.note) : hexLabel(k.note);
+    el.setAttribute('opacity', out ? '0.18' : k.off ? '0.22' : '1');
+    el.style.cursor = k.off ? 'default' : 'pointer';
+  });
+}
+
+function updateHexOverlays() {
+  const g = hexGeo();
+  paintHexKeys(g);
+  const nov = document.getElementById('names-ov');
+  if (nov) nov.innerHTML = '';   // the keys carry the map themselves (paintHexKeys)
+
+  const cov = document.getElementById('chord-ov');
+  if (cov) {
+    let ch = '';
+    if (chordHighlight.active) {
+      const { rootNote: rn, chordNotes: cn, positions: pos, colors, focusPos: fp } = chordHighlight;
+      const rc = colors?.root || '#8877dd', tc = colors?.tone || '#554488';
+      const rs2 = colors?.rootStroke || '#aa99ee', ts2 = colors?.toneStroke || '#7766bb';
+      // Same rule as the neck: 🌈 colours by identity, ⟡ by function against the
+      // session key (falling back to the chord's own root only when there is none).
+      const kr = toSharp((pedalBus.masterKey && pedalBus.masterKey.root) || pedalBus.root || '') || null;
+      const ivRoot = fretboardView === 'intervals' ? (kr || rn) : rn;
+      const degCol = note => {
+        if (fretboardView === 'spectrum') return { fill: pcColor(note, 82, 48), text: pcTextOn(note) };
+        if (fretboardView === 'intervals' && ivRoot) { const d = ((NOTES.indexOf(note) - NOTES.indexOf(ivRoot)) % 12 + 12) % 12; return { fill: INTERVAL_COLORS[d], text: INTERVAL_TEXT[d] }; }
+        return null;
+      };
+      // Which hexes: a position that carries an octave came from a keyed
+      // instrument and names one pitch — light every hex holding it (the
+      // isomorphic duplicates included). A position without one (a guitar
+      // grip, a bare chord) names a pitch class — light it everywhere.
+      const lit = new Map();
+      if (pos?.length) pos.forEach(p => { if (p.fret < 0) return; g.find(p.note, p.octave ?? p.oct).forEach(k => lit.set(k, p)); });
+      else g.cells.forEach(k => { if (cn.includes(k.note)) lit.set(k, { note: k.note }); });
+      // Drills name their focus the way the neck does — {si,fret}, never by
+      // pitch — so resolve string-shaped entries to a note first (through the
+      // position they point at, else the tuning). Without this the sounding
+      // note never turns gold here, and focusOnly plans draw nothing at all.
+      const rawFocus = Array.isArray(fp) ? fp : (fp ? [fp] : []);
+      const focusList = rawFocus.map(f => {
+        if (f.note) return f;
+        const m = (pos || []).find(p => p.si === f.si && p.fret === f.fret);
+        if (m) return { note: m.note, octave: m.octave ?? m.oct };
+        const s = customTuning[f.si];
+        return (s && f.fret != null) ? getNoteAtFret(s.note, s.octave, f.fret) : f;
+      });
+      const isFocus = k => focusList.some(f => f.note === k.note && (f.octave == null || f.octave === k.octave));
+      lit.forEach((p, k) => {
+        const isRoot = k.note === rn, dl = _displayLabel(k.note, rn, p.disp), dc = degCol(k.note);
+        const focus = isFocus(k);
+        if (chordHighlight.focusOnly && !focus) return;
+        const fill = focus ? '#ffc830' : (dc?.fill || (isRoot ? rc : tc));
+        const stroke = focus ? '#ffdd55' : (isRoot ? rs2 : ts2);
+        const txt = focus ? '#1a1000' : (dc?.text || '#fff');
+        ch += `<g ${isRoot || focus ? 'filter="url(#cgf)"' : ''}><polygon points="${g.poly(k.x, k.y, g.size * 0.93)}" fill="${fill}" opacity="${isRoot || focus ? .95 : .85}" stroke="${stroke}" stroke-width="${isRoot || focus ? 2.5 : 1.5}"/>`
+            + `<text x="${k.x}" y="${k.y+3.5}" text-anchor="middle" font-size="${isRoot ? 11 : 10}" font-family="'JetBrains Mono',monospace" font-weight="${isRoot ? 900 : 700}" fill="${txt}" style="pointer-events:none">${dl}</text></g>`;
+      });
+    }
+    // Ghost keys — the upcoming note/chord as a dashed outline, in the theme's
+    // "next" colour, so now and next can't be confused.
+    if (ghostHighlight.active && ghostHighlight.positions?.length) {
+      const gcol = THEME_GHOST[currentTheme] || ghostHighlight.colors?.stroke || '#5cc8ff';
+      let ghost = '';
+      ghostHighlight.positions.forEach(p => {
+        if (p.fret < 0) return;
+        g.find(p.note, p.octave ?? p.oct).forEach(k => {
+          ghost += `<g><polygon points="${g.poly(k.x, k.y, g.size * 0.78)}" fill="rgba(8,6,4,.45)" stroke="${gcol}" stroke-width="2.2" stroke-dasharray="4,3"/>`
+                 + `<text x="${k.x}" y="${k.y+3.5}" text-anchor="middle" font-size="9" font-family="'JetBrains Mono',monospace" font-weight="800" fill="${gcol}" style="pointer-events:none">${hexLabel(p.note)}</text></g>`;
+        });
+      });
+      ch = ghost + ch;
+    }
+    cov.innerHTML = ch;
+  }
+
+  // Last tapped / heard note. The exact pitch lights hard, its other octaves
+  // soft — on an isomorphic board "where else is this note" is half the lesson.
+  const ov = document.getElementById('note-ov');
+  const rd = document.getElementById('note-readout');
+  if (!ov) return;
+  const det = audio.detected;
+  const arn = chordHighlight.active ? chordHighlight.rootNote : null;
+  const ring = (k, exact, col, edge) =>
+    `<g ${exact ? 'filter="url(#ngf)"' : ''}><polygon points="${g.poly(k.x, k.y, g.size * (exact ? 0.98 : 0.8))}" fill="${col}" opacity="${exact ? .92 : .45}" stroke="${edge}" stroke-width="${exact ? 2 : 1}"/>`
+    + `<text x="${k.x}" y="${k.y+3.5}" text-anchor="middle" font-size="${exact ? 11 : 9}" font-family="'JetBrains Mono',monospace" font-weight="800" fill="#fff" style="pointer-events:none">${_displayLabel(k.note, arn)}</text></g>`;
+  const ctxLine = note => {
+    if (!chordHighlight.active) return '';
+    const inCtx = chordHighlight.chordNotes.includes(note), ivl = intervalLabel(chordHighlight.rootNote, note);
+    return `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span><span class="mono" style="color:${inCtx?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl} ${inCtx?'✓':'✗'}</span>`;
+  };
+  if (det) {
+    ov.innerHTML = g.find(det.note).map(k => ring(k, k.octave === det.octave, k.octave === det.octave ? '#ff4466' : '#0099cc', k.octave === det.octave ? '#ff8899' : 'none')).join('');
+    if (rd) {
+      const cc = Math.abs(det.cents) < 5 ? '#00ff88' : Math.abs(det.cents) < 15 ? '#ffaa00' : '#ff4466';
+      const detLabel = showIntervals && arn ? intervalLabel(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
+      rd.innerHTML = `<span class="mono" style="color:#ff4466;font-size:calc(24px*var(--ui));font-weight:900;text-shadow:0 0 20px rgba(255,68,102,0.5)">${detLabel}</span>`
+        + `<span class="mono" style="color:#555;font-size:calc(11px*var(--ui))">${det.freq.toFixed(1)} Hz</span>`
+        + `<span class="mono" style="color:${cc};font-size:calc(11px*var(--ui));font-weight:700">${det.cents > 0 ? '+' : ''}${det.cents}¢</span>` + ctxLine(det.note);
+    }
+    return;
+  }
+  if (lastClickedNote) {
+    const cn = lastClickedNote;
+    ov.innerHTML = g.find(cn.note).map(k => ring(k, cn.octave == null || k.octave === cn.octave, '#44aaff', '#88ccff')).join('');
+    if (rd) {
+      const rdLabel = showIntervals && arn ? intervalLabel(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
+      rd.innerHTML = `<span class="mono" style="color:#44aaff;font-size:calc(20px*var(--ui));font-weight:900">${rdLabel}</span>` + ctxLine(cn.note);
+    }
+    return;
+  }
+  ov.innerHTML = '';
+  if (rd) {
+    rd.innerHTML = chordHighlight.active
+      ? `<span class="mono" style="color:#8877dd;font-size:calc(14px*var(--ui));font-weight:700">${chordHighlight.label}</span><span class="mono" style="color:#555;font-size:calc(10px*var(--ui));margin-left:8px">${chordHighlight.chordNotes.join(' · ')}</span>`
+      : `<span class="mono" style="color:#333;font-size:calc(11px*var(--ui))">Tap a key — every hex of that note lights, its exact octave brightest</span>`;
+  }
+}
+
 // ── buildInstrumentView — dispatch to correct renderer ───────────────
 export function buildInstrumentView() {
   const inst = getInst();
@@ -371,6 +601,13 @@ export function buildInstrumentView() {
       if (tuningBar) tuningBar.style.display = 'none';
       if (tuningOv)  tuningOv.style.display  = 'none';
       buildKeyboardSVG();
+    } else if (inst.renderer === 'hex') {
+      // no per-string selects, but the TUNING row stays: it's where the hex
+      // board picks its LAYOUT, the way a guitar picks a tuning
+      let rigOpen = false; try { rigOpen = localStorage.getItem('rn-rig-open') === '1'; } catch (e) {}
+      if (tuningBar) tuningBar.style.display = rigOpen ? '' : 'none';
+      if (tuningOv)  tuningOv.style.display  = 'none';
+      buildHexSVG();
     } else {
       // the ⚙ RIG toggle may have the setup rows collapsed — don't force them back open
       let rigOpen = false; try { rigOpen = localStorage.getItem('rn-rig-open') === '1'; } catch (e) {}
@@ -390,7 +627,20 @@ export function buildTuningBar(saveStateFn) {
   const g       = geo();
   const presets = TUNING_PRESETS[currentInstrument] || [];
   const opts    = getTuningOptions();
+  const lab     = document.getElementById('tuning-label');
 
+  // The hex board has no strings to tune; its equivalent choice is the LAYOUT —
+  // which interval each direction means — so the presets combo offers those.
+  if (getInst().renderer === 'hex') {
+    if (lab) lab.textContent = 'LAYOUT';
+    if (ps) {
+      ps.innerHTML = Object.entries(HEX_LAYOUTS).map(([k, L]) =>
+        `<option value="${k}" ${k === hexLayout ? 'selected' : ''} title="${L.note}">${L.name}</option>`).join('');
+      ps.onchange = e => { setHexLayout(e.target.value); buildInstrumentView(); updateOverlays(); if (saveStateFn) saveStateFn(); };
+    }
+    ov.innerHTML = '';
+  } else {
+  if (lab) lab.textContent = 'TUNING';
   if (ps) {
     let ap = '';
     presets.forEach(p => {
@@ -435,6 +685,7 @@ export function buildTuningBar(saveStateFn) {
       updateOverlays();
     };
   });
+  }
 
   const ts = document.getElementById('fb-theme');
   if (ts) {
@@ -569,6 +820,50 @@ function updateKeyboardOverlays() {
     }
     cov.innerHTML = ch;
   }
+
+  // The sung note and the tapped key, exactly as the hex board shows them: the
+  // exact octave brightest, every other octave of that note soft. The piano had
+  // neither, so a tap played but lit nothing and the ear trainer's "what note
+  // is lit?" pointed at an empty keyboard.
+  const ov = document.getElementById('note-ov'), rd = document.getElementById('note-readout');
+  if (ov) {
+    const det = audio.detected;
+    const arn = chordHighlight.active ? chordHighlight.rootNote : null;
+    const ctxLine = note => {
+      if (!chordHighlight.active) return '';
+      const inCtx = chordHighlight.chordNotes.includes(note), ivl = intervalLabel(chordHighlight.rootNote, note);
+      return `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span><span class="mono" style="color:${inCtx?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl} ${inCtx?'✓':'✗'}</span>`;
+    };
+    // rings sit on the key's lower half, under the chord layer's labels
+    const rings = (note, octave, colExact, colOther, edge) => g.allKeys().filter(k => k.note === note).map(k => {
+      const kp = keyPos(k.note, k.octave); if (!kp) return '';
+      const exact = k.octave === octave;
+      return `<circle cx="${kp.x}" cy="${kp.y + 6}" r="${exact ? 7 : 4.5}" fill="${exact ? colExact : colOther}" opacity="${exact ? .95 : .5}" stroke="${exact ? edge : 'none'}" stroke-width="2"/>`
+        + (exact ? `<text x="${kp.x}" y="${kp.y + 9}" text-anchor="middle" font-size="8" font-family="'JetBrains Mono',monospace" font-weight="800" fill="#fff" style="pointer-events:none">${_displayLabel(k.note, arn)}</text>` : '');
+    }).join('');
+    if (det) {
+      ov.innerHTML = rings(det.note, det.octave, '#ff4466', '#0099cc', '#ff8899');
+      if (rd) {
+        const cc = Math.abs(det.cents) < 5 ? '#00ff88' : Math.abs(det.cents) < 15 ? '#ffaa00' : '#ff4466';
+        const detLabel = showIntervals && arn ? intervalLabel(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
+        rd.innerHTML = `<span class="mono" style="color:#ff4466;font-size:calc(24px*var(--ui));font-weight:900;text-shadow:0 0 20px rgba(255,68,102,0.5)">${detLabel}</span>`
+          + `<span class="mono" style="color:#555;font-size:calc(11px*var(--ui))">${det.freq.toFixed(1)} Hz</span>`
+          + `<span class="mono" style="color:${cc};font-size:calc(11px*var(--ui));font-weight:700">${det.cents > 0 ? '+' : ''}${det.cents}¢</span>` + ctxLine(det.note);
+      }
+    } else if (lastClickedNote) {
+      const cn = lastClickedNote;
+      ov.innerHTML = rings(cn.note, cn.octave, '#44aaff', '#44aaff', '#88ccff');
+      if (rd) {
+        const rdLabel = showIntervals && arn ? intervalLabel(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
+        rd.innerHTML = `<span class="mono" style="color:#44aaff;font-size:calc(20px*var(--ui));font-weight:900">${rdLabel}</span>` + ctxLine(cn.note);
+      }
+    } else {
+      ov.innerHTML = '';
+      if (rd) rd.innerHTML = chordHighlight.active
+        ? `<span class="mono" style="color:#8877dd;font-size:calc(14px*var(--ui));font-weight:700">${chordHighlight.label}</span><span class="mono" style="color:#555;font-size:calc(10px*var(--ui));margin-left:8px">${chordHighlight.chordNotes.join(' · ')}</span>`
+        : `<span class="mono" style="color:#333;font-size:calc(11px*var(--ui))">Tap a key — every octave of that note lights, the exact one brightest</span>`;
+    }
+  }
 }
 
 // ── Position isolation helpers (hand-position window / custom shape) ──
@@ -587,8 +882,21 @@ function inShape(fret, si) {
   return !!(p && p.active && p.customShape && p.customShape.some(c => c.si === si && c.fret === fret));
 }
 
+// Every {si,fret} on the neck sounding this pitch class — how a position that
+// names a pitch but no string (keyboard/hex shaped) gets placed on the neck.
+// `src` rides along so labels (disp) and colours still resolve per position.
+function everyFretOf(note, src = {}) {
+  if (!note) return [];
+  const g = geo(), out = [];
+  customTuning.forEach((s, si) => {
+    for (let f = 0; f <= g.nf; f++) if (getNoteAtFret(s.note, s.octave, f).note === note) out.push({ ...src, si, fret: f, note });
+  });
+  return out;
+}
+
 export function updateOverlays() {
   if (getInst().renderer === 'keyboard') return updateKeyboardOverlays();
+  if (getInst().renderer === 'hex')      return updateHexOverlays();
 
   const nov = document.getElementById('names-ov');
   if (nov) {
@@ -669,6 +977,13 @@ export function updateOverlays() {
         return '#15140d';
       };
       if (pos) {
+        // A position with no string came from a keyed board (piano {note,octave,midi},
+        // a Lumatone tap) and outlived an instrument switch — nothing re-renders the
+        // highlight for the new board. The neck can't put a bare pitch on one string,
+        // so light it wherever it lives (the hex rule) instead of asking geo() for
+        // the y of string undefined and drawing every dot at cy="NaN".
+        const keyed = pos.some(p => p.si == null || p.fret == null);
+        const onNeck = keyed ? pos.flatMap(p => (p.si != null && p.fret != null) ? [p] : everyFretOf(p.note, p)) : pos;
         // focusPos may be a single {si,fret} or an ARRAY of them (a synced
         // sequence lights one/several notes gold while the rest stay dim).
         const focusList = Array.isArray(fp) ? fp : (fp ? [fp] : []);
@@ -678,7 +993,7 @@ export function updateOverlays() {
         const fbadge = (cx, y, p, isOpen) => (p.finger > 0 && p.fret > 0)
           ? `<g><circle cx="${cx+(isOpen?8:7)}" cy="${y-(isOpen?9:8)}" r="4.6" fill="#15140d" stroke="#ffcf5a" stroke-width="0.8"/><text x="${cx+(isOpen?8:7)}" y="${y-(isOpen?9:8)+2.3}" text-anchor="middle" font-size="6.5" font-family="'JetBrains Mono',monospace" font-weight="800" fill="#ffcf5a" style="pointer-events:none">${p.finger}</text></g>`
           : '';
-        pos.forEach(p => {
+        onNeck.forEach(p => {
           if (p.fret < 0) return;
           const y = g.sy(p.si), cx = g.fm(p.fret), isRoot = p.note === rn, isOpen = p.fret === 0;
           const dl = _displayLabel(p.note, rn, p.disp), isFocus = focusList.some(f => f.si === p.si && f.fret === p.fret);
@@ -714,9 +1029,10 @@ export function updateOverlays() {
         // matches the sequence the drill actually plays — not a re-sort by string. Skip the
         // path entirely for a single-note MAP (e.g. "every A on the neck"): those dots aren't a
         // melodic line, so a connecting path would imply a shape/order that isn't real.
-        const played = pos.filter(p => p.fret >= 0);
+        // Same for spots spread from a keyed position — they have no play order either.
+        const played = onNeck.filter(p => p.fret >= 0);
         const oneNoteMap = played.length > 1 && played.every(p => p.note === played[0].note);
-        if (played.length > 1 && !oneNoteMap && !chordHighlight.focusOnly) {
+        if (played.length > 1 && !oneNoteMap && !keyed && !chordHighlight.focusOnly) {
           for (let i = 0; i < played.length - 1; i++) {
             const a = played[i], b = played[i+1];
             ch += `<line x1="${g.fm(a.fret)}" y1="${g.sy(a.si)}" x2="${g.fm(b.fret)}" y2="${g.sy(b.si)}" stroke="rgba(136,119,221,.2)" stroke-width="1.5" stroke-dasharray="3,3"/>`;
@@ -750,7 +1066,9 @@ export function updateOverlays() {
       const flow = fretboardView === 'voice' && chordHighlight.active && !chordHighlight.focusOnly && Array.isArray(chordHighlight.positions);
       const curOn = si => flow ? chordHighlight.positions.find(c => c.si === si && c.fret >= 0) : null;
       let ghost = '';
-      ghostHighlight.positions.forEach(p => {
+      // Ghosts from a keyed board carry no string either — spread them the same way.
+      const gpos = ghostHighlight.positions.flatMap(p => (p.si != null && p.fret != null) ? [p] : everyFretOf(p.note, p));
+      gpos.forEach(p => {
         if (p.fret < 0) return;
         const y = gg.sy(p.si), cx = gg.fm(p.fret), isOpen = p.fret === 0, r = isOpen ? 10 : 8.5;
         const c = curOn(p.si);

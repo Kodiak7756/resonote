@@ -361,9 +361,18 @@ function isExtendedCanonicalStringContext() {
   return isStandardBass4Context() || isStandardGuitar8Context();
 }
 
+// The piano and the Lumatone are both 'keyed' boards: no strings, no frets,
+// one key per pitch. Scale boxes on either are root-to-root octave runs, and
+// the hex board's MIDI span comfortably covers the piano's C2..C6, so the
+// keyboard box engine serves both without knowing which one is on screen.
+function isKeyedRenderer() {
+  const r = getInst().renderer;
+  return r === 'keyboard' || r === 'hex';
+}
+
 function getInstrumentPositionProfile() {
   const ns = customTuning.length;
-  if (getInst().renderer === 'keyboard') return { maxSpan:12, maxNPS:8, minCoveredStrings:0 };
+  if (isKeyedRenderer()) return { maxSpan:12, maxNPS:8, minCoveredStrings:0 };
   if (currentInstrument === 'mandolin') return { maxSpan:4, maxNPS:3, minCoveredStrings:3 };
   if (currentInstrument === 'banjo5')   return { maxSpan:4, maxNPS:3, minCoveredStrings:4 };
   if (currentInstrument === 'bass4')    return { maxSpan:4, maxNPS:3, minCoveredStrings:3 };
@@ -948,7 +957,7 @@ function reduceBoxesToRepresentativePositions(boxes, intervals) {
 
 export function getDisplayPositionsForBox(box, root) {
   if (!box || !box.positions) return null;
-  if (getInst().renderer === 'keyboard') {
+  if (isKeyedRenderer()) {
     return box.positions.map(p => ({...p})).sort((a,b) => a.midi - b.midi);
   }
   const rootIdx = NOTES.indexOf(root);
@@ -973,7 +982,7 @@ export function getDisplayPositionsForBox(box, root) {
 }
 
 export function findScaleBoxes(root, intervals, opts={}) {
-  if (getInst().renderer === 'keyboard') return findKeyboardScaleBoxes(root, intervals);
+  if (isKeyedRenderer()) return findKeyboardScaleBoxes(root, intervals);
   if (isExtendedCanonicalStringContext()) {
     const extended = buildExtendedCanonicalInstrumentBoxes(root, intervals, opts);
     if (extended && extended.length) return extended;

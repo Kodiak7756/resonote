@@ -34,6 +34,9 @@ export const KEYS = {
   loadout:   'rn-loadout-done',
   takes:     'rn-takes',              // index of kept Studio takes; the AUDIO is in IndexedDB
   history:   'rn-history',            // this module's own rolling backups
+  rhythmBest:'rn-rhythm-best',        // Rhythm Game: best accuracy per pattern
+  vocalRange:'rn-vocal-range',        // Vocals: the singer's measured low/high
+  vocalsView:'rn-vocals-view',        // Vocals: ladder/folded mode, seconds visible, fit-to-range
 };
 
 // Caps live HERE, once, next to the key they protect — not at each call site.

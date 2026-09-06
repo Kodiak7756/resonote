@@ -18,6 +18,7 @@ import { buildWorkoutsContent }  from './workouts.js';
 import { buildImprovLabContent } from './improv-lab.js';
 import { buildWriteItContent } from './write-it.js';
 import { buildMirrorContent }    from './mirror.js';
+import { buildRhythmGameContent } from './rhythm-game.js';
 
 // Ordered by tier so the + PEDALS drawer reads as a ladder: Basic (reference &
 // utilities) → Pro (the learning system) → Studio (production & recording).
@@ -57,6 +58,7 @@ export const CATALOG = [
   { type:'chords',      family:'reference', title:'Chord Directory',                icon:'🎵', color:'#171e21', accent:'#7db5c7', desc:'Chord voicings, key chords & theory on the fretboard',                    w:290, h:480, tier:'free'   },
   { type:'scales',      family:'reference', title:'Scale & Arpeggio Explorer',      icon:'🎼', color:'#161d1f', accent:'#6baac0', desc:'Scales and arpeggios as CAGED box shapes across the neck — switch modes in one pedal', w:300, h:540, tier:'free'   },
   { type:'mirror',      family:'reference', title:'Mirror',                         icon:'🎹', color:'#141b1d', accent:'#59a0b8', desc:'See what you are playing on another instrument — the same notes drawn on a piano keyboard or a second neck in any tuning', w:340, h:300, tier:'free'   },
+  { type:'rhythmgame',  family:'drill',     title:'Rhythm Game',                    icon:'🎮', color:'#1f2319', accent:'#b3bf70', desc:'Tap along to real rhythm notation scrolling past a hit line — click + figure audible, judged to the millisecond, best scores kept per pattern', w:360, h:560, tier:'free'   },
   { type:'workouts',    family:'drill',     title:'Workouts',                       icon:'🏋', color:'#202318', accent:'#a6ba6c', desc:'One-tap position practices: random open chords, upper & mid triads, CAGED runs, 3nps, broken 3rds — beat-synced or 🎤 listen-to-advance (build your own in PRO)', w:310, h:560, tier:'free'   },
   // ── PRO — understand & improve ─────────────────────────────────────
   { type:'theory',      family:'study',     title:'Theory Path',                    icon:'🧭', color:'#18231b', accent:'#73bd85', desc:'Guided music theory, basics → advanced. Find your level, then learn each concept with a teach card + a practical scored exercise', w:470, h:690, tier:'pro'    },
@@ -89,7 +91,9 @@ const BUILDERS = {
   melody:      buildFunctionalEarContent,   // merged: Melody Lab's resolution drill lives in 🎯 Resolve mode
   workshop:    buildWorkshopContent,
   runner:      buildWorkshopContent,        // legacy → Technique Workshop · Positions tab
-  rhythm:      buildWorkshopContent,        // legacy → Technique Workshop · Groove tab
+  // No 'rhythm' builder: that was the retired Groove pedal's type, and main.js
+  // migrates a saved one to 'workshop' (Groove tab) before a builder is looked
+  // up. The Rhythm Game is 'rhythmgame' precisely so it never shares the name.
   finger:      buildWorkshopContent,        // legacy → Technique Workshop · Finger tab
   technique:   buildWorkshopContent,        // legacy → Technique Workshop · Technique tab
   voicinglab:  buildWorkshopContent,        // merged: opens the Workshop on its 🧵 Voicings tab
@@ -107,6 +111,7 @@ const BUILDERS = {
   improvlab:   buildImprovLabContent,
   writeit:     buildWriteItContent,
   mirror:      buildMirrorContent,
+  rhythmgame:  buildRhythmGameContent,
 };
 
 export function buildContent(p) {

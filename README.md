@@ -26,6 +26,8 @@ Then open **http://localhost:5173**. On Windows you can double-click `START-RESO
 - **LEARN** — the Theory Path as a readable page: lessons, demos on the neck, exercises, drills.
 - **TAB** — write pieces beat by beat on tab, staff and the neck at once; they save to your Songbook.
 - **STUDIO** — recording and the REAPER bridge.
+- **Instruments** — the display above the pedals can be a guitar neck (any tuning), a piano, a **Lumatone** hex board (Wicki-Hayden or Bosanquet layout — the same interval is always the same step, so a shape learned in one key is the same shape in every key), or **Vocals** (a pitch ladder with a live trace of what you sing, target rungs for whatever a pedal lights, and a find-my-range tool).
+- **Rhythm Game** (a FREE pedal) — real rhythm notation scrolls toward a hit line; tap Space, click the lane, or let the mic hear you, and every tap is judged to the millisecond against the click. Patterns run from quarter notes to syncopation, 3/4 and 6/8.
 
 ## Sharing
 

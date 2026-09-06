@@ -1,6 +1,6 @@
 import { showIntervals, showNoteMap, fretboardView, setShowIntervals, setShowNoteMap, setFretboardView, clearChordHighlight, loadState } from '../core/state.js';
 import { setBoardRenderH, persistBoardRenderH } from './fretboard.js';
-import { currentInstrument, setCurrentInstrument, INSTRUMENTS, customTuning, applyTuning, TUNING_PRESETS } from '../core/tuning.js';
+import { currentInstrument, setCurrentInstrument, INSTRUMENTS, customTuning, applyTuning, TUNING_PRESETS, HEX_LAYOUTS, hexLayout, setHexLayout } from '../core/tuning.js';
 import { buildInstrumentView, buildTuningBar, updateOverlays, setLastClickedNote, FRETBOARD_THEMES, currentTheme, setCurrentTheme, INST_DEFAULT_THEME, mapScope, setMapScope } from './fretboard.js';
 import { CATALOG } from '../pedals/index.js';
 import { TOURS, coachDone } from './coach.js';
@@ -223,6 +223,7 @@ export function renderInstrumentBar(onInstrumentChange, onFocus) {
     { id:'banjo5',   label:'BANJO'    },
     { id:'mandolin', label:'MANDOLIN' },
     { id:'piano',    label:'PIANO'    },
+    { id:'lumatone', label:'LUMATONE' },
     { id:'vocals',   label:'🎤 VOCALS' }
   ];
 
@@ -370,7 +371,7 @@ export function renderInstrumentDisplay() {
   el.innerHTML = `
     <div class="fb-outer">
       <div id="tuning-bar" style="display:flex;align-items:center;gap:8px;padding:0 8px 4px">
-        <span class="mono" style="color:#555;font-size:calc(8px*var(--ui));letter-spacing:1px">TUNING</span>
+        <span id="tuning-label" class="mono" style="color:#555;font-size:calc(8px*var(--ui));letter-spacing:1px">TUNING</span>
         <select id="tuning-preset" class="tuning-combo"></select>
         <span class="mono" style="color:#555;font-size:calc(8px*var(--ui));letter-spacing:1px;margin-left:8px">STYLE</span>
         <select id="fb-theme" class="tuning-combo"></select>
@@ -585,7 +586,7 @@ export function renderHelp(tab = 'guide') {
     body += `<div style="color:#bbb;font-size:calc(13px*var(--ui));line-height:1.8;margin-bottom:16px">Resonote teaches guitar theory ON the instrument: every concept is shown on the fretboard, named in plain terms, and turned into a loopable practice. The layout has two halves — the <b style="color:#ddd">board</b> (fretboard + its readouts) on top, and your <b style="color:#ddd">pedalboard</b> of tools below.</div>`;
     body += `<div style="display:flex;flex-direction:column;gap:12px">`;
     body += card('QUICK START', `1 · Open the ${hl('Theory Path')} pedal and press ${hl('▶ Continue')} — it picks your next lesson.<br>2 · In any lesson, ${hl('Hear & see it')} plays the concept on the neck; the ${hl('facts strip')} under the fretboard states its theory.<br>3 · Finish with ${hl('🏋 Dynamic Practice')}: same structure, your choice of key, tempo, and layer.`);
-    body += card('THE BOARD', `${hl('Instruments')} — guitar, 8-string, bass, banjo, mandolin, piano, or 🎤 vocals; tuning and wood style are per-instrument.<br>${hl('Resize')} — drag the slim handle between the board and the pedalboard (double-click = full width). Your size is remembered.<br>${hl('Readout + facts strip')} — under the neck: what's playing now, then its objective theory (notes · degrees · structure · resolution).`);
+    body += card('THE BOARD', `${hl('Instruments')} — guitar, 8-string, bass, banjo, mandolin, piano, the ⬡ Lumatone hex board (one shape, every key), or 🎤 vocals; tuning and wood style are per-instrument.<br>${hl('Resize')} — drag the slim handle between the board and the pedalboard (double-click = full width). Your size is remembered.<br>${hl('Readout + facts strip')} — under the neck: what's playing now, then its objective theory (notes · degrees · structure · resolution).`);
     body += card('DISPLAY &amp; THE MAP', `${hl('● Standard')} — plain dots · ${hl('🌈 Spectrum')} — every note wears its own colour (fifths-ordered, matching the legend and both circles) · ${hl('⟡ Intervals')} — every note wears its FUNCTION in the session key: gold is home, amber and terracotta are the 3rds, rose and wine the 7ths, sage/teal/olive the colour tones, slate and plum the notes that pull hardest. Change the key and the whole neck recolours.<br>${hl('🗺 MAP')} labels the neck itself. ${hl('♮ NAMES')} writes note names, ${hl('⟡ DEGREES')} writes each note's degree in the session key (R ♭2 2 3 …) — press the lit one again to hide the map. ${hl('IN KEY')} shows only the notes of the session key, so the neck becomes a map of that key; ${hl('WHOLE NECK')} shows all twelve as a chromatic reference. The tonic is drawn brightest. ${hl('✕ CLEAR')} empties the neck.<br>${hl('🎯 FOCUS')} (by the instruments) docks everything and hands the room to the strings.`);
     body += card('SESSION BUSES', `The top bar's ${hl('KEY')} and ${hl('TEMPO')} drive every linked pedal at once — change the key and the Circle, Explorer, drills and labs follow. ${hl('⟲ Re-link all')} reattaches any pedal you detached.`);
     body += card('PEDALS', `${hl('Drag')} by the header · ${hl('resize')} from the corner · ${hl('▁ minimize')} · add more from ${hl('+ PEDALS')}. Each pedal's goal and fast setup lives in the ${hl('PEDALS')} tab of this help. ${hl('💾 SAVE')} stores your whole board and every pedal's settings.`);
@@ -660,6 +661,7 @@ const LOADOUT_INSTRUMENTS = [
   { id:'banjo5',   icon:'🪕', label:'Banjo',    note:'5 strings' },
   { id:'mandolin', icon:'🪕', label:'Mandolin', note:'4 courses' },
   { id:'piano',    icon:'🎹', label:'Piano',    note:'keys' },
+  { id:'lumatone', icon:'⬡',  label:'Lumatone', note:'hex keys, one shape every key' },
   { id:'vocals',   icon:'🎤', label:'Vocals',   note:'your voice' }
 ];
 
@@ -692,6 +694,14 @@ function loadoutSetTuning(name) {
   const p = (TUNING_PRESETS[currentInstrument] || []).find(x => x.name === name);
   if (!p) return;
   applyTuning(p.strings);
+  buildInstrumentView();
+  buildTuningBar();
+  updateOverlays();
+}
+
+// The hex board's tuning is its LAYOUT — same tap path, different state.
+function loadoutSetLayout(id) {
+  setHexLayout(id);
   buildInstrumentView();
   buildTuningBar();
   updateOverlays();
@@ -771,7 +781,11 @@ function lookEditorHTML() {
     </div>`;
 
   if (currentInstrument === 'vocals') {
-    return h + `<div style="color:#999;font-size:calc(11.5px*var(--ui));line-height:1.6;margin-top:8px">The voice view carries its own controls on the display itself — lane mode, plus the ball, trail and notation toggles. Choose 🎤 VOCALS as your instrument and they sit just above the trace.</div></div>`;
+    return h + `<div style="color:#999;font-size:calc(11.5px*var(--ui));line-height:1.6;margin-top:8px">The voice view carries its own controls on the display itself — 🪜 Ladder (the pitch ladder with a live trace, seconds visible, and 🎯 Find my range) or ⭕ Folded (one octave with the ball, trail and notation toggles). Choose 🎤 VOCALS as your instrument and they sit just above the trace.</div></div>`;
+  }
+
+  if (currentInstrument === 'lumatone') {
+    return h + `<div style="color:#999;font-size:calc(11.5px*var(--ui));line-height:1.6;margin-top:8px">The hex board is coloured by the DISPLAY mode in the top bar — neutral keys, the 🌈 note spectrum, or the ⟡ interval ladder against the session key — so there is no finish to pick here. Its layout lives in the TUNING row under ⚙ RIG.</div></div>`;
   }
 
   if (currentInstrument === 'piano') {
@@ -930,7 +944,16 @@ function renderLoadout(el) {
        <div class="mono" style="color:${on ? '#bbaaee' : '#bbb'};font-size:calc(10px*var(--ui));font-weight:700;margin-top:5px">${t.name}</div>`);
   }).join('') + customCard) + lookPanel);
 
-  const tuningInner = presets.length
+  const isHex = INSTRUMENTS[currentInstrument]?.renderer === 'hex';
+  const tuningInner = isHex
+    // a layout card names its three directions, because that IS the layout
+    ? grid(150, Object.entries(HEX_LAYOUTS).map(([k, L]) => {
+        const on = hexLayout === k;
+        return pick('loadout-layout', `data-layout="${k}"`, on,
+          `<span class="mono" style="color:${on ? '#bbaaee' : '#ccc'};font-size:calc(11px*var(--ui));font-weight:800">${L.name}</span>
+           <div class="mono" style="color:#777;font-size:calc(9.5px*var(--ui));margin-top:3px">${L.note}</div>`);
+      }).join(''))
+    : presets.length
     ? grid(112, presets.map(p => {
         const on = activeTuning === p.name;
         return pick('loadout-tuning', `data-tuning="${p.name}"`, on,
@@ -938,7 +961,7 @@ function renderLoadout(el) {
            <div class="mono" style="color:#777;font-size:calc(9.5px*var(--ui));margin-top:3px">${p.strings.slice().reverse().map(x => x.note).join(' ')}</div>`);
       }).join(''))
     : `<div style="color:#666;font-size:calc(11.5px*var(--ui))">No tuning to set for ${INSTRUMENTS[currentInstrument]?.name || 'this instrument'} — carry on.</div>`;
-  body += step(3, 'TUNING', 'Standard is right if you’re not sure.', tuningInner);
+  body += step(3, isHex ? 'LAYOUT' : 'TUNING', isHex ? 'Which interval each direction means. Wicki-Hayden puts a fifth straight up-right.' : 'Standard is right if you’re not sure.', tuningInner);
 
   let pedalInner = grid(196, starters.map(loadoutPedalCard).join(''));
   pedalInner += `<button id="loadout-more" class="mono" style="margin-top:9px;background:rgba(255,255,255,.03);border:1px solid #333;border-radius:8px;color:#999;font-size:calc(10px*var(--ui));letter-spacing:.5px;padding:7px 12px;cursor:pointer">${s.more ? '− Hide the rest' : `＋ Show every pedal (${rest.length} more)`}</button>`;
@@ -990,6 +1013,11 @@ function renderLoadout(el) {
   el.querySelectorAll('.loadout-tuning').forEach(b => b.addEventListener('click', () => {
     loadoutSetTuning(b.dataset.tuning);
     s.tuning = b.dataset.tuning;
+    s.touched.add('tuning');
+    renderHelp('loadout');
+  }));
+  el.querySelectorAll('.loadout-layout').forEach(b => b.addEventListener('click', () => {
+    loadoutSetLayout(b.dataset.layout);
     s.touched.add('tuning');
     renderHelp('loadout');
   }));

@@ -7,7 +7,7 @@
 //  as bare globals and silently threw on those paths).
 // ════════════════════════════════════════════════════════════════════
 import { NOTES, KEY_PATTERNS, intervalLabel, getKeyChords, CHORD_TYPES, SCALE_TYPES, getChordNotes } from '../core/music-theory.js';
-import { customTuning, getNoteAtFret } from '../core/tuning.js';
+import { customTuning, getNoteAtFret, getInst } from '../core/tuning.js';
 import { audio, playClickedNote } from '../core/audio.js';
 import { updateOverlays, setLastClickedNote } from '../ui/fretboard.js';
 import { setFretboardClickHandler } from '../main.js';
@@ -202,12 +202,23 @@ export function buildFunctionalEarContent(p) {
   // ── THEORY engine ──────────────────────────────────────────────────
   const fretRange = () => zone === 'open' ? [0, 4] : zone === 'mid' ? [5, 9] : zone === 'upper' ? [10, 15] : [0, Math.min(15, customTuning.length > 4 ? 15 : 12)];
   const stringRange = () => stringFocus === 'all' ? customTuning.map((_, i) => i) : [parseInt(stringFocus)];
+  // Piano, Lumatone and vocals have no strings or frets: there the question is a
+  // pitch, not a place, and the zone picker / "str N fret M" copy have nothing to
+  // point at (customTuning is empty on those boards, so the old path also threw).
+  const keyed = () => getInst().renderer !== 'fretboard';
 
   function nextTheoryQuestion() {
     answered = false; feedback = '';
     if (quizMode === 'find' || quizMode === 'name') {
-      const [fMin, fMax] = fretRange(), si = pick(stringRange()), fret = fMin + Math.floor(Math.random() * (fMax - fMin + 1));
-      const { note, octave } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, fret);
+      let note, octave, si, fret;
+      if (keyed()) {
+        // Octaves 3–4 sit inside every keyed board (piano C2–C5, both hex
+        // layouts wider), so the lit key is always actually on screen.
+        note = pick(NOTES); octave = pick([3, 4]);
+      } else {
+        const [fMin, fMax] = fretRange(); si = pick(stringRange()); fret = fMin + Math.floor(Math.random() * (fMax - fMin + 1));
+        ({ note, octave } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, fret));
+      }
       question = { mode: quizMode, note, octave, si, fret };
       if (quizMode === 'find') playClickedNote(note, octave);
       else { setLastClickedNote({ note, octave, si, fret }); updateOverlays(); }
@@ -449,7 +460,7 @@ export function buildFunctionalEarContent(p) {
 
     } else {
       // THEORY
-      const isFret = quizMode === 'find' || quizMode === 'name';
+      const isFret = (quizMode === 'find' || quizMode === 'name') && !keyed();   // zones are fret windows — meaningless on a keyed board
       const bestKey = `${quizMode}-${zone}-${timeLimit}`, bestScore = bestScores[bestKey] || 0;
       h += `<div class="rk-section"><div class="rk-label">DRILL</div><div class="rk-seg" style="gap:3px">`;
       THEORY_MODES_R1.forEach(([m, label]) => h += `<button class="rk-seg-btn fet-qmode${quizMode === m ? ' is-active' : ''}" data-qm="${m}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:5px 2px">${label}</button>`);
@@ -478,8 +489,8 @@ export function buildFunctionalEarContent(p) {
         h += `<div style="display:flex;align-items:center;justify-content:center;gap:10px"><span class="mono" style="color:${ACCENT};font-size:calc(18px*var(--ui));font-weight:900">${score.correct}</span>${score.wrong ? `<span class="mono" style="color:var(--rk-bad);font-size:calc(11px*var(--ui))">${score.wrong}✗</span>` : ''}<span class="mono" style="color:var(--rk-dim);font-size:calc(9px*var(--ui));font-weight:700">🔥${score.streak}</span><span class="mono fet-tsecs" style="color:${barColor};font-size:calc(13px*var(--ui));font-weight:900">${timeLeft}s</span></div>`;
         h += `<div style="background:var(--rk-soft);border:1px solid var(--rk-line);border-radius:9px;padding:9px;text-align:center;min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px">`;
         if (!question) h += `<div class="mono" style="color:var(--rk-ink-mute)">Loading…</div>`;
-        else if (quizMode === 'find') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Play or click this note:</div><div class="mono" style="color:${ACCENT};font-size:calc(26px*var(--ui));font-weight:900">${question.note}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(13px*var(--ui));font-weight:700">${feedback === 'correct' ? '✓' : '✗ str ' + (question.si + 1) + ' fret ' + question.fret}</div>`; h += `<button class="rk-chip fet-qreplay" style="min-height:calc(28px*var(--ui));font-size:calc(7px*var(--ui))">🔊 Replay</button>`; }
-        else if (quizMode === 'name') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">What note is on str ${question.si + 1} fret ${question.fret}?</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ ' + question.note}</div>`; else h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center">` + NOTES.map(n => `<button class="rk-chip fet-qname" data-na="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(8px*var(--ui));min-width:26px;padding:2px 4px">${n}</button>`).join('') + `</div>`; }
+        else if (quizMode === 'find') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">Play or click this note:</div><div class="mono" style="color:${ACCENT};font-size:calc(26px*var(--ui));font-weight:900">${question.note}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(13px*var(--ui));font-weight:700">${feedback === 'correct' ? '✓' : keyed() ? '✗ it was ' + question.note + question.octave : '✗ str ' + (question.si + 1) + ' fret ' + question.fret}</div>`; h += `<button class="rk-chip fet-qreplay" style="min-height:calc(28px*var(--ui));font-size:calc(7px*var(--ui))">🔊 Replay</button>`; }
+        else if (quizMode === 'name') { h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${keyed() ? 'What note is lit?' : `What note is on str ${question.si + 1} fret ${question.fret}?`}</div>`; if (answered) h += `<div class="mono" style="color:${fb(feedback)};font-size:calc(16px*var(--ui));font-weight:900">${feedback === 'correct' ? '✓ ' + question.note : '✗ ' + question.note}</div>`; else h += `<div style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center">` + NOTES.map(n => `<button class="rk-chip fet-qname" data-na="${n}" style="min-height:calc(28px*var(--ui));font-size:calc(8px*var(--ui));min-width:26px;padding:2px 4px">${n}</button>`).join('') + `</div>`; }
         else if (quizMode === 'colour') {
           h += `<div class="mono" style="color:var(--rk-ink);font-size:calc(10px*var(--ui));font-weight:600;line-height:1.4">${question.prompt}</div>`;
           if (answered) {

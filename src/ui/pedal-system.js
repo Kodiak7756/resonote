@@ -24,7 +24,8 @@ export const LINK_PROFILE = {
   progression:{key:1,tempo:1}, runner:{key:1,tempo:1}, rhythm:{key:1,tempo:1}, finger:{key:1,tempo:1},
   beatmaker:{tempo:1}, technique:{tempo:1}, looper:{tempo:1}, tab:{key:1,tempo:1}, practice:{tempo:1},
   notequiz:{key:1}, ear:{key:1}, chordlab:{key:1}, melody:{key:1}, theory:{key:1}, songdir:{key:1},
-  workshop:{key:1,tempo:1}
+  workshop:{key:1,tempo:1},
+  rhythmgame:{tempo:1}   // the game runs at the master tempo; a key means nothing to a rhythm
 };
 
 function linkChipHTML(kind, type) {

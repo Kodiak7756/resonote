@@ -1,5 +1,41 @@
 import { NOTES } from './music-theory.js';
 
+// ── Hex (isomorphic) layouts ─────────────────────────────────────────
+// The Lumatone is a hex grid where every step in a given direction is the same
+// interval no matter where you start — a C major triad is the same three-key
+// shape as an F# major triad, just picked up and moved. That is the lesson the
+// fretboard teaches with movable shapes, made literal: the grid can't NOT be
+// isomorphic, so there is nothing to memorise per key.
+//
+// Coordinates are axial (q, r): q steps right along a row, r steps up-right to
+// the next row. The third neighbour, up-left, is (r - q) and so falls out of
+// the other two — which is why a layout needs only two numbers. Rows sit
+// pointy-top (horizontal rows offset by half a key), because that is the
+// orientation where "right", "up-right" and "up-left" are all real neighbours.
+export const HEX_LAYOUTS = {
+  // Right = a whole tone, up-right = a fifth, so up-left = a fourth. A major
+  // scale is a compact zigzag and every fifth is one key straight up-right.
+  'wicki-hayden': { name:'Wicki-Hayden', right:2, upRight:7, note:'right +2 · up-right +7 · up-left +5' },
+  // Right = a whole tone, up-right = a semitone: the chromatic scale reads as a
+  // shallow diagonal and the whole grid is a stretched-out piano.
+  'bosanquet':    { name:'Bosanquet',    right:2, upRight:1, note:'right +2 · up-right +1 · up-left −1' }
+};
+export const HEX_DEFAULT_LAYOUT = 'wicki-hayden';
+
+// The rectangular board is the axial parallelogram sheared back: display column
+// c on row r is axial q = c - floor(r/2) ("odd-r" offset), so odd rows sit half
+// a key to the right and the grid looks like a real hex board instead of a rhombus.
+export function hexAxial(c, r) { return { q: c - Math.floor(r / 2), r }; }
+
+// Start note for a layout, chosen so the board's centre hex is middle C. Derived
+// rather than typed in, so changing the grid size or a layout's steps can't
+// leave the board drifting off-centre.
+export function hexStartMidi(layoutId, cols, rows) {
+  const L = HEX_LAYOUTS[layoutId] || HEX_LAYOUTS[HEX_DEFAULT_LAYOUT];
+  const { q, r } = hexAxial(Math.floor(cols / 2), Math.floor(rows / 2));
+  return 60 - (L.right * q + L.upRight * r);
+}
+
 // ── Instruments ──────────────────────────────────────────────────────
 export const INSTRUMENTS = {
   guitar6: {
@@ -31,9 +67,17 @@ export const INSTRUMENTS = {
     name:'Piano', renderer:'keyboard', frets:0,
     freqRange:[28,4200], octaves:3, startOctave:2, strings:[]
   },
+  lumatone: {
+    name:'Lumatone', renderer:'hex', frets:0, strings:[], freqRange:[28,4200],
+    layout: HEX_DEFAULT_LAYOUT, columns:28, rows:10,
+    // bottom-left hex in the default layout; each layout re-derives its own so
+    // middle C stays in the middle of the board whichever one is chosen
+    startMidi: hexStartMidi(HEX_DEFAULT_LAYOUT, 28, 10)
+  },
   vocals: {
     name:'Vocals', renderer:'vocals', frets:0,
-    freqRange:[80,1100], strings:[],
+    // 60, not 80: the ladder starts at C2 (65.4 Hz) and the gate must let it through
+    freqRange:[60,1100], strings:[],
     vocalRange:{ low:{ note:'C', octave:2 }, high:{ note:'C', octave:6 } }
   }
 };
@@ -82,6 +126,26 @@ export function setCustomTuning(strings) {
 }
 
 export function getInst() { return INSTRUMENTS[currentInstrument]; }
+
+// ── Hex layout state ─────────────────────────────────────────────────
+// The hex board's equivalent of a tuning: which interval each direction means.
+// Lives beside customTuning for the same reason — the instrument bar swaps it
+// and every draw path reads it from here.
+export let hexLayout = HEX_DEFAULT_LAYOUT;
+export function setHexLayout(id) { hexLayout = HEX_LAYOUTS[id] ? id : HEX_DEFAULT_LAYOUT; }
+export function getHexLayout() { return HEX_LAYOUTS[hexLayout]; }
+
+// MIDI note of the hex at axial (q, r) in the current layout — a plain linear
+// map, which is the whole point: the interval between two hexes depends only
+// on the vector between them, never on where they sit.
+export function hexMidi(q, r, layoutId = hexLayout, inst = getInst()) {
+  const L = HEX_LAYOUTS[layoutId] || HEX_LAYOUTS[HEX_DEFAULT_LAYOUT];
+  const start = layoutId === (inst.layout || HEX_DEFAULT_LAYOUT) && inst.startMidi != null
+    ? inst.startMidi
+    : hexStartMidi(layoutId, inst.columns || 28, inst.rows || 10);
+  return start + L.right * q + L.upRight * r;
+}
+export function midiToNote(m) { return { note: NOTES[((m % 12) + 12) % 12], octave: Math.floor(m / 12) - 1 }; }
 
 export function applyTuning(strings) {
   customTuning = strings.map(x => ({

@@ -185,7 +185,7 @@ export function buildScaleArpContent(p) {
         h += `</div>`;
         if (selBox !== null && boxes[selBox]) {
           const b = boxes[selBox];
-          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${b.label}${b.lo !== undefined ? ` · Frets ${b.lo}–${b.hi}` : ''} · ${b.totalNotes} notes</div>`;
+          h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));text-align:center">${b.label}${b.lo !== undefined ? (b.keyboard ? ` · Octaves ${b.lo}–${b.hi}` : ` · Frets ${b.lo}–${b.hi}`) : ''} · ${b.totalNotes} notes</div>`;
         }
       } else {
         h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:12px 0">No positions found</div>`;

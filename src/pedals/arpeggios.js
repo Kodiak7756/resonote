@@ -200,11 +200,21 @@ function buildSweepArpeggioBoxes(root, intervals) {
 // ─── Main scale/arpeggio box finder ───────────────────────────────────────────
 //
 // Arpeggio lookups (the live consumer always passes {arpCat,arpName}) get
-// instrument-agnostic sweep cards; everything else — and the keyboard renderer —
-// delegates to the shared scale-box engine in core/voicings.js.
+// string-instrument sweep cards; everything else — and the two isomorphic
+// renderers — delegates to the shared scale-box engine in core/voicings.js.
+//
+// The Lumatone has no strings (INSTRUMENTS.lumatone.strings is []), so picking
+// it leaves customTuning holding the LAST stringed instrument while frets is 0.
+// Running the sweep builder there would walk a phantom guitar; the hex board is
+// isomorphic like the piano, so it takes the same pitch-window boxes.
+
+function isIsomorphicBoard() {
+  const r = getInst().renderer;
+  return r === 'keyboard' || r === 'hex';
+}
 
 export function findScaleBoxes(root, intervals, opts = {}) {
-  if (getInst().renderer === 'keyboard') return coreFindScaleBoxes(root, intervals, opts);
+  if (isIsomorphicBoard()) return coreFindScaleBoxes(root, intervals, opts);
   if (opts.arpCat || opts.arpName) {
     const sweepBoxes = buildSweepArpeggioBoxes(root, intervals);
     if (sweepBoxes && sweepBoxes.length) return sweepBoxes;
@@ -282,7 +292,11 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 // ─── Arpeggio fretboard box diagram renderer ──────────────────────────────────
 
 export function renderArpBoxDiagram(box, root, isActive) {
-  if (getInst().renderer === 'keyboard') {
+  // Hex boxes carry note+octave positions with no fret, and the string diagram
+  // below would size itself from Math.min(...frets) = NaN. The piano strip is
+  // an honest picture of the same pitches on any isomorphic board; a hex
+  // mini-diagram can come later.
+  if (isIsomorphicBoard()) {
     return renderKeyboardBoxDiagram(box, root, isActive, {
       root:     ARP_COLORS.root,
       tone:     ARP_COLORS.tone,

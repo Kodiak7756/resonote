@@ -1,9 +1,9 @@
 import { audio } from './core/audio.js';
-import { setCurrentInstrument, setCustomTuning, applyTuning, currentInstrument, customTuning, INSTRUMENTS } from './core/tuning.js';
+import { setCurrentInstrument, setCustomTuning, applyTuning, currentInstrument, customTuning, INSTRUMENTS, hexLayout, setHexLayout } from './core/tuning.js';
 import { loadState, saveState, setShowIntervals, setShowNoteMap, chordHighlight, pedalBus, metroClock, fretboardView } from './core/state.js';
 import { boardHistory, restoreBoard, snapshotBoardNow, inventory, read as storeRead, write as storeWrite, KEYS } from './core/store.js';
 import { restoreMissing } from './core/kevin-library.js';
-import { buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
+import { buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, hexGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
 import { renderHeader, renderInstrumentBar, renderInstrumentDisplay, renderCatalog, renderHelp, loadoutDone } from './ui/header.js';
 import { createPedalElement, bringToFront, LINK_PROFILE } from './ui/pedal-system.js';
 import { buildPositionBar, isDefining, addShapeFret } from './ui/position-bar.js';
@@ -156,7 +156,7 @@ const LEGACY_MIGRATE = {
   arpeggios: { type: 'scales',   set: { saMode: 'arps' } },
   notequiz:  { type: 'ear',      set: { fetGroup: 'theory' } },
   runner:    { type: 'workshop', set: { ws_tab: 'positions' } },
-  rhythm:    { type: 'workshop', set: { ws_tab: 'groove' } },
+  rhythm:    { type: 'workshop', set: { ws_tab: 'groove' } },   // the Rhythm Game is 'rhythmgame' so this row can't eat it
   finger:    { type: 'workshop', set: { ws_tab: 'finger' } },
   technique: { type: 'workshop', set: { ws_tab: 'technique' } },
   // the Great Reorg merges (2026): each retired pedal opens its new home view
@@ -214,6 +214,8 @@ function restoreState() {
     }
     if (d.showIntervals !== undefined) setShowIntervals(d.showIntervals);
     if (d.showNoteMap   !== undefined) setShowNoteMap(d.showNoteMap);
+    // The hex board's tuning is its LAYOUT; a layout chosen once should survive a reload like a tuning does.
+    if (d.hexLayout) setHexLayout(d.hexLayout);
     if (d.customTuning && d.customTuning.length) {
       setCustomTuning(d.customTuning);
     } else if (INSTRUMENTS[d.currentInstrument]?.strings?.length) {
@@ -241,6 +243,7 @@ function save() {
     showIntervals:  false,
     showNoteMap:    false,
     customTuning:   customTuning.length ? customTuning.map(s => ({ note: s.note, octave: s.octave })) : null,
+    hexLayout,
     // the look the player actually chose (load-out / STYLE combo) outranks the
     // instrument's default wood — otherwise the choice dies on the next launch
     currentTheme:   currentTheme || INST_DEFAULT_THEME[currentInstrument],
@@ -910,7 +913,10 @@ function mountPedal(p) {
   const entry = CATALOG.find(c => c.type === p.type);
   const el    = createPedalElement(
     p, entry,
-    (id) => { pedals = pedals.filter(x => x.id !== id); save(); renderSessionBar(); refreshCatalog(); },
+    // A pedal that keeps a clock or a mic hook running defines _teardown; the
+    // ✕ is the one moment it can be told, so it is told here.
+    (id) => { const pd = pedals.find(x => x.id === id); if (pd && typeof pd._teardown === 'function') { try { pd._teardown(); } catch (e) {} }
+              pedals = pedals.filter(x => x.id !== id); save(); renderSessionBar(); refreshCatalog(); },
     // Minimize now means DOCK. applyLayoutToDom hides the card and rebuilds the
     // rail, so the ▁ button and the dock chip are two ends of one mechanism
     // rather than two behaviours that have to be kept in step.
@@ -1319,14 +1325,15 @@ function dispatchFretboardClick(info) {
   }
   // Interval Explorer: clicks pick up to two notes and measure between them.
   if (fretboardView === 'interval' && info.si !== undefined && info.fret !== undefined) {
-    playClickedNote(info.note, info.octave || 3);
+    playClickedNote(info.note, info.octave ?? 3);
     const i = intervalPicks.findIndex(p => p.si === info.si && p.fret === info.fret);
     if (i >= 0) intervalPicks.splice(i, 1);
     else { intervalPicks.push(info); if (intervalPicks.length > 2) intervalPicks.shift(); }
     renderIntervalPicks();
     return;
   }
-  playClickedNote(info.note, info.octave || 3);
+  // ?? not ||: the Wicki-Hayden board reaches octave 0, which is a note, not a missing value
+  playClickedNote(info.note, info.octave ?? 3);
   setLastClickedNote(info);
   updateOverlays();
   if (onFretboardClick) onFretboardClick(info);
@@ -1372,6 +1379,16 @@ function wireFretboardClick() {
           wi++;
         }
       }
+    } else if (inst.renderer === 'hex') {
+      // The hex board already knows which key was hit: each key is its own
+      // group carrying its cell index, so no geometry search is needed. Going
+      // through dispatchFretboardClick (not a private handler in the renderer)
+      // is what lets the pedals' click hook and the interval picker see hex
+      // taps exactly as they see frets and piano keys.
+      const el = e.target.closest && e.target.closest('.hex-key');
+      if (!el) return;
+      const k = hexGeo().cells[+el.dataset.i];
+      if (k && !k.off) dispatchFretboardClick({ note: k.note, octave: k.octave, midi: k.midi, q: k.q, r: k.r });
     } else if (inst.renderer === 'fretboard') {
       const g = geo();
 

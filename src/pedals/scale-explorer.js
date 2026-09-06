@@ -126,7 +126,13 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 
 // ── Mini scale box diagram ────────────────────────────────────────────
 export function renderScaleBoxDiagram(box, root, isActive) {
-  if (getInst().renderer === 'keyboard') {
+  // Anything that is not strings-and-frets gets the piano card: voicings.js
+  // hands the keyboard AND the Lumatone hex grid octave-window boxes (lo/hi
+  // octaves, note+octave positions, no fret), and the string diagram below
+  // would read p.fret off them and draw a NaN-sized SVG. A pitch-ordered
+  // octave strip is the honest picture of a scale on any isomorphic layout.
+  const renderer = getInst().renderer;
+  if (renderer === 'keyboard' || renderer === 'hex') {
     return renderKeyboardBoxDiagram(box, root, isActive, {
       root: SCALE_COLORS.root,
       tone: SCALE_COLORS.tone,
