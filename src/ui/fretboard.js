@@ -3,6 +3,7 @@ import { INTERVAL_COLORS, INTERVAL_TEXT, INTERVAL_LABELS } from '../core/colors.
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
 import { applyLook, pianoKeyColor } from '../core/looks.js';
 import { renderVocalsDisplay, destroyVocalsDisplay } from '../pedals/vocals.js';
+import { renderDrumKit, destroyDrumKit } from './drum-kit.js';
 import { customTuning, getInst, getNoteAtFret, TUNING_PRESETS, applyTuning, getTuningOptions, currentInstrument,
          HEX_LAYOUTS, hexLayout, setHexLayout, hexAxial, hexMidi, midiToNote } from '../core/tuning.js';
 import { showIntervals, showNoteMap, chordHighlight, ghostHighlight, positionIsolation, fretboardView, conceptInfo, nowBanner, pedalBus } from '../core/state.js';
@@ -56,7 +57,7 @@ export const THEME_GHOST = {
 
 export const INST_DEFAULT_THEME = {
   guitar6:'gibson', guitar8:'ibanez', bass4:'fender',
-  banjo5:'banjo', mandolin:'mandolin', piano:'gibson', lumatone:'moon', vocals:'moon'
+  banjo5:'banjo', mandolin:'mandolin', piano:'gibson', lumatone:'moon', vocals:'moon', drums:'moon'
 };
 
 export let currentTheme = INST_DEFAULT_THEME[currentInstrument] || 'gibson';
@@ -577,26 +578,32 @@ export function buildInstrumentView() {
   const tuningOv  = document.getElementById('tuning-ov');
   const instDisp  = document.getElementById('instrument-display');
 
-  // Show/hide fretboard vs vocals display
+  // Show/hide fretboard vs the displays that replace it (vocals, drums)
   const fbOuter = instDisp?.querySelector('.fb-outer');
   const vocDisp = document.getElementById('vocals-display');
+  const drumDisp = document.getElementById('drums-display');
 
   const readout  = document.getElementById('note-readout');   // sits outside .fb-outer (clip fix) — toggle it with the board
   const splitter = document.getElementById('fb-splitter');    // board/pedalboard drag boundary — board views only
   const cInfo    = document.getElementById('concept-info');
-  if (inst.renderer === 'vocals') {
+  // Vocals and drums bring their own display and have no pitches on a neck to
+  // read out, so the board, its readouts and its setup rows all step aside.
+  const ownDisplay = inst.renderer === 'vocals' || inst.renderer === 'drums';
+  if (inst.renderer !== 'vocals' && vocDisp) { vocDisp.style.display = 'none'; destroyVocalsDisplay(); }
+  if (inst.renderer !== 'drums' && drumDisp) { drumDisp.style.display = 'none'; destroyDrumKit(); }
+  if (ownDisplay) {
     if (fbOuter) fbOuter.style.display = 'none';
     if (readout) readout.style.display = 'none';
     if (cInfo) cInfo.style.display = 'none';
     if (splitter) splitter.style.display = 'none';
-    if (vocDisp) { vocDisp.style.display = ''; renderVocalsDisplay(); }
+    if (inst.renderer === 'vocals' && vocDisp) { vocDisp.style.display = ''; renderVocalsDisplay(); }
+    if (inst.renderer === 'drums' && drumDisp) { drumDisp.style.display = ''; renderDrumKit(); }
     if (tuningBar) tuningBar.style.display = 'none';
     if (tuningOv)  tuningOv.style.display  = 'none';
   } else {
     if (fbOuter) fbOuter.style.display = '';
     if (readout) readout.style.display = '';
     if (splitter) splitter.style.display = '';
-    if (vocDisp) { vocDisp.style.display = 'none'; destroyVocalsDisplay(); }
     if (inst.renderer === 'keyboard') {
       if (tuningBar) tuningBar.style.display = 'none';
       if (tuningOv)  tuningOv.style.display  = 'none';
@@ -1155,9 +1162,10 @@ export function updateOverlays() {
     }
   } else if (nb) { nb.style.display = 'none'; nb.innerHTML = ''; }
   // Concept facts strip — always synced, regardless of the readout's own branches below.
+  // Not over the drum kit: a scale's notes and degrees say nothing about a snare.
   const ci = document.getElementById('concept-info');
   if (ci) {
-    if (conceptInfo && conceptInfo.rows && conceptInfo.rows.length) {
+    if (conceptInfo && conceptInfo.rows && conceptInfo.rows.length && getInst().renderer !== 'drums') {
       ci.style.display = 'flex';
       let ch2 = conceptInfo.title ? `<span class="mono" style="color:#d8d2b8;font-size:calc(11px*var(--ui));font-weight:800">${conceptInfo.title}</span>` : '';
       conceptInfo.rows.forEach(r => {

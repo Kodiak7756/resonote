@@ -8,6 +8,7 @@ import { NOTES } from '../core/music-theory.js';
 import { pcColor } from '../core/colors.js';
 import { getLook, saveLook, clearLook, hasLook, lookFromTheme, restain, INLAY_SHAPES } from '../core/looks.js';
 import { BUSES, BUS_LABEL, BUS_HINT, getMix, setLevel, setMute, onMix, anyMuted, allSilent } from '../core/mixer.js';
+import { DRUM_FINISHES, drumFinish, setDrumFinish } from './drum-kit.js';
 
 // 🎯 Focus lives in the INSTRUMENT BAR now, next to the neck controls it acts on —
 // but the app's one focus handler still arrives through renderHeader, which runs
@@ -224,7 +225,8 @@ export function renderInstrumentBar(onInstrumentChange, onFocus) {
     { id:'mandolin', label:'MANDOLIN' },
     { id:'piano',    label:'PIANO'    },
     { id:'lumatone', label:'LUMATONE' },
-    { id:'vocals',   label:'🎤 VOCALS' }
+    { id:'vocals',   label:'🎤 VOCALS' },
+    { id:'drums',    label:'🥁 DRUMS'  }
   ];
 
   // Two views for now. The other renderers (function / tension / chord tones /
@@ -392,7 +394,8 @@ export function renderInstrumentDisplay() {
     <div id="fb-splitter" title="Drag to resize the fretboard · double-click for full width" style="height:14px;display:flex;align-items:center;justify-content:center;cursor:ns-resize;user-select:none;touch-action:none">
       <div id="fb-splitter-grip" style="width:72px;height:4px;border-radius:2px;background:#2c2c2c;transition:background .15s"></div>
     </div>
-    <div id="vocals-display" style="display:none"></div>`;
+    <div id="vocals-display" style="display:none"></div>
+    <div id="drums-display" style="display:none"></div>`;
 
   // apply the ⚙ RIG collapsed state to the freshly-rendered setup rows
   try {
@@ -565,7 +568,7 @@ const PEDAL_QUICKSTART = {
   ear:         ['Pick a mode: sound training (notes/intervals/chords) or theory recall — including 🎯 Resolve: which chord tone does a tension pull to?', 'Press play to hear the question.', 'Answer on the fretboard or the option buttons — streaks track your accuracy.'],
   workshop:    ['Pick a tool tab: Positions, Groove, Finger, Technique, or 🧵 Voicings (string-set triads & voice leading).', 'Choose the pattern options (fingering, string set…) and a starting tempo.', 'Follow the gold note; nudge the BPM up only when it’s clean.'],
   practice:    ['🎓 Theory tab lists every drill in the curriculum — ▶ loops any of them at your tempo.', 'Session tab: build timed blocks (scales, chords, ear…) and press start.', 'Resize the pedal taller — the list grows with it.'],
-  beatmaker:   ['Pick a genre — it loads that groove, mode, tempo and chord progression at once.', 'Choose “beats only” for the kit alone, or “+ chords” for a full backing track in any key.', 'Press play. Shape the groove in the 16-step grid; everything follows the session tempo.'],
+  beatmaker:   ['Pick a genre — it loads that groove, mode, tempo and chord progression at once.', 'Choose “beats only” for the kit alone, or “+ chords” for a full backing track in any key.', 'Press play. Shape the groove in the grid (1, 2 or 4 bars) — or press 🥁 Kit and play it in: ● Rec lays down what you hit while the loop runs, ✎ Step toggles pieces on one step at a time, ↶ Undo takes back a pass.'],
   amp:         ['Connect your guitar (Input & Tuner pedal).', 'Pick an amp + cab, set gain and EQ.', 'Add reverb to taste and play.'],
   looper:      ['Connect audio input.', 'Record your first loop — its length sets the cycle.', 'Overdub layers on top; mute or clear per layer.'],
   reaper:      ['One-time REAPER setup: Actions → Show action list → New action → Load ReaScript → pick Resonote_Import.lua (in the repo’s reaper folder), and give it a shortcut.', 'OUT: hit ⇄ Export here, in Progression Studio, or in Backing Track — then run Resonote Import in REAPER to drop the newest .mid at the cursor.', 'IN: render or record in REAPER, choose the WAV here — get tempo, key & every note mapped on the fretboard.'],
@@ -586,7 +589,7 @@ export function renderHelp(tab = 'guide') {
     body += `<div style="color:#bbb;font-size:calc(13px*var(--ui));line-height:1.8;margin-bottom:16px">Resonote teaches guitar theory ON the instrument: every concept is shown on the fretboard, named in plain terms, and turned into a loopable practice. The layout has two halves — the <b style="color:#ddd">board</b> (fretboard + its readouts) on top, and your <b style="color:#ddd">pedalboard</b> of tools below.</div>`;
     body += `<div style="display:flex;flex-direction:column;gap:12px">`;
     body += card('QUICK START', `1 · Open the ${hl('Theory Path')} pedal and press ${hl('▶ Continue')} — it picks your next lesson.<br>2 · In any lesson, ${hl('Hear & see it')} plays the concept on the neck; the ${hl('facts strip')} under the fretboard states its theory.<br>3 · Finish with ${hl('🏋 Dynamic Practice')}: same structure, your choice of key, tempo, and layer.`);
-    body += card('THE BOARD', `${hl('Instruments')} — guitar, 8-string, bass, banjo, mandolin, piano, the ⬡ Lumatone hex board (one shape, every key), or 🎤 vocals; tuning and wood style are per-instrument.<br>${hl('Resize')} — drag the slim handle between the board and the pedalboard (double-click = full width). Your size is remembered.<br>${hl('Readout + facts strip')} — under the neck: what's playing now, then its objective theory (notes · degrees · structure · resolution).`);
+    body += card('THE BOARD', `${hl('Instruments')} — guitar, 8-string, bass, banjo, mandolin, piano, the ⬡ Lumatone hex board (one shape, every key), 🎤 vocals, or 🥁 drums (a full kit you click, tap or play from the keyboard — and record straight into the Backing Track pedal); tuning and wood style are per-instrument.<br>${hl('Resize')} — drag the slim handle between the board and the pedalboard (double-click = full width). Your size is remembered.<br>${hl('Readout + facts strip')} — under the neck: what's playing now, then its objective theory (notes · degrees · structure · resolution).`);
     body += card('DISPLAY &amp; THE MAP', `${hl('● Standard')} — plain dots · ${hl('🌈 Spectrum')} — every note wears its own colour (fifths-ordered, matching the legend and both circles) · ${hl('⟡ Intervals')} — every note wears its FUNCTION in the session key: gold is home, amber and terracotta are the 3rds, rose and wine the 7ths, sage/teal/olive the colour tones, slate and plum the notes that pull hardest. Change the key and the whole neck recolours.<br>${hl('🗺 MAP')} labels the neck itself. ${hl('♮ NAMES')} writes note names, ${hl('⟡ DEGREES')} writes each note's degree in the session key (R ♭2 2 3 …) — press the lit one again to hide the map. ${hl('IN KEY')} shows only the notes of the session key, so the neck becomes a map of that key; ${hl('WHOLE NECK')} shows all twelve as a chromatic reference. The tonic is drawn brightest. ${hl('✕ CLEAR')} empties the neck.<br>${hl('🎯 FOCUS')} (by the instruments) docks everything and hands the room to the strings.`);
     body += card('SESSION BUSES', `The top bar's ${hl('KEY')} and ${hl('TEMPO')} drive every linked pedal at once — change the key and the Circle, Explorer, drills and labs follow. ${hl('⟲ Re-link all')} reattaches any pedal you detached.`);
     body += card('PEDALS', `${hl('Drag')} by the header · ${hl('resize')} from the corner · ${hl('▁ minimize')} · add more from ${hl('+ PEDALS')}. Each pedal's goal and fast setup lives in the ${hl('PEDALS')} tab of this help. ${hl('💾 SAVE')} stores your whole board and every pedal's settings.`);
@@ -662,7 +665,8 @@ const LOADOUT_INSTRUMENTS = [
   { id:'mandolin', icon:'🪕', label:'Mandolin', note:'4 courses' },
   { id:'piano',    icon:'🎹', label:'Piano',    note:'keys' },
   { id:'lumatone', icon:'⬡',  label:'Lumatone', note:'hex keys, one shape every key' },
-  { id:'vocals',   icon:'🎤', label:'Vocals',   note:'your voice' }
+  { id:'vocals',   icon:'🎤', label:'Vocals',   note:'your voice' },
+  { id:'drums',    icon:'🥁', label:'Drums',    note:'a full kit — play & record beats' }
 ];
 
 const LOADOUT_STEPS = ['inst', 'look', 'tuning', 'pedals'];
@@ -788,6 +792,18 @@ function lookEditorHTML() {
     return h + `<div style="color:#999;font-size:calc(11.5px*var(--ui));line-height:1.6;margin-top:8px">The hex board is coloured by the DISPLAY mode in the top bar — neutral keys, the 🌈 note spectrum, or the ⟡ interval ladder against the session key — so there is no finish to pick here. Its layout lives in the TUNING row under ⚙ RIG.</div></div>`;
   }
 
+  // A kit's look is its shell wrap. The same choice sits on the kit's own bar.
+  if (currentInstrument === 'drums') {
+    const cur = drumFinish();
+    h += lab('SHELL FINISH');
+    h += '<div style="display:flex;gap:6px;flex-wrap:wrap">' + Object.entries(DRUM_FINISHES).map(([k, f]) => {
+      const on = k === cur;
+      return `<button class="look-dfin" data-k="${k}" title="${f.name}" style="border:1px solid ${on ? '#8877dd' : '#3a3a3a'};background:${on ? 'rgba(136,119,221,.14)' : 'rgba(255,255,255,.02)'};border-radius:8px;padding:5px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+        <span style="display:block;width:34px;height:16px;border-radius:3px;background:linear-gradient(90deg,${f.ramp.join(',')})"></span><span class="mono" style="color:${on ? '#bbaaee' : '#8a8a8a'};font-size:calc(8px*var(--ui))">${f.name}</span></button>`;
+    }).join('') + '</div>';
+    return h + `<div class="mono" style="color:#666;font-size:calc(9px*var(--ui));margin-top:9px;line-height:1.5">The kit redraws as you pick. Size and the key hints live on the kit's own bar.</div></div>`;
+  }
+
   if (currentInstrument === 'piano') {
     const mode = d.piano?.mode || 'spectrum';
     h += lab('KEY COLOURS');
@@ -870,6 +886,7 @@ function wireLookEditor(el) {
     if (!lookDraft.piano.keyColors) lookDraft.piano.keyColors = NOTES.map(n => pcColor(n, 70, 62));
     applyDraft(); rerender();
   }));
+  el.querySelectorAll('.look-dfin').forEach(b => b.addEventListener('click', () => { setDrumFinish(b.dataset.k); rerender(); }));
   el.querySelectorAll('.look-pkey').forEach(inp => inp.addEventListener('input', () => {
     const cols = [...(lookDraft.piano?.keyColors || NOTES.map(n => pcColor(n, 70, 62)))];
     cols[+inp.dataset.i] = inp.value;

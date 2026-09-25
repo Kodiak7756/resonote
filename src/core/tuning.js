@@ -79,6 +79,11 @@ export const INSTRUMENTS = {
     // 60, not 80: the ladder starts at C2 (65.4 Hz) and the gate must let it through
     freqRange:[60,1100], strings:[],
     vocalRange:{ low:{ note:'C', octave:2 }, high:{ note:'C', octave:6 } }
+  },
+  // A kit has no pitches to map, so it has its own display (ui/drum-kit.js) the
+  // way Vocals does — and it is the pad the 🥁 Backing Track pedal records from.
+  drums: {
+    name:'Drum Kit', renderer:'drums', frets:0, strings:[], freqRange:[28,4200]
   }
 };
 

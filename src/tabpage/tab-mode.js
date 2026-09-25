@@ -963,8 +963,8 @@ function syncTransport(countLeft) {
 function instToggleLabel() {
   const r = INSTRUMENTS[currentInstrument]?.renderer;
   // Match on the renderer names tuning.js actually uses ('keyboard', 'hex',
-  // 'vocals'); anything fretted is a neck.
-  return r === 'keyboard' ? '🎹 Keys' : r === 'hex' ? '⬡ Hex' : r === 'vocals' ? '🎤 Voice' : '🎸 Neck';
+  // 'vocals', 'drums'); anything fretted is a neck.
+  return r === 'keyboard' ? '🎹 Keys' : r === 'hex' ? '⬡ Hex' : r === 'vocals' ? '🎤 Voice' : r === 'drums' ? '🥁 Kit' : '🎸 Neck';
 }
 // The instrument sits below the lanes and is the tallest thing on the page, so it
 // collapses like any other lane. switchMode resets it on every entry to the page,
