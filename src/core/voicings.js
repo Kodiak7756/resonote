@@ -160,6 +160,9 @@ export function findSlashVoicings(bassNote, upperSemis, upperQual) {
             const upFretted = frets.filter(f => f > 0);
             if (frets.some(f => f === 0) && upFretted.some(f => f > 5)) continue;
             const positions = [noteOf(bassSi, bf), ...set.map((si, k) => noteOf(si, frets[k]))];
+            // the bass has to BE the bass: an open D under an A-string E (x 7 0 0 0 x) is G/D, not G/E
+            const pitch = p => p.octave * 12 + NOTES.indexOf(p.note);
+            if (positions.some(p => pitch(p) < pitch(positions[0]))) continue;
             const key = positions.map(p => `${p.si}:${p.fret}`).join('|');
             if (seen.has(key)) continue; seen.add(key);
             const fr = positions.filter(p => p.fret > 0);
