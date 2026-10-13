@@ -982,8 +982,10 @@ export function drillToPlan(drill, bpmOverride) {
   if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm });
   if (/two-note octaves|octave leaps/.test(sig)) return buildOctave(root, { bpm });
 
-  // 1.4) WALKING-BASS walkdown — authored open-position descent (bass = the scale, down).
-  if (/walkdown|walking bass/.test(sig)) return buildWalkdown({ bpm, root });
+  // 1.4) The WALKDOWN étude — authored open-position descent (bass = the scale, down). Keyed on
+  // "walkdown" only: the Walking Bass Lines lesson (I–vi–ii–V) also says "walking bass" and
+  // must fall through to its own progression, not borrow this étude.
+  if (/walkdown/.test(sig)) return buildWalkdown({ bpm, root });
 
   // 1.5) SLASH-CHORD flavors — one held bass, cycling upper-structure triads above it.
   // "A string / 5th string" in the drill text moves the bass to the second authored position.
