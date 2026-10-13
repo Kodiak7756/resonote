@@ -1354,32 +1354,32 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "root": "C",
+                "root": "G",
                 "quality": "Major",
                 "beats": 2,
                 "numeral": "1"
               },
               {
-                "root": "F",
+                "root": "C",
                 "quality": "Major",
                 "beats": 2,
                 "numeral": "4"
               },
               {
-                "root": "G",
+                "root": "D",
                 "quality": "Major",
                 "beats": 2,
                 "numeral": "5"
               },
               {
-                "root": "C",
+                "root": "G",
                 "quality": "Major",
                 "beats": 2,
                 "numeral": "1"
               }
             ],
             "voicing": "chords in root position",
-            "pattern": "Play I-IV-V-I in C (C-F-G-C) for two beats each. Then play the exact same shape starting on different roots (say, G major: G-C-D-G). Same numbers, different key—that's how Nashville numbers work.",
+            "pattern": "Play 1-4-5-1 in G (G-C-D-G) for two beats each, all open chords. Then play the exact same numbers starting on other roots: in D it's D-G-A-D, in A it's A-D-E-A. Same numbers, different key—that's how Nashville numbers work.",
             "focus": "Understanding that chord numbers describe relationships, not fixed notes"
           }
         },
@@ -1818,11 +1818,12 @@ export const CURRICULUM = {
                 "root": "C",
                 "quality": "Major",
                 "beats": 4,
-                "numeral": "I"
+                "numeral": "I",
+                "frets": "x32010"
               }
             ],
             "voicing": "root position arpeggios",
-            "pattern": "Start on C, play the root position major triad slowly: C (root), up 4 frets to E (3rd), up 3 more frets to G (5th). Then back down: G, E, C. Repeat in rhythm: one note per beat, every triad is C-E-G.",
+            "pattern": "Hold your open C chord (x32010) and pick it one string at a time, low to high: C (5th string, 3rd fret), E (4th string, 2nd fret), G (open 3rd string), then C and E again on top. Come back down, then strum it and let it ring. One note per beat. Every note is C, E or G: the triad was hiding in the chord you already play.",
             "focus": "Hearing major triads as root + major 3rd + perfect 5th in a clear, voiced arrangement"
           }
         },
@@ -1898,20 +1899,44 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "root": "C",
+                "root": "E",
                 "quality": "Major",
-                "beats": 2,
-                "numeral": "I"
+                "beats": 4,
+                "frets": "022100"
               },
               {
-                "root": "C",
+                "root": "E",
                 "quality": "Minor",
-                "beats": 2,
-                "numeral": "i"
+                "beats": 4,
+                "frets": "022000"
+              },
+              {
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x02220"
+              },
+              {
+                "root": "A",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "x02210"
+              },
+              {
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "xx0232"
+              },
+              {
+                "root": "D",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "xx0231"
               }
             ],
-            "voicing": "root and 3rd",
-            "pattern": "Play C (root), then E (major 3rd)—sounds bright. Now lower E down one fret to E♭ (minor 3rd)—sounds darker. Flip back: E (major), E♭ (minor), major, minor, four times per measure. Only the 3rd changes.",
+            "voicing": "open chords",
+            "pattern": "Play open E, then lift one finger to make Em: the G# on the 3rd string drops to the open G. Then A to Am: the C# on the B string drops one fret to C. Then D to Dm: the F# on the high E string drops one fret to F. Each time the root and 5th stay put and only the 3rd moves, and the mood flips from bright to dark.",
             "focus": "Hearing how the 3rd is the emotional heart of any major or minor triad"
           }
         },
@@ -2098,13 +2123,21 @@ export const CURRICULUM = {
             "progression": [
               {
                 "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "numeral": "I",
+                "frets": "x32010"
+              },
+              {
+                "root": "C",
                 "quality": "Aug",
                 "beats": 4,
-                "numeral": "I+"
+                "numeral": "I+",
+                "frets": "x32110"
               }
             ],
             "voicing": "augmented triad",
-            "pattern": "Play C augmented (C-E-G#) and let it ring. It sounds bright like major but 'lifted' and floating—the raised 5th refuses to settle. Play it against a plain C major chord to hear how different the raised 5th makes it.",
+            "pattern": "Hold an open C chord (x32010), pick it one string at a time, then strum it. Now move the open G up one fret, to the 3rd string's 1st fret (x32110): that G# is the raised 5th. Pick it one string at a time and strum it. It sounds bright like major but 'lifted' and floating—the raised 5th refuses to settle.",
             "focus": "Hearing augmented triads as symmetrical, bright-but-unresolved chords"
           }
         },
@@ -2177,7 +2210,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "root position, 1st and 2nd inversions",
-            "pattern": "Play C major in root position (C-E-G), then 1st inversion (E-G-C), then 2nd inversion (G-C-E)—same three notes, different bottom note. Now play C major to F major using inversions that keep your hand close: no big jumps between chords.",
+            "pattern": "On the G, B and high E strings, play C major three ways, moving up the neck: 0-1-0 (G on the bottom, 2nd inversion), 5-5-3 (C on the bottom, root position), 9-8-8 (E on the bottom, 1st inversion). Pick each one note by note, then strum it: same three notes, different bottom note. Then go from C (5-5-3) to F (5-6-5): the C on the G string stays put and the other two fingers move up. No big jumps between chords.",
             "focus": "Using inversions to connect chords smoothly without jumping around the neck"
           }
         },
@@ -2244,7 +2277,7 @@ export const CURRICULUM = {
           ],
           "drill": {
             "title": "Movable Triad Shapes",
-            "bpm": 90,
+            "bpm": 70,
             "timeSig": [
               4,
               4
@@ -2253,30 +2286,30 @@ export const CURRICULUM = {
               {
                 "root": "C",
                 "quality": "Major",
-                "beats": 2,
+                "beats": 4,
                 "numeral": "I"
               },
               {
                 "root": "D",
                 "quality": "Minor",
-                "beats": 2,
+                "beats": 4,
                 "numeral": "ii"
               },
               {
                 "root": "E",
                 "quality": "Minor",
-                "beats": 2,
+                "beats": 4,
                 "numeral": "iii"
               },
               {
                 "root": "F",
                 "quality": "Major",
-                "beats": 2,
+                "beats": 4,
                 "numeral": "IV"
               }
             ],
             "voicing": "three-string triads",
-            "pattern": "Play a small C major triad on three strings (D-G-B strings or G-B-E strings). Slide the shape up the diatonic scale and it becomes D minor, then E minor, then F major. Same family of shapes, new root—movable triads let you play any chord anywhere.",
+            "pattern": "Play a small C major triad on the G-B-e strings: 5-5-3, with the root on the G string. Slide that root-position shape up the C major scale and it becomes D minor (7-6-5), then E minor (9-8-7), then F major (10-10-8). Same family of shapes, new root—movable triads let you play any chord anywhere.",
             "focus": "Learning small, repeatable triad shapes that transpose by sliding them up or down"
           }
         }
