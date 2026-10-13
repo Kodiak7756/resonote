@@ -1,4 +1,4 @@
-import { NOTES, KEY_POSITION_ZONES, getKeyChords, SCALE_TYPES, getScaleNotes,
+import { NOTES, KEY_POSITION_ZONES, getKeyChords, SCALE_TYPES, CHORD_TYPES, getScaleNotes,
   CANONICAL_MAJOR_TEMPLATE_BOXES, CANONICAL_MINOR_PENT_TEMPLATE_BOXES,
   CANONICAL_MAJOR_PENT_TEMPLATE_BOXES, sameIntervals,
   isFivePositionMajorScale, isFivePositionMajorPentatonic, isFivePositionMinorPentatonic
@@ -88,7 +88,24 @@ function tabToSi(tabFrets) {
   return si;
 }
 
-function validateShape(siFrets, chordNotes, rootNote) {
+// The notes a grip must sound to still BE the chord it's named for. A triad (or a power chord)
+// needs every note. A bigger chord may drop its perfect 5th, and an 11th/13th chord its 9th —
+// never the 3rd (or the sus note standing in for it), the 7th/6th, or the colour tone that
+// names it: Cmaj7 without its B is just C. The formula only says which tone is the 9th; the
+// notes the caller passed stay the source of truth.
+function requiredTones(rootNote, chordNotes, qualityName) {
+  const rootPc = NOTES.indexOf(rootNote);
+  const notes = [...new Set(chordNotes)];
+  if (notes.length < 4) return notes;
+  const formula = Object.values(CHORD_TYPES).find(g => g[qualityName])?.[qualityName] || [];
+  const ninthOptional = formula.includes(14) && formula.some(iv => iv > 15);
+  return notes.filter(n => {
+    const iv = (NOTES.indexOf(n) - rootPc + 12) % 12;
+    return iv !== 7 && !(ninthOptional && iv === 2);
+  });
+}
+
+function validateShape(siFrets, chordNotes, rootNote, required) {
   const played = [];
   for (let si = 0; si < siFrets.length; si++) {
     if (siFrets[si] < 0) continue;
@@ -99,6 +116,7 @@ function validateShape(siFrets, chordNotes, rootNote) {
   }
   if (played.length < 3) return null;
   if (!played.some(p => p.note === rootNote)) return null;
+  if (!required.every(n => played.some(p => p.note === n))) return null;
   return played;
 }
 
@@ -159,6 +177,7 @@ export function findSlashVoicings(bassNote, upperSemis, upperQual) {
 export function findVoicings(rootNote, chordNotes, qualityName) {
   const ns = customTuning.length;
   const results = [], seen = new Set();
+  const required = requiredTones(rootNote, chordNotes, qualityName);
 
   function addResult(positions, name, cat, priority) {
     const key = positions.map(p => `${p.si}:${p.fret}`).sort().join('|');
@@ -177,7 +196,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
   const openShapes = OPEN_VOICINGS[qualityName]?.[rootNote] || [];
   openShapes.forEach((shape, i) => {
     const si = tabToSi(shape);
-    const played = validateShape(si, chordNotes, rootNote);
+    const played = validateShape(si, chordNotes, rootNote, required);
     if (played) addResult(played, `${rootNote} Open`, 'open', 100 - i);
   });
 
@@ -192,7 +211,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
       const tabAbs = tmpl.rel.map(r => r === -1 ? -1 : f + r);
       if (tabAbs.some(x => x !== -1 && (x < 0 || x > 20))) continue;
       const si = tabToSi(tabAbs);
-      const played = validateShape(si, chordNotes, rootNote);
+      const played = validateShape(si, chordNotes, rootNote, required);
       if (played) {
         const hasFret0 = played.some(p => p.fret === 0);
         addResult(played, tmpl.name, 'barre', hasFret0 ? 80 : 70 - f);
@@ -200,29 +219,38 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
     }
   });
 
-  // 3. Triads on 3 adjacent strings
-  for (let i = 0; i <= ns - 3; i++) {
-    const grp = [i, i + 1, i + 2];
-    for (let baseFret = 0; baseFret <= 12; baseFret++) {
-      const span = 4;
-      const options = grp.map(si => {
-        const o = [];
-        for (let f = baseFret; f <= Math.min(baseFret + span, 15); f++) {
-          const { note } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, f);
-          if (chordNotes.includes(note)) o.push({ si, fret: f, note });
-        }
-        return o;
-      });
-      if (options.some(o => o.length === 0)) continue;
-      for (const a of options[0]) for (const b of options[1]) for (const c of options[2]) {
-        const notes = new Set([a.note, b.note, c.note]);
-        if (notes.size < 3 || !notes.has(rootNote)) continue;
-        const positions = [a, b, c].map(x => ({ si: x.si, fret: x.fret, note: x.note }));
-        const strNames = grp.map(si => si + 1).join('-');
-        addResult(positions, `Triad (${strNames})`, 'triad', 50 - baseFret);
+  // 3. Compact grips on adjacent strings — one chord tone per string, all different, root
+  // included. A triad lives on 3 strings. A bigger chord also gets 4-string sets, so there is
+  // room for its 3rd AND its 7th/6th/colour tone, and a 3-string grip of it only counts when
+  // it already holds every required tone (the R·3·7 shell of a 7th chord does).
+  const sizes = chordNotes.length < 4 ? [3] : [3, 4];
+  sizes.forEach(k => {
+    for (let i = 0; i <= ns - k; i++) {
+      const grp = Array.from({ length: k }, (_, j) => i + j);
+      for (let baseFret = 0; baseFret <= 12; baseFret++) {
+        const span = 4;
+        const options = grp.map(si => {
+          const o = [];
+          for (let f = baseFret; f <= Math.min(baseFret + span, 15); f++) {
+            const { note } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, f);
+            if (chordNotes.includes(note)) o.push({ si, fret: f, note });
+          }
+          return o;
+        });
+        if (options.some(o => o.length === 0)) continue;
+        // every pick of one option per string
+        let combos = [[]];
+        options.forEach(o => { combos = combos.flatMap(c => o.map(x => [...c, x])); });
+        combos.forEach(combo => {
+          const notes = new Set(combo.map(x => x.note));
+          if (notes.size < k || !notes.has(rootNote) || !required.every(n => notes.has(n))) return;
+          const positions = combo.map(x => ({ si: x.si, fret: x.fret, note: x.note }));
+          const strNames = grp.map(si => si + 1).join('-');
+          addResult(positions, `${chordNotes.length < 4 ? 'Triad' : k + '-string'} (${strNames})`, 'triad', 50 - baseFret);
+        });
       }
     }
-  }
+  });
 
   results.sort((a, b) => b.priority - a.priority);
   return results.slice(0, 20);
