@@ -1,4 +1,4 @@
-import { NOTES, KEY_POSITION_ZONES, getKeyChords, SCALE_TYPES, getScaleNotes,
+import { NOTES, KEY_POSITION_ZONES, getKeyChords, SCALE_TYPES, CHORD_TYPES, getScaleNotes,
   CANONICAL_MAJOR_TEMPLATE_BOXES, CANONICAL_MINOR_PENT_TEMPLATE_BOXES,
   CANONICAL_MAJOR_PENT_TEMPLATE_BOXES, sameIntervals,
   isFivePositionMajorScale, isFivePositionMajorPentatonic, isFivePositionMinorPentatonic
@@ -22,7 +22,8 @@ export const OPEN_VOICINGS = {
   'mMaj7':   { 'A':[[-1,0,2,1,1,0]],'E':[[0,2,1,0,0,0]] },
   'Add9':    { 'C':[[-1,3,2,0,3,0]],'A':[[-1,0,2,4,2,0]],'G':[[3,0,0,0,0,3]],'E':[[0,2,2,1,0,2]] },
   '6':       { 'C':[[-1,3,2,2,1,0]],'A':[[-1,0,2,2,2,2]],'G':[[3,2,0,0,0,0]],'E':[[0,2,2,1,2,0]] },
-  'Min6':    { 'A':[[-1,0,2,2,1,2]],'E':[[0,2,2,0,2,0]] }
+  'Min6':    { 'A':[[-1,0,2,2,1,2]],'E':[[0,2,2,0,2,0]] },
+  '5':       { 'E':[[0,2,2,-1,-1,-1]],'A':[[-1,0,2,2,-1,-1]],'D':[[-1,-1,0,2,3,-1]] }
 };
 
 // ── Close-position triads on a chosen 3-string set ───────────────────
@@ -57,6 +58,9 @@ export const BARRE_SHAPES = {
   'Aug':     [{name:'Aug (R6)',rootTab:0,rel:[0,3,2,1,1,0]}],
   'Sus2':    [{name:'Sus2 (R6)',rootTab:0,rel:[0,2,4,4,0,0]},{name:'Sus2 (R5)',rootTab:1,rel:[-1,0,2,2,0,0]}],
   'Sus4':    [{name:'Sus4 (R6)',rootTab:0,rel:[0,2,2,2,0,0]},{name:'Sus4 (R5)',rootTab:1,rel:[-1,0,2,2,3,0]}],
+  // Power chords: root + 5th, or root + 5th + the root an octave up — no 3rd, so neither major nor minor.
+  '5':       [{name:'R-5-R (R6)',rootTab:0,rel:[0,2,2,-1,-1,-1]},{name:'R-5 (R6)',rootTab:0,rel:[0,2,-1,-1,-1,-1]},
+              {name:'R-5-R (R5)',rootTab:1,rel:[-1,0,2,2,-1,-1]},{name:'R-5 (R5)',rootTab:1,rel:[-1,0,2,-1,-1,-1]}],
   'Maj7':    [{name:'Maj7 (R6)',rootTab:0,rel:[0,2,1,1,0,0]},{name:'Maj7 (R5)',rootTab:1,rel:[-1,0,2,1,2,0]}],
   '7 (Dom)': [{name:'7 (R6)',rootTab:0,rel:[0,2,0,1,0,0]},{name:'7 (R5)',rootTab:1,rel:[-1,0,2,0,2,0]}],
   'Min7':    [{name:'m7 (R6)',rootTab:0,rel:[0,2,0,0,0,0]},{name:'m7 (R5)',rootTab:1,rel:[-1,0,2,0,1,0]}],
@@ -88,7 +92,24 @@ function tabToSi(tabFrets) {
   return si;
 }
 
-function validateShape(siFrets, chordNotes, rootNote) {
+// The notes a grip must sound to still BE the chord it's named for. A triad (or a power chord)
+// needs every note. A bigger chord may drop its perfect 5th, and an 11th/13th chord its 9th —
+// never the 3rd (or the sus note standing in for it), the 7th/6th, or the colour tone that
+// names it: Cmaj7 without its B is just C. The formula only says which tone is the 9th; the
+// notes the caller passed stay the source of truth.
+function requiredTones(rootNote, chordNotes, qualityName) {
+  const rootPc = NOTES.indexOf(rootNote);
+  const notes = [...new Set(chordNotes)];
+  if (notes.length < 4) return notes;
+  const formula = Object.values(CHORD_TYPES).find(g => g[qualityName])?.[qualityName] || [];
+  const ninthOptional = formula.includes(14) && formula.some(iv => iv > 15);
+  return notes.filter(n => {
+    const iv = (NOTES.indexOf(n) - rootPc + 12) % 12;
+    return iv !== 7 && !(ninthOptional && iv === 2);
+  });
+}
+
+function validateShape(siFrets, chordNotes, rootNote, required) {
   const played = [];
   for (let si = 0; si < siFrets.length; si++) {
     if (siFrets[si] < 0) continue;
@@ -97,8 +118,9 @@ function validateShape(siFrets, chordNotes, rootNote) {
     if (!chordNotes.includes(note)) return null;
     played.push({ si, fret: siFrets[si], note });
   }
-  if (played.length < 3) return null;
+  if (played.length < Math.min(3, chordNotes.length)) return null;
   if (!played.some(p => p.note === rootNote)) return null;
+  if (!required.every(n => played.some(p => p.note === n))) return null;
   return played;
 }
 
@@ -138,6 +160,9 @@ export function findSlashVoicings(bassNote, upperSemis, upperQual) {
             const upFretted = frets.filter(f => f > 0);
             if (frets.some(f => f === 0) && upFretted.some(f => f > 5)) continue;
             const positions = [noteOf(bassSi, bf), ...set.map((si, k) => noteOf(si, frets[k]))];
+            // the bass has to BE the bass: an open D under an A-string E (x 7 0 0 0 x) is G/D, not G/E
+            const pitch = p => p.octave * 12 + NOTES.indexOf(p.note);
+            if (positions.some(p => pitch(p) < pitch(positions[0]))) continue;
             const key = positions.map(p => `${p.si}:${p.fret}`).join('|');
             if (seen.has(key)) continue; seen.add(key);
             const fr = positions.filter(p => p.fret > 0);
@@ -159,11 +184,13 @@ export function findSlashVoicings(bassNote, upperSemis, upperQual) {
 export function findVoicings(rootNote, chordNotes, qualityName) {
   const ns = customTuning.length;
   const results = [], seen = new Set();
+  const required = requiredTones(rootNote, chordNotes, qualityName);
 
   function addResult(positions, name, cat, priority) {
     const key = positions.map(p => `${p.si}:${p.fret}`).sort().join('|');
     if (seen.has(key)) return;
     seen.add(key);
+    if (!planFingers(positions)) return;              // no hand can hold it — don't offer it
     const fretted = positions.filter(p => p.fret > 0);
     results.push({
       positions, name, cat, priority,
@@ -176,7 +203,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
   const openShapes = OPEN_VOICINGS[qualityName]?.[rootNote] || [];
   openShapes.forEach((shape, i) => {
     const si = tabToSi(shape);
-    const played = validateShape(si, chordNotes, rootNote);
+    const played = validateShape(si, chordNotes, rootNote, required);
     if (played) addResult(played, `${rootNote} Open`, 'open', 100 - i);
   });
 
@@ -191,7 +218,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
       const tabAbs = tmpl.rel.map(r => r === -1 ? -1 : f + r);
       if (tabAbs.some(x => x !== -1 && (x < 0 || x > 20))) continue;
       const si = tabToSi(tabAbs);
-      const played = validateShape(si, chordNotes, rootNote);
+      const played = validateShape(si, chordNotes, rootNote, required);
       if (played) {
         const hasFret0 = played.some(p => p.fret === 0);
         addResult(played, tmpl.name, 'barre', hasFret0 ? 80 : 70 - f);
@@ -199,55 +226,103 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
     }
   });
 
-  // 3. Triads on 3 adjacent strings
-  for (let i = 0; i <= ns - 3; i++) {
-    const grp = [i, i + 1, i + 2];
-    for (let baseFret = 0; baseFret <= 12; baseFret++) {
-      const span = 4;
-      const options = grp.map(si => {
-        const o = [];
-        for (let f = baseFret; f <= Math.min(baseFret + span, 15); f++) {
-          const { note } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, f);
-          if (chordNotes.includes(note)) o.push({ si, fret: f, note });
-        }
-        return o;
-      });
-      if (options.some(o => o.length === 0)) continue;
-      for (const a of options[0]) for (const b of options[1]) for (const c of options[2]) {
-        const notes = new Set([a.note, b.note, c.note]);
-        if (notes.size < 3 || !notes.has(rootNote)) continue;
-        const positions = [a, b, c].map(x => ({ si: x.si, fret: x.fret, note: x.note }));
-        const strNames = grp.map(si => 6 - si).join('-');
-        addResult(positions, `Triad (${strNames})`, 'triad', 50 - baseFret);
+  // 3. Compact grips on adjacent strings — one chord tone per string, all different, root
+  // included. A triad lives on 3 strings. A bigger chord also gets 4-string sets, so there is
+  // room for its 3rd AND its 7th/6th/colour tone, and a 3-string grip of it only counts when
+  // it already holds every required tone (the R·3·7 shell of a 7th chord does).
+  const sizes = chordNotes.length < 4 ? [3] : [3, 4];
+  sizes.forEach(k => {
+    for (let i = 0; i <= ns - k; i++) {
+      const grp = Array.from({ length: k }, (_, j) => i + j);
+      for (let baseFret = 0; baseFret <= 12; baseFret++) {
+        const span = 4;
+        const options = grp.map(si => {
+          const o = [];
+          for (let f = baseFret; f <= Math.min(baseFret + span, 15); f++) {
+            const { note } = getNoteAtFret(customTuning[si].note, customTuning[si].octave, f);
+            if (chordNotes.includes(note)) o.push({ si, fret: f, note });
+          }
+          return o;
+        });
+        if (options.some(o => o.length === 0)) continue;
+        // every pick of one option per string
+        let combos = [[]];
+        options.forEach(o => { combos = combos.flatMap(c => o.map(x => [...c, x])); });
+        combos.forEach(combo => {
+          const notes = new Set(combo.map(x => x.note));
+          if (notes.size < k || !notes.has(rootNote) || !required.every(n => notes.has(n))) return;
+          const positions = combo.map(x => ({ si: x.si, fret: x.fret, note: x.note }));
+          const strNames = grp.map(si => si + 1).join('-');
+          addResult(positions, `${chordNotes.length < 4 ? 'Triad' : k + '-string'} (${strNames})`, 'triad', 50 - baseFret);
+        });
       }
     }
-  }
+  });
 
   results.sort((a, b) => b.priority - a.priority);
   return results.slice(0, 20);
 }
 
 // ── Fingering + single-grip selection (drills / progressions) ────────
-// Assign fretting-hand fingers (1-4; 0 = open) to a voicing: a low-fret barre takes finger 1,
-// the rest fill in by fret then string. Heuristic, but matches the common open/barre grips —
-// so a learner can see WHICH finger frets WHICH note. Audit-driven 2026-06-14.
+// Plan fretting-hand fingers for a grip: a Map "si:fret" → 1-4, or null when no hand can play it.
+// One finger holds several strings only at ONE fret, and only if every string it lies across is
+// fretted at that fret or higher — a barre over an open or muted string would stop that string.
+// The index barres the lowest fret when something is fretted above it and the barre is either
+// needed (five or more fretted notes) or tight (same-fret notes on neighbouring strings, as in
+// Dm7 x x 0 2 1 1); open D keeps 1-3-2, open Gmaj7 lays no finger across its open strings.
+// The rest go by fret, then low string → high. Still over four? Other legal same-fret runs are
+// barred (the aug shape's G·B pair, the 6 shape's A·D pair); if even that isn't enough, null.
+function planFingers(positions) {
+  const fretted = positions.filter(p => p.fret > 0);
+  const fm = new Map();
+  if (!fretted.length) return fm;
+  const fretOn = new Map(positions.map(p => [p.si, p.fret]));
+  const canSpan = (a, b, fret) => {
+    for (let s = Math.min(a, b) + 1; s < Math.max(a, b); s++) if (!(fretOn.get(s) >= fret)) return false;
+    return true;
+  };
+  // maximal same-fret runs one finger could hold, low string first
+  const runsAt = fret => fretted.filter(p => p.fret === fret).sort((a, b) => b.si - a.si).reduce((runs, p) => {
+    const run = runs[runs.length - 1];
+    if (run && canSpan(run[run.length - 1].si, p.si, fret)) run.push(p); else runs.push([p]);
+    return runs;
+  }, []);
+  const groupOf = new Map(fretted.map(p => [p, [p]]));
+  const fingers = () => new Set(groupOf.values()).size;
+  const bar = run => run.forEach(p => groupOf.set(p, run));
+  const frets = [...new Set(fretted.map(p => p.fret))].sort((a, b) => a - b);
+  let index = null;
+  if (frets.length > 1) {
+    const best = runsAt(frets[0]).filter(r => r.length > 1).sort((a, b) => b.length - a.length)[0];
+    const tight = best && best[0].si - best[best.length - 1].si === best.length - 1;
+    if (best && (tight || fingers() > 4)) { bar(best); index = best; }
+  }
+  if (fingers() > 4) {
+    frets.flatMap(runsAt).filter(r => r.length > 1).sort((a, b) => b.length - a.length || a[0].fret - b[0].fret)
+      .forEach(r => { if (fingers() > 4 && new Set(r.map(p => groupOf.get(p))).size > 1) bar(r); });
+  }
+  if (fingers() > 4) return null;
+  // Number them in that order, one finger per fret from the lowest as far as four allow:
+  // a power chord reads 1-3-4 and an Em-shape barre 1-3-4-1-1-1, not 1-2-3.
+  const lowest = g => Math.max(...g.map(p => p.si));
+  const order = [...new Set(groupOf.values())]
+    .sort((a, b) => (b === index) - (a === index) || a[0].fret - b[0].fret || lowest(b) - lowest(a));
+  let prev = 0;
+  order.forEach((g, i) => {
+    const finger = Math.max(prev + 1, Math.min(1 + g[0].fret - frets[0], 4 - (order.length - 1 - i)));
+    g.forEach(p => fm.set(`${p.si}:${p.fret}`, finger));
+    prev = finger;
+  });
+  return fm;
+}
+
+// Assign fretting-hand fingers (1-4; 0 = open) to a voicing, so a learner can see WHICH finger
+// frets WHICH note. A grip no hand can hold gets no numbers on its fretted notes (finger: null)
+// rather than impossible ones. Audit-driven 2026-06-14; barre rules 2026-10-13.
 export function assignFingers(positions) {
   if (!positions || !positions.length) return positions || [];
-  const fretted = positions.filter(p => p.fret > 0).sort((a, b) => a.fret - b.fret || b.si - a.si);
-  if (!fretted.length) return positions.map(p => ({ ...p, finger: 0 }));
-  const minF = fretted[0].fret;
-  const atMin = fretted.filter(p => p.fret === minF);
-  // a real barre = 2+ notes share the lowest fret AND something is fretted above it
-  const isBarre = atMin.length >= 2 && fretted.some(p => p.fret > minF);
-  const fm = new Map();
-  if (isBarre) atMin.forEach(p => fm.set(`${p.si}:${p.fret}`, 1));
-  let next = isBarre ? 2 : 1;
-  fretted.forEach(p => {
-    const key = `${p.si}:${p.fret}`;
-    if (fm.has(key)) return;
-    fm.set(key, Math.min(4, next)); next++;
-  });
-  return positions.map(p => ({ ...p, finger: p.fret > 0 ? (fm.get(`${p.si}:${p.fret}`) || 1) : 0 }));
+  const fm = planFingers(positions);
+  return positions.map(p => ({ ...p, finger: p.fret > 0 ? (fm ? fm.get(`${p.si}:${p.fret}`) : null) : 0 }));
 }
 
 // Pick ONE playable voicing (with fingers) for a chord, by position strategy:
@@ -455,26 +530,6 @@ function chooseTemplateOctaveShift(baseFrets, nf, opts={}) {
   })[0];
 }
 
-function shiftCanonicalBoxByOctave(positions, shift, root, rootIdx) {
-  return positions.map(p => {
-    const fret = p.fret + shift;
-    if (fret < 0 || fret > getInst().frets) return null;
-    const info = getNoteAtFret(customTuning[p.si].note, customTuning[p.si].octave, fret);
-    return { si:p.si, fret, note:info.note, octave:info.octave,
-      midi:info.octave*12+NOTES.indexOf(info.note), isRoot:info.note===root,
-      deg:(NOTES.indexOf(info.note)-rootIdx+12)%12 };
-  }).filter(Boolean).sort((a,b) => b.si-a.si || a.fret-b.fret || a.midi-b.midi);
-}
-
-function maybeApplyCanonicalLowRegisterOverride(root, boxIndex, positions, rootIdx) {
-  if (root !== 'C') return positions;
-  if (boxIndex === 2 || boxIndex === 3 || boxIndex === 4) {
-    const shifted = shiftCanonicalBoxByOctave(positions, -12, root, rootIdx);
-    if (shifted.length === positions.length) return shifted;
-  }
-  return positions;
-}
-
 function buildCanonicalBoxesFromTemplates(root, templates, anchorFret, templateRootFret, opts={}) {
   if (anchorFret === null) return null;
   const delta = anchorFret - templateRootFret;
@@ -521,9 +576,13 @@ function buildCanonicalSubsetBoxesFromReference(root, templates, referenceRoot, 
   return buildCanonicalBoxesFromReference(root, templates, referenceRoot, { ...opts, allowedDegs: new Set(allowedDegs) });
 }
 
+// The major anchor is the root on the low E string nearest fret 3, which for C#, D, D# and E
+// lands at fret 9-12 — so their boxes ran 8-24 with no open-position box for two beginner keys.
+// Each box drops an octave when it sits at fret 12+ and still fits on the neck (the same
+// per-box rule as the mode boxes, and what C's hand-made override did); CAGED order is kept.
 function buildCanonicalMajorBoxes(root) {
   return buildCanonicalBoxesFromTemplates(root, CANONICAL_MAJOR_TEMPLATE_BOXES,
-    getCanonicalMajorAnchorFret(root), 3, { lowRegisterOverride: maybeApplyCanonicalLowRegisterOverride });
+    getCanonicalMajorAnchorFret(root), 3, { lowRegisterOverride: (r, i, positions) => normalizeBoxToLowRegister(positions) });
 }
 function buildCanonicalMajorPentBoxes(root) {
   return buildCanonicalBoxesFromReference(root, CANONICAL_MAJOR_PENT_TEMPLATE_BOXES, 'G',

@@ -83,15 +83,47 @@ export const SCALE_TYPES = {
 };
 
 // ── Interval System ──────────────────────────────────────────────────
-export const INTERVAL_LABELS = ['R','♭2','2','♭3','3','4','♭5','5','♯5','6','♭7','7'];
+export const INTERVAL_LABELS = ['R','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
 // Function-color palette: interval (semitones from root) → a learnable colour so the
 // HARMONIC FUNCTION of a note reads at a glance (root gold, 3rd red, 5th blue, 7th purple).
 export const DEGREE_COLORS = ['#ffd23f','#d65db1','#6ec6ff','#ff9e3d','#ff5e5e','#56c271','#c77dff','#4d9de0','#b08968','#2ec4b6','#9d6bff','#7b5cff'];
-export const SCALE_DEGREE_LABELS = ['1','♭2','2','♭3','3','4','♭5','5','♯5','6','♭7','7'];
+export const SCALE_DEGREE_LABELS = ['1','♭2','2','♭3','3','4','♭5','5','♭6','6','♭7','7'];
 
-export function intervalLabel(rootNote, note) {
+// A semitone count can't tell ♯4 from ♭5 or ♯5 from ♭6 — the formula the note came from can,
+// the way authored.js degLabel spells a scale by its degrees. Pass the scale/chord intervals
+// (or a chord's semitones above its root) when they're known:
+//   · a seven-note scale names each note by its place in it — Lydian's 6 is its 4th → ♯4
+//   · a chord formula keeps its extensions literal — 15 → ♯9, 18 → ♯11, 20 → ♭13, 14 → 9
+//   · a chord or scale with a major 3rd and no perfect 5th calls its 8 the ♯5 (Aug, 7♯5)
+// A note outside the formula, or no formula at all, reads from the table.
+const MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
+const EXTENSION_LABELS = { 13: '♭9', 14: '9', 15: '♯9', 17: '11', 18: '♯11', 20: '♭13', 21: '13' };
+function formulaLabel(semitones, formula) {
+  if (!Array.isArray(formula) || !formula.length) return null;
+  const pcs = formula.map(iv => ((iv % 12) + 12) % 12);
+  if (formula.length === 7 && formula.every(iv => iv >= 0 && iv < 12) && new Set(pcs).size === 7) {
+    const deg = [...pcs].sort((a, b) => a - b).indexOf(semitones);
+    if (deg <= 0) return deg === 0 ? 'R' : null;
+    const delta = semitones - MAJOR_STEPS[deg];
+    return (delta < 0 ? '♭'.repeat(-delta) : '♯'.repeat(delta)) + (deg + 1);
+  }
+  const ext = formula.find(iv => iv >= 12 && iv % 12 === semitones);
+  if (EXTENSION_LABELS[ext]) return EXTENSION_LABELS[ext];
+  if (semitones === 8 && pcs.includes(8) && pcs.includes(4) && !pcs.includes(7)) return '♯5';
+  return null;
+}
+
+export function intervalLabel(rootNote, note, formula) {
   const semitones = ((NOTES.indexOf(note) - NOTES.indexOf(rootNote)) % 12 + 12) % 12;
-  return INTERVAL_LABELS[semitones];
+  return formulaLabel(semitones, formula) || INTERVAL_LABELS[semitones];
+}
+
+// A chord's (or scale's) notes as semitones above its root — the formula to hand intervalLabel
+// when only the spelled notes are known (a chord highlight, a key's notes).
+export function semitonesAbove(rootNote, notes) {
+  const r = NOTES.indexOf(toSharp(rootNote));
+  return (notes || []).filter(n => NOTES.includes(toSharp(n)))
+    .map(n => ((NOTES.indexOf(toSharp(n)) - r) % 12 + 12) % 12);
 }
 
 export function getScaleDegree(rootIdx, noteIdx) { return (noteIdx - rootIdx + 12) % 12; }
@@ -211,7 +243,7 @@ export const CANONICAL_MINOR_PENT_TEMPLATE_BOXES = [
   ],
   [
     {si:5,fret:13,deg:10},{si:5,fret:15,deg:0},
-    {si:4,fret:15,deg:5},
+    {si:4,fret:13,deg:3},{si:4,fret:15,deg:5},
     {si:3,fret:12,deg:7},{si:3,fret:15,deg:10},
     {si:2,fret:12,deg:0},{si:2,fret:15,deg:3},
     {si:1,fret:13,deg:5},{si:1,fret:15,deg:7},
