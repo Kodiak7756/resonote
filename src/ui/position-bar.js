@@ -2,9 +2,8 @@
 // Controls the position-isolation "lens" over the all-notes view: a movable
 // fret window, quick fret presets, key-aware scale-box (CAGED) positions, and
 // a click-to-build custom shape. Dims (never hides) notes outside the window.
-import { positionBus, positionIsolation, pedalBus, keyTypeToScale,
+import { positionBus, positionIsolation, pedalBus, keyTypeToScale, keyTypeIntervals,
          setShowNoteMap, showNoteMap } from '../core/state.js';
-import { KEY_PATTERNS } from '../core/music-theory.js';
 import { findScaleBoxes } from '../core/voicings.js';
 import { updateOverlays } from './fretboard.js';
 import { updateNoteMapBtn } from './header.js';
@@ -26,8 +25,8 @@ function ensureNoteMap() { if (!showNoteMap) { setShowNoteMap(true); updateNoteM
 function keyBoxes() {
   const root = pedalBus.root || 'C';
   const kt = pedalBus.keyType || 'Major';
-  const pat = KEY_PATTERNS[kt] || KEY_PATTERNS['Major'];
-  try { return findScaleBoxes(root, pat.intervals, keyTypeToScale(kt)) || []; } catch (e) { return []; }
+  // The key's own scale — a mode's boxes, not its parallel major's (E Phrygian ≠ E major).
+  try { return findScaleBoxes(root, keyTypeIntervals(kt), keyTypeToScale(kt)) || []; } catch (e) { return []; }
 }
 
 export function buildPositionBar() {
