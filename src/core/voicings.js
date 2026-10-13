@@ -22,7 +22,8 @@ export const OPEN_VOICINGS = {
   'mMaj7':   { 'A':[[-1,0,2,1,1,0]],'E':[[0,2,1,0,0,0]] },
   'Add9':    { 'C':[[-1,3,2,0,3,0]],'A':[[-1,0,2,4,2,0]],'G':[[3,0,0,0,0,3]],'E':[[0,2,2,1,0,2]] },
   '6':       { 'C':[[-1,3,2,2,1,0]],'A':[[-1,0,2,2,2,2]],'G':[[3,2,0,0,0,0]],'E':[[0,2,2,1,2,0]] },
-  'Min6':    { 'A':[[-1,0,2,2,1,2]],'E':[[0,2,2,0,2,0]] }
+  'Min6':    { 'A':[[-1,0,2,2,1,2]],'E':[[0,2,2,0,2,0]] },
+  '5':       { 'E':[[0,2,2,-1,-1,-1]],'A':[[-1,0,2,2,-1,-1]],'D':[[-1,-1,0,2,3,-1]] }
 };
 
 // ── Close-position triads on a chosen 3-string set ───────────────────
@@ -57,6 +58,9 @@ export const BARRE_SHAPES = {
   'Aug':     [{name:'Aug (R6)',rootTab:0,rel:[0,3,2,1,1,0]}],
   'Sus2':    [{name:'Sus2 (R6)',rootTab:0,rel:[0,2,4,4,0,0]},{name:'Sus2 (R5)',rootTab:1,rel:[-1,0,2,2,0,0]}],
   'Sus4':    [{name:'Sus4 (R6)',rootTab:0,rel:[0,2,2,2,0,0]},{name:'Sus4 (R5)',rootTab:1,rel:[-1,0,2,2,3,0]}],
+  // Power chords: root + 5th, or root + 5th + the root an octave up — no 3rd, so neither major nor minor.
+  '5':       [{name:'R-5-R (R6)',rootTab:0,rel:[0,2,2,-1,-1,-1]},{name:'R-5 (R6)',rootTab:0,rel:[0,2,-1,-1,-1,-1]},
+              {name:'R-5-R (R5)',rootTab:1,rel:[-1,0,2,2,-1,-1]},{name:'R-5 (R5)',rootTab:1,rel:[-1,0,2,-1,-1,-1]}],
   'Maj7':    [{name:'Maj7 (R6)',rootTab:0,rel:[0,2,1,1,0,0]},{name:'Maj7 (R5)',rootTab:1,rel:[-1,0,2,1,2,0]}],
   '7 (Dom)': [{name:'7 (R6)',rootTab:0,rel:[0,2,0,1,0,0]},{name:'7 (R5)',rootTab:1,rel:[-1,0,2,0,2,0]}],
   'Min7':    [{name:'m7 (R6)',rootTab:0,rel:[0,2,0,0,0,0]},{name:'m7 (R5)',rootTab:1,rel:[-1,0,2,0,1,0]}],
@@ -114,7 +118,7 @@ function validateShape(siFrets, chordNotes, rootNote, required) {
     if (!chordNotes.includes(note)) return null;
     played.push({ si, fret: siFrets[si], note });
   }
-  if (played.length < 3) return null;
+  if (played.length < Math.min(3, chordNotes.length)) return null;
   if (!played.some(p => p.note === rootNote)) return null;
   if (!required.every(n => played.some(p => p.note === n))) return null;
   return played;
