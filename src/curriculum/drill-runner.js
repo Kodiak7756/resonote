@@ -257,20 +257,45 @@ function buildChromatic(root, count, opts = {}) {
   return { root: ps[0].note, notes: uniqNotes(ps), label: opts.label || `${root} chromatic`, positions: ps, steps: seqSteps(seq, 60 / (opts.bpm || 90)) };
 }
 // Render a harmonic interval as a real, PLAYABLE two-string DOUBLE-STOP — two notes sounded
-// TOGETHER can't share a string. Pick a root string low enough that the smallest interval still
-// lands on a HIGHER string, then place each interval note at its most compact higher-string spot.
-function dyadFor(siRoot, fRoot, semi) {
-  const omid = si => { const n = noteAt(si, 0); return n.octave * 12 + NOTES.indexOf(n.note); };
-  const target = omid(siRoot) + fRoot + semi;
+// TOGETHER can't share a string. The top note goes on a HIGHER string within three frets of the
+// root (an open string costs nothing), the way interval shapes are actually fingered: a 5th is
+// the next string two frets up, an octave two strings over and two frets up (three when the B
+// string is crossed), a minor 2nd the G string with the B string three frets back. null = no
+// such shape from this root position.
+function dyadNear(lo, semi) {
+  const target = _pmidi(lo) + semi;
   let best = null;
-  for (let s = siRoot - 1; s >= 0; s--) {            // only HIGHER strings (lower index)
-    const g = target - omid(s);
-    if (g < 0 || g > 22) continue;
-    const span = Math.abs(g - fRoot);
-    if (span > 6) continue;                          // keep the shape within a hand span
-    if (!best || span < best.span || (span === best.span && s > best.s)) best = { s, g, span };
+  for (let s = lo.si - 1; s >= 0; s--) {            // only HIGHER strings (lower index)
+    const g = target - _pmidi(noteAt(s, 0));
+    if (g < 0 || g > nfrets()) continue;
+    const span = g === 0 ? 0 : lo.fret === 0 ? Math.max(0, g - 3) : Math.abs(g - lo.fret);
+    if (span > 3) continue;
+    // nearest string first; a fretted shape within two frets beats an open string, because the
+    // fretted one is the shape that moves to every other root
+    const cost = (g === 0 && lo.fret > 0 ? 2.5 : span) + (lo.si - 1 - s) * 0.5;
+    if (!best || cost < best.cost) best = { s, g, cost };
   }
-  return best ? posWithNote(best.s, best.g) : posWithNote(siRoot, fRoot + semi);   // fallback: same string
+  return best ? posWithNote(best.s, best.g) : null;
+}
+// Where to put the root so EVERY interval asked for has such a shape: closest in pitch to C3
+// (or to C of opts.octave), on the G string or lower, then lowest on the neck, A string before
+// low E on a tie. opts.along = semitones the clip also shows up the root's own string (keep that
+// within the 12th fret when it can be).
+// A minor 2nd has no shape near C3 (C on the A string has no lower string to borrow; on the low E
+// it is a five-fret reach), so a set that includes one moves up to C4 on the G string.
+function intervalRootPos(r, semis, opts = {}) {
+  const pref = (opts.octave || 3) * 12;   // C of that octave
+  let best = null;
+  for (let si = customTuning.length - 1; si >= 1; si--) for (let f = 0; f <= 12; f++) {
+    const lo = posWithNote(si, f);
+    if (lo.note !== r) continue;
+    if (semis.some(x => !dyadNear(lo, x))) continue;
+    const open = f === 0 && semis.every(x => dyadNear(lo, x).fret === 0);
+    const cost = Math.abs(_pmidi(lo) - pref) + (opts.preferOpen && !open ? 5 : 0) + f * 0.1 + (si === customTuning.length - 1 ? 0.05 : 0)
+      + (si < 2 ? 3 : 0) + (opts.along && f + opts.along > 12 ? 3 : 0);
+    if (!best || cost < best.cost) best = { lo, cost };
+  }
+  return best && best.lo;
 }
 // Spell an interval by FUNCTION relative to the root (so a minor 3rd over C reads E♭, not D♯ —
 // it keeps the 3rd's letter, E, just flattened). Lowered intervals → flats; the tritone stays ♯4.
@@ -286,21 +311,20 @@ function spellInterval(rootName, semi) {
 }
 function buildIntervalShape(root, intervals, opts = {}) {
   const r = toSharp(root), dur = 60 / (opts.bpm || 80);
-  const omid = si => { const n = noteAt(si, 0); return n.octave * 12 + NOTES.indexOf(n.note); };
-  const minSemi = Math.min(...intervals, opts.resolve != null ? opts.resolve : 99);
-  const siRoot = minSemi < 3 ? customTuning.length - 1 : customTuning.length - 2;  // low E for 2nds, else A
-  let fRoot = ((NOTES.indexOf(r) - (omid(siRoot) % 12)) % 12 + 12) % 12; if (fRoot < 2) fRoot += 12;
-  const lo = posWithNote(siRoot, fRoot); lo.disp = r;   // disp = the note as it should READ (functional spelling)
+  const all = opts.resolve != null ? [...intervals, opts.resolve] : intervals;
+  const lo0 = intervalRootPos(r, all, opts);
+  if (!lo0) return buildInterval(r, intervals[0], opts);   // (a tuning with no two-string shape)
+  const lo = { ...lo0, disp: r };   // disp = the note as it should READ (functional spelling)
   const positions = [lo], steps = [];
   intervals.forEach(semi => {
-    const hi = dyadFor(siRoot, fRoot, semi); hi.disp = spellInterval(r, semi);
+    const hi = dyadNear(lo, semi); hi.disp = spellInterval(r, semi);
     positions.push(hi);
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }], play: [{ note: lo.note, octave: lo.octave }], dur });
     steps.push({ focus: [{ si: hi.si, fret: hi.fret }], play: [{ note: hi.note, octave: hi.octave }], dur });
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }, { si: hi.si, fret: hi.fret }], play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.5, gap: dur * 1.9 });
   });
   if (opts.resolve != null) {   // sound the tension dyad, then resolve it (still on two strings)
-    const res = dyadFor(siRoot, fRoot, opts.resolve); res.disp = spellInterval(r, opts.resolve);
+    const res = dyadNear(lo, opts.resolve); res.disp = spellInterval(r, opts.resolve);
     positions.push(res);
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }, { si: res.si, fret: res.fret }], play: [{ note: lo.note, octave: lo.octave }, { note: res.note, octave: res.octave }], dur: dur * 1.8, gap: dur * 2.2, label: 'resolves → ' + lo.note + '+' + res.note });
   }
@@ -525,20 +549,71 @@ function buildWalkdown(opts = {}) {
 
 function twoNotePlan(lo, hi, label, dur) {
   const both = [{ si: lo.si, fret: lo.fret }, { si: hi.si, fret: hi.fret }];
-  return { root: lo.note, notes: uniqNotes([lo, hi]), label, positions: [lo, hi], steps: [
+  const steps = [
     { focus: [both[0]], play: [{ note: lo.note, octave: lo.octave }], dur },
-    { focus: [both[1]], play: [{ note: hi.note, octave: hi.octave }], dur },
-    { focus: both, play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.6, gap: dur * 1.9 },
-  ] };
+    { focus: [both[1]], play: [{ note: hi.note, octave: hi.octave }], dur, gap: lo.si === hi.si ? dur * 1.9 : undefined },
+  ];
+  // two notes on ONE string can only follow each other — sound them together only across strings
+  if (lo.si !== hi.si) steps.push({ focus: both, play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.6, gap: dur * 1.9 });
+  return { root: lo.note, notes: uniqNotes([lo, hi]), label, positions: [lo, hi], steps };
 }
 function buildInterval(root, semis, opts = {}) {
   const start = pickClimbStart(root, semis);
   return twoNotePlan(posWithNote(start.si, start.fret), posWithNote(start.si, start.fret + semis), opts.label || `${root} + ${semis}st`, 60 / (opts.bpm || 84));
 }
+const _fp = p => ({ si: p.si, fret: p.fret }), _pp = p => ({ note: p.note, octave: p.octave });
+const _strName = si => (si === 0 ? 'high ' : si === customTuning.length - 1 ? 'low ' : '') + (customTuning[si].label || customTuning[si].note);
+const _nth = n => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+// An interval CLIP (ear questions, "Hear it" demos): the root, then the top note, then both
+// together as a two-string shape. When the caption talks in frets ("C up 1 fret", "A up 12 half
+// steps") the top note is first shown up the root's own string, the way the caption says it.
+// opts.octave picks the register (an ear pair passes the same one, so neither clip gives itself
+// away by sounding higher); opts.preferOpen keeps a pair of open strings open; opts.melodic plays
+// the two notes one after the other, overlapping, and never struck together.
+function buildIntervalClip(root, semis, opts = {}) {
+  const r = toSharp(root), dur = 60 / (opts.bpm || 84);
+  const lo0 = intervalRootPos(r, [semis], { ...opts, along: opts.alongString ? semis : 0 });
+  if (!lo0) return buildInterval(r, semis, opts);
+  const lo = { ...lo0, disp: r }, hi = dyadNear(lo, semis);
+  hi.disp = spellInterval(r, semis);
+  const along = opts.alongString && lo.fret + semis <= 15 ? { ...posWithNote(lo.si, lo.fret + semis), disp: hi.disp } : null;
+  const base = opts.label || `${r} up to ${hi.disp}`;
+  const steps = [{ focus: [_fp(lo)], play: [_pp(lo)], dur }];
+  if (opts.melodic) {   // two separate plinks, close together, both left ringing
+    steps[0] = { ...steps[0], dur: dur * 2, gap: dur * 0.5 };
+    steps.push({ focus: [_fp(hi)], play: [_pp(hi)], dur: dur * 2 });
+  } else {
+    const top = along || hi;
+    steps.push({ focus: [_fp(top)], play: [_pp(top)], dur, label: along ? `${base} · ${semis} fret${semis === 1 ? '' : 's'} up the same string` : undefined });
+    steps.push({ focus: [_fp(lo), _fp(hi)], play: [_pp(lo), _pp(hi)], dur: dur * 1.6, gap: dur * 1.9, label: `${base} · together: ${_strName(lo.si)} string ${lo.fret ? _nth(lo.fret) + ' fret' : 'open'}, ${_strName(hi.si)} string ${hi.fret ? _nth(hi.fret) + ' fret' : 'open'}` });
+  }
+  const positions = along ? [lo, along, hi] : [lo, hi];
+  return { root: r, notes: uniqNotes(positions), label: base, positions, steps };
+}
+// "Octave leaps": each open bass string up to its 12th fret and back (same name, higher), then
+// the same octave as the two-string shape guitarists actually grab — two strings over and two
+// frets up, three when the B string is crossed (open A + G string 2nd fret, open low E + D string
+// 2nd fret, open D + B string 3rd fret). Starts on the drill's root string.
 function buildOctave(root, opts = {}) {
-  let si = -1; for (let s = customTuning.length - 1; s >= 0; s--) if (customTuning[s].note === toSharp(root)) { si = s; break; }
-  if (si < 0) return buildInterval(root, 12, { ...opts, label: `${root} octave` });
-  return twoNotePlan(posWithNote(si, 0), posWithNote(si, 12), `${root} octave`, 60 / (opts.bpm || 80));
+  const r = toSharp(root), dur = 60 / (opts.bpm || 80), low = customTuning.length - 1;
+  const own = [low, low - 1, low - 2].find(s => s >= 0 && customTuning[s].note === r);
+  const starts = own != null
+    ? [own, ...[low, low - 1, low - 2].filter(s => s !== own)].map(s => posWithNote(s, 0))
+    : [low, low - 1].map(s => posWithNote(s, Math.max(0, fretOfOn(s, r)))).filter(p => p.fret + 12 <= nfrets());
+  const steps = [], positions = [];
+  starts.forEach(lo => {
+    const up = posWithNote(lo.si, lo.fret + 12), shape = dyadNear(lo, 12);
+    const where = `${lo.note}: 12 frets up the ${_strName(lo.si)} string and back`;
+    positions.push(lo, up);
+    steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur, label: where });
+    steps.push({ focus: [_fp(up)], play: [_pp(up)], dur, label: where });
+    steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur, label: where });
+    if (shape) {
+      positions.push(shape);
+      steps.push({ focus: [_fp(lo), _fp(shape)], play: [_pp(lo), _pp(shape)], dur, label: `${lo.note}: the same octave on two strings — ${_strName(shape.si)} string, ${_nth(shape.fret)} fret` });
+    } else steps[steps.length - 1].dur = steps[steps.length - 1].gap = dur * 2;
+  });
+  return { root: r, notes: uniqNotes(positions), label: opts.label || `${r} octaves`, positions, steps };
 }
 function buildNoteDemo(noteName, opts = {}) {
   const pos = opts.pos || lowestPos(noteName);
@@ -567,16 +642,19 @@ function buildOpenStrings(opts = {}) {
   const order = []; for (let si = customTuning.length - 1; si >= 0; si--) order.push(posWithNote(si, 0));
   return { root: order[0].note, notes: uniqNotes(order), label: 'Open strings', positions: order, steps: seqSteps(order, 60 / (opts.bpm || 90)) };
 }
+// Half vs whole steps, one note after the other up the low E string (two notes can't sound
+// together on one string, and a step is a MOVE anyway): half steps one fret apart (E-F, F-F♯,
+// F♯-G), then whole steps two frets apart (G-A, A-B). Each pair takes two beats.
 function buildStepSizes(opts = {}) {
   const si = customTuning.length - 1, dur = 60 / (opts.bpm || 80);   // low E (thickest)
   const positions = [], steps = [];
-  [[0, 1], [3, 5]].forEach(([a, b]) => {  // E→F (½ step), G→A (whole step)
-    const pa = posWithNote(si, a), pb = posWithNote(si, b); positions.push(pa, pb);
-    steps.push({ focus: [{ si, fret: a }], play: [{ note: pa.note, octave: pa.octave }], dur });
-    steps.push({ focus: [{ si, fret: b }], play: [{ note: pb.note, octave: pb.octave }], dur });
-    steps.push({ focus: [{ si, fret: a }, { si, fret: b }], play: [{ note: pa.note, octave: pa.octave }, { note: pb.note, octave: pb.octave }], dur: dur * 1.4, gap: dur * 1.9 });
+  [[0, 1], [1, 2], [2, 3], [3, 5], [5, 7]].forEach(([a, b]) => {
+    const pa = posWithNote(si, a), pb = posWithNote(si, b);
+    [pa, pb].forEach(p => { if (!positions.some(q => q.fret === p.fret)) positions.push(p); });
+    const label = b - a === 1 ? `half step — 1 fret: ${pa.note} to ${pb.note}` : `whole step — 2 frets: ${pa.note} to ${pb.note}`;
+    steps.push({ focus: [_fp(pa)], play: [_pp(pa)], dur, label }, { focus: [_fp(pb)], play: [_pp(pb)], dur, label });
   });
-  return { root: positions[0].note, notes: uniqNotes(positions), label: 'Half vs whole steps', positions, steps };
+  return { root: positions[0].note, notes: uniqNotes(positions), label: 'Half vs whole steps', positions, steps: padToBar(steps, dur, opts.barBeats || 4) };
 }
 function buildEnharmonic(opts = {}) {
   const dur = 60 / (opts.bpm || 70), positions = [], steps = [];
@@ -1262,7 +1340,11 @@ export function demoToPlan(demo) {
   }
   if (demo.kind === 'interval') {
     const semis = (((demo.intervalSemitones || 0) % 24) + 24) % 24;
-    return semis === 12 ? buildOctave(root, { bpm: 80, label: demo.caption }) : buildInterval(root, semis, { bpm: 84, label: demo.caption });
+    const cap = demo.caption || '';
+    return buildIntervalClip(root, semis || 12, {
+      bpm: semis === 12 ? 80 : 84, label: demo.caption, octave: demo.octave, melodic: !!demo.melodic,
+      preferOpen: /open string/i.test(cap), alongString: /\bfrets?\b|half steps?\b/i.test(cap),
+    });
   }
   if (demo.kind === 'note') {
     const nn = toSharp(demo.note || demo.root);
@@ -1295,7 +1377,7 @@ export function drillToPlan(drill, bpmOverride) {
   if (/count|chromatic|finding/.test(title) || /one fret at a time/.test(sig)) return buildChromatic('E', 9, { bpm, si: customTuning.length - 1, fret: 0, label: 'Counting up the low E string by half steps' });
   if (/enharmonic/.test(title)) return buildEnharmonic({ bpm });
   if (voicing.includes('open string')) return buildOpenStrings({ bpm });
-  if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm });
+  if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm, barBeats: timeSig[0] });
   if (/two-note octaves|octave leaps/.test(sig)) return buildOctave(root, { bpm });
 
   // 1.4) The WALKDOWN étude — authored open-position descent (bass = the scale, down). Keyed on

@@ -123,7 +123,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "C",
                     "intervalSemitones": 1,
-                    "caption": "C up 1 fret"
+                    "caption": "C up 1 fret",
+                    "octave": 4
                   }
                 },
                 {
@@ -132,7 +133,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "C",
                     "intervalSemitones": 2,
-                    "caption": "C up 2 frets"
+                    "caption": "C up 2 frets",
+                    "octave": 4
                   }
                 }
               ],
@@ -168,7 +170,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "two-note intervals",
-            "pattern": "Play half-step pairs (one fret apart): E-F, F-F#, F#-G, etc., holding each pair 2 beats. Then whole-step pairs (2 frets): G-A, A-B. Feel the tension of tight half steps vs. open whole steps.",
+            "pattern": "On the low E string, one note after the other, play half-step pairs (one fret apart): E-F, F-F#, F#-G, giving each pair 2 beats. Then whole-step pairs (2 frets apart): G-A, A-B. Feel the tension of tight half steps vs. open whole steps.",
             "focus": "Distinguishing half steps (tight) from whole steps (open) by feel and sound"
           }
         },
@@ -262,7 +264,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "G",
                     "intervalSemitones": 7,
-                    "caption": "G up 7 frets"
+                    "caption": "G up 7 frets",
+                    "octave": 4
                   }
                 },
                 {
@@ -271,7 +274,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "G",
                     "intervalSemitones": 12,
-                    "caption": "G up 12 frets"
+                    "caption": "G up 12 frets",
+                    "octave": 4
                   }
                 }
               ],
@@ -307,7 +311,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "two-note octaves",
-            "pattern": "Play open A string, then jump 12 frets up to the same note (octave). Both sound like 'A'—same name, higher pitch. Jump back down. Repeat with other open strings: low E-to-12th-fret E, D-to-12th-fret D.",
+            "pattern": "Play open A string, then jump 12 frets up to the same note (octave). Both sound like 'A'—same name, higher pitch. Jump back down. Then play the same octave on two strings at once: open A with the G string's 2nd fret. Repeat with other open strings: low E to its 12th fret, then open low E with the D string's 2nd fret; D to its 12th fret, then open D with the B string's 3rd fret (crossing the B string adds one fret).",
             "focus": "Recognizing octave relationships across the neck (12 frets, same note)"
           }
         },
@@ -908,7 +912,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "C",
                     "intervalSemitones": 7,
-                    "caption": "C to G — perfect 5th"
+                    "caption": "C to G — perfect 5th",
+                    "octave": 4
                   }
                 },
                 {
@@ -917,7 +922,8 @@ export const CURRICULUM = {
                     "kind": "interval",
                     "root": "C",
                     "intervalSemitones": 1,
-                    "caption": "C to C# — minor 2nd"
+                    "caption": "C to C# — minor 2nd",
+                    "octave": 4
                   }
                 }
               ],
@@ -9927,7 +9933,8 @@ export const CURRICULUM = {
                   "audio": {
                     "kind": "interval",
                     "root": "D",
-                    "intervalSemitones": 7
+                    "intervalSemitones": 7,
+                    "melodic": true
                   }
                 },
                 {
