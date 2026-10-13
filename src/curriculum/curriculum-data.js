@@ -89,7 +89,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "single notes",
-            "pattern": "Play one note per beat: A-B-C-D-E-F-G-A, then reverse. Climb straight up the open A string one alphabet letter at a time to the A an octave higher (fret 12), then back down. After G it loops to A — that's the whole alphabet.",
+            "pattern": "Play one note per beat: A-B-C-D-E-F-G-A, then reverse. Climb straight up the open A string one alphabet letter at a time, on frets 0-2-3-5-7-8-10-12, to the A an octave higher at the 12th fret, then back down. After G it loops to A — that's the whole alphabet.",
             "focus": "Hearing the musical alphabet as a physical climb on one string"
           }
         },
@@ -475,7 +475,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "single notes — every A",
-            "pattern": "Play every A on the neck, low to high. The same note lives in many places — the open A string and the 5th fret of the low E are the exact same pitch, and A keeps reappearing as you climb. Finding any note means knowing every spot it lives.",
+            "pattern": "Find every A in the first 12 frets. Start from a landmark: the low E string's 5th fret (count up from open E: E F F♯ G G♯ A). Then use the octave shape, two strings up and two frets up, to the D string's 7th fret, and again (three frets up once you land on the B string) to the B string's 10th fret. Do the same from the open A string: G string 2nd fret, then the high E string's 5th fret. Finish on the A string's 12th fret, the open A an octave up.",
             "focus": "Seeing one note (A) in every place it lives across the whole fretboard — what finding any note really means"
           }
         }

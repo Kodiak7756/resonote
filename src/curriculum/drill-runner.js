@@ -620,19 +620,62 @@ function buildNoteDemo(noteName, opts = {}) {
 // Light EVERY occurrence of a note across the whole neck and play them in pitch order, so the
 // learner sees the SAME note living in many places (open A = 5th-fret low E = 7th-fret D…). The
 // point of "Finding Any Note on the Neck" — the relationship of one note across the fretboard.
+// Finding any note the way it's taught, within the first 12 frets: its landmark on the low E
+// string and on the A string (count up from the open string), then the octave shape from each —
+// two strings up and two frets up, or three frets up once the jump lands on the B or high E
+// string — then the 12th fret (the open string again, an octave up) and anything left over.
+// Every A: low E 5 → D 7 → B 10, then open A → G 2 → high E 5, then A 12.
 function buildNoteEverywhere(noteName, opts = {}) {
-  const n = toSharp(noteName), nf = nfrets();
-  const all = [];
-  for (let si = customTuning.length - 1; si >= 0; si--)
-    for (let f = 0; f <= nf; f++) {
-      const na = noteAt(si, f);
-      if (na.note === n) all.push({ si, fret: f, note: na.note, octave: na.octave, midi: na.octave * 12 + NOTES.indexOf(na.note) });
+  const n = toSharp(noteName), N = customTuning.length, maxF = Math.min(12, nfrets());
+  const open = si => _pmidi(noteAt(si, 0));
+  const where = (si, f) => (f === 0 ? `the open ${_strName(si)} string` : `the ${_strName(si)} string, ${_nth(f)} fret`);
+  const seq = [], seen = new Set();
+  const add = (si, f, label) => {
+    const k = si + ':' + f;
+    if (si < 0 || si >= N || f < 0 || f > maxF || seen.has(k)) return;
+    seen.add(k); seq.push({ ...posWithNote(si, f), label });
+  };
+  const words = ['', 'one', 'two', 'three', 'four'];
+  [N - 1, N - 2].forEach(si0 => {
+    const f0 = fretOfOn(si0, n);
+    if (si0 < 0 || f0 < 0) return;
+    add(si0, f0, f0 === 0 ? `${n}: ${where(si0, 0)}` : `${n} on ${where(si0, f0)}: count up from the open ${customTuning[si0].label || customTuning[si0].note}`);
+    let si = si0, f = f0;
+    while (si - 2 >= 0) {
+      const f2 = f + 12 - (open(si - 2) - open(si));
+      if (f2 < 0 || f2 > maxF) break;
+      const up = f2 - f;
+      add(si - 2, f2, `octave shape: two strings up, ${words[up] || up} frets up → ${where(si - 2, f2)}`);
+      si -= 2; f = f2;
     }
-  if (!all.length) return buildNoteDemo(n, opts);
-  // pitch order — unisons (open A = 5th-fret low E) land back-to-back; positions match the
-  // play sequence so the connecting path follows what's actually played.
-  const seq = all.slice().sort((a, b) => a.midi - b.midi || b.si - a.si).map(p => ({ si: p.si, fret: p.fret, note: p.note, octave: p.octave }));
-  return { root: n, notes: [n], label: opts.label || `Every ${n} on the neck`, positions: seq, steps: seqSteps(seq, 60 / (opts.bpm || 88)) };
+  });
+  [N - 1, N - 2].forEach(si0 => {
+    const f0 = fretOfOn(si0, n);
+    if (si0 >= 0 && f0 >= 0 && f0 + 12 <= maxF) add(si0, f0 + 12, `12th fret: the open string's ${n} an octave up → ${where(si0, f0 + 12)}`);
+  });
+  const rest = [];
+  for (let si = N - 1; si >= 0; si--) for (let f = 0; f <= maxF; f++) if (noteAt(si, f).note === n && !seen.has(si + ':' + f)) rest.push(posWithNote(si, f));
+  rest.sort((a, b) => _pmidi(a) - _pmidi(b) || b.si - a.si).forEach(q => add(q.si, q.fret, `${n} also lives on ${where(q.si, q.fret)}`));
+  if (!seq.length) return buildNoteDemo(n, opts);
+  const dur = 60 / (opts.bpm || 88);
+  let steps = seq.map(q => ({ focus: [_fp(q)], play: [_pp(q)], dur, label: q.label }));
+  if (opts.barBeats) steps = padToBar(steps, dur, opts.barBeats, 0);
+  const positions = seq.map(q => ({ si: q.si, fret: q.fret, note: q.note, octave: q.octave }));
+  return { root: n, notes: [n], label: opts.label || `Every ${n} up to the 12th fret`, positions, steps };
+}
+// The musical alphabet up ONE string from a root: the seven letter names in order, one per beat
+// (the white keys, so from A it's A B C D E F G A on frets 0-2-3-5-7-8-10-12 of the A string), up
+// to the same letter an octave higher and back down.
+const _WHITE = [0, 2, 4, 5, 7, 9, 11];   // C D E F G A B
+function alphabetIntervals(root) {
+  const i = Math.max(0, 'CDEFGAB'.indexOf(String(root || 'A').trim().charAt(0).toUpperCase()));
+  return _WHITE.map((_, k) => (_WHITE[(i + k) % 7] - _WHITE[i] + 12) % 12);
+}
+function buildAlphabetClimb(root, opts = {}) {
+  const r = toSharp(root), ints = alphabetIntervals(root), start = pickClimbStart(r, 12);
+  const up = [...ints, 12].map(iv => posWithNote(start.si, start.fret + iv));
+  const label = opts.label || `The musical alphabet up ${start.fret === 0 ? 'the open' : 'the'} ${_strName(start.si)} string: ${up.map(q => q.note).join('-')} (frets ${up.map(q => q.fret).join('-')})`;
+  return buildScaleClimb(r, ints, { bpm: opts.bpm, downToo: true, label, barBeats: opts.barBeats });
 }
 function buildOpenStrings(opts = {}) {
   const order = []; for (let si = customTuning.length - 1; si >= 0; si--) order.push(posWithNote(si, 0));
@@ -1632,11 +1675,9 @@ export function demoToPlan(demo) {
   if (!demo) return null;
   const root = toSharp(demo.root || demo.note || 'C');
   if (demo.kind === 'scale') {
-    // The musical-alphabet lesson demonstrates A natural minor from the open A string —
-    // the seven letters starting on A — so the demo matches its practice-drill preview.
-    if (/alphabet/.test(demo.caption || '')) {
-      return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: 96, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
-    }
+    // The musical-alphabet clips climb the seven letters up ONE string from the clip's root
+    // (open A: frets 0-2-3-5-7-8-10-12; open low E: E F G A B C D E), like the drill.
+    if (/alphabet|seven letters/.test(demo.caption || '')) return buildAlphabetClimb(root, { bpm: 96, label: demo.caption });
     const ints = SCALE_TYPES[demo.scaleCat]?.[demo.scaleName] || [0, 2, 4, 5, 7, 9, 11];
     const run = buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}`, rootToRoot: true, octaves: 1 });
     // a home under the clip: demo.over = {root, quality} strikes that chord each bar (an ear
@@ -1775,10 +1816,10 @@ export function drillToPlan(drill, bpmOverride) {
   const timeSig = timeSigOf(drill.timeSig);
 
   // 1) Single-note FOUNDATION drills (named, unambiguous)
-  if (/alphabet/.test(title)) return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: bpmOverride || 120, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
+  if (/alphabet/.test(title)) return buildAlphabetClimb(root, { bpm, barBeats: timeSig[0] });
   // "Finding any note" → show the SAME note EVERYWHERE on the neck (every A, etc.), so the
   // relationship across the fretboard reads — not just one position.
-  if (/finding notes|finding any note/.test(sig)) return buildNoteEverywhere(root, { bpm, label: `Every ${root} on the neck` });
+  if (/finding notes|finding any note/.test(sig)) return buildNoteEverywhere(root, { bpm, barBeats: timeSig[0], label: `Every ${root} up to the 12th fret · landmarks on the low E and A strings, then octave shapes` });
   if (/count|chromatic|finding/.test(title) || /one fret at a time/.test(sig)) return buildChromatic('E', 9, { bpm, si: customTuning.length - 1, fret: 0, label: 'Counting up the low E string by half steps' });
   if (/enharmonic/.test(title)) return buildEnharmonic({ bpm });
   if (voicing.includes('open string')) return buildOpenStrings({ bpm });
