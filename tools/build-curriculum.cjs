@@ -1,3 +1,7 @@
+// NOTE: src/curriculum/curriculum-data.js is now HAND-MAINTAINED. Its source JSON
+// is not in the repo and the data has been hand-edited since it was generated, so
+// running this script would overwrite those fixes. Edit curriculum-data.js directly.
+//
 // Generates src/curriculum/curriculum-data.js from a theory-path-curriculum
 // workflow output file, and validates every demo/exercise against the app's
 // real CHORD_TYPES / SCALE_TYPES / NOTES so nothing can break the renderer.
