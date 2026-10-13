@@ -2542,18 +2542,20 @@ export const CURRICULUM = {
               {
                 "root": "C",
                 "quality": "Maj7",
+                "beats": 2,
                 "numeral": "Imaj7",
-                "beats": 2
+                "frets": "x3545x"
               },
               {
                 "root": "C",
                 "quality": "7 (Dom)",
+                "beats": 2,
                 "numeral": "I7",
-                "beats": 2
+                "frets": "x3535x"
               }
             ],
-            "voicing": "triads-DGB",
-            "pattern": "Play Cmaj7 (1 beat), hold it (1 beat), then switch to C7 (1 beat) and hold (1 beat). On beat 4, flick back to Maj7. The one-fret drop on the 7th is the only change.",
+            "voicing": "5th-string shapes",
+            "pattern": "Play Cmaj7 at the 3rd fret (x3545x) for 2 beats, then drop the note on the G string one fret, from B to B♭, for C7 (x3535x), 2 beats. Go back and forth. That one-fret drop on the 7th is the only change.",
             "focus": "Hearing the difference between a natural 7th (soft, dreamy) and a flat 7th (bluesy, restless)."
           }
         },
@@ -3050,18 +3052,20 @@ export const CURRICULUM = {
               {
                 "root": "B",
                 "quality": "m7♭5",
+                "beats": 2,
                 "numeral": "viiø7",
-                "beats": 2
+                "frets": "x2323x"
               },
               {
                 "root": "B",
                 "quality": "Dim7",
+                "beats": 2,
                 "numeral": "vii°7",
-                "beats": 2
+                "frets": "x2313x"
               }
             ],
-            "voicing": "triads-DGB",
-            "pattern": "Play Bm7♭5 (2 beats)—a question with no answer, shadowy and unresolved. Switch to Bdim7 (2 beats)—eerie, symmetrical, like a movie-villain moment. Both chords crave the next chord to rescue them.",
+            "voicing": "5th-string shapes",
+            "pattern": "Play Bm7♭5 at the 2nd fret (x2323x) for 2 beats: a question with no answer, shadowy and unresolved. Then drop the note on the G string one fret, from A to A♭, for Bdim7 (x2313x), 2 beats: eerie, evenly spaced, like a movie-villain moment. Both chords crave the next chord to rescue them.",
             "focus": "Hearing the difference between half-diminished (yearning) and fully diminished (spooky), and understanding that both are unresolved tension."
           }
         }
@@ -3981,18 +3985,20 @@ export const CURRICULUM = {
               {
                 "root": "C",
                 "quality": "Sus4",
+                "beats": 2,
                 "numeral": "Isus4",
-                "beats": 2
+                "frets": "x33011"
               },
               {
                 "root": "C",
                 "quality": "Major",
+                "beats": 2,
                 "numeral": "I",
-                "beats": 2
+                "frets": "x32010"
               }
             ],
             "voicing": "open chords",
-            "pattern": "Csus4 (2 beats)—the F rubs against where the E wants to be, creating a micro-tension. Then C major (2 beats)—the F slides to E and clicks into place. That resolution is the suspension's whole point: a one-note journey from unresolved to resolved.",
+            "pattern": "Csus4 (x33011) for 2 beats: the F rubs against where the E wants to be. Then C major (x32010) for 2 beats: the F on the D string drops one fret and the F on the high E string drops to the open string, both landing on E. That one-fret click into place is the suspension's whole point.",
             "focus": "Understanding suspensions as miniature tension-and-release arcs within a single chord change."
           }
         },
@@ -5720,18 +5726,20 @@ export const CURRICULUM = {
               {
                 "root": "C",
                 "quality": "Sus4",
+                "beats": 2,
                 "numeral": "sus4",
-                "beats": 2
+                "frets": "x33011"
               },
               {
                 "root": "C",
                 "quality": "Sus2",
+                "beats": 2,
                 "numeral": "sus2",
-                "beats": 2
+                "frets": "x30013"
               }
             ],
             "voicing": "open chords",
-            "pattern": "Csus4 (C F G)—the 4th replaces the major 3rd; the chord is suspended between major and minor. Sus2 (C D G)—the 2nd replaces the 3rd instead. Neither sounds happy or sad; both sound open and unresolved, waiting for the 3rd to fill in.",
+            "pattern": "Csus4 (x33011: C F G): the 4th replaces the major 3rd, so the chord hangs between major and minor. Csus2 (x30013: C D G): the open D string is the 2nd, replacing the 3rd instead. Neither sounds happy or sad; both sound open and unresolved, waiting for the 3rd to fill in.",
             "focus": "Hearing suspended chords as 'identity-neutral'—without the 3rd, the chord has no major or minor quality."
           }
         },
@@ -6730,7 +6738,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "triads-DGB",
-            "pattern": "One triad per bar on the top three strings. For every chord change, deliberately move each finger to the CLOSEST note of the next chord — never let a voice leap if a step will do.",
+            "pattern": "One triad per bar on the D, G and B strings. For every chord change, deliberately move each finger to the CLOSEST note of the next chord — never let a voice leap if a step will do.",
             "focus": "Routing each moving voice by the shortest distance to the next chord tone."
           }
         },
@@ -6944,32 +6952,29 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "numeral": "I(sus4)",
                 "root": "D",
                 "quality": "Sus4",
-                "beats": 2
+                "beats": 4,
+                "numeral": "I(sus4)",
+                "frets": "xx0233"
               },
               {
-                "numeral": "I",
-                "root": "D",
-                "quality": "Major",
-                "beats": 2
-              },
-              {
-                "numeral": "IV(sus2)",
                 "root": "G",
                 "quality": "Sus2",
-                "beats": 2
+                "beats": 2,
+                "numeral": "IV(sus2)",
+                "frets": "3x0233"
               },
               {
-                "numeral": "IV",
                 "root": "G",
                 "quality": "Major",
-                "beats": 2
+                "beats": 2,
+                "numeral": "IV",
+                "frets": "320033"
               }
             ],
-            "voicing": "open chords",
-            "pattern": "2 beats of Dsus4 (D-G-A), then resolve to D for 2 beats; move the root up a 4th to G and the same suspended notes become Gsus2 (G-A-D) for 2 beats, then resolve to G. Keep the suspended notes ringing across the root change.",
+            "voicing": "ringing sus grips",
+            "pattern": "Hold Dsus4 (xx0233: D-A-D-G) for 4 beats. Keep those fingers exactly where they are and add the low E string's 3rd fret: the bass jumps up a 4th to G and the same ringing notes become Gsus2 (3x0233) for 2 beats. Then add the A string's 2nd fret and lift the finger off the G string (320033): the suspended A gives way to B and G, and you're on plain G major for 2 beats.",
             "focus": "Letting a sus4 grab carry over as the sus2 a 4th higher when the root moves up a 4th."
           }
         },
@@ -7094,32 +7099,36 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "numeral": "I",
                 "root": "C",
                 "quality": "Major",
-                "beats": 4
+                "beats": 4,
+                "numeral": "I",
+                "frets": "x32013"
               },
               {
-                "numeral": "iii",
                 "root": "E",
                 "quality": "Minor",
-                "beats": 4
+                "beats": 4,
+                "numeral": "iii",
+                "frets": "xx2000"
               },
               {
-                "numeral": "IV",
                 "root": "F",
                 "quality": "Major",
-                "beats": 4
+                "beats": 4,
+                "numeral": "IV",
+                "frets": "xx321x"
               },
               {
-                "numeral": "V",
                 "root": "G",
                 "quality": "Major",
-                "beats": 4
+                "beats": 4,
+                "numeral": "V",
+                "frets": "xx54xx"
               }
             ],
             "voicing": "arpeggiated",
-            "pattern": "Arpeggiate each chord low-to-high. As the bass note climbs C-E-F-G across the bars, deliberately choose a top note that DESCENDS, so your lowest and highest voices spread apart.",
+            "pattern": "Roll each chord low to high. The bass climbs C-E-F-G while the top note falls G-E-C-B: C (x32013), Em (xx2000), F (xx321x), G (xx54xx). Your lowest and highest notes spread apart.",
             "focus": "Building contrary motion between the bass and the top voice."
           }
         },
@@ -7194,32 +7203,32 @@ export const CURRICULUM = {
             ],
             "progression": [
               {
-                "numeral": "I",
                 "root": "C",
-                "quality": "Major",
-                "beats": 4
+                "quality": "Maj7",
+                "beats": 4,
+                "numeral": "I"
               },
               {
-                "numeral": "vi",
                 "root": "A",
-                "quality": "Minor",
-                "beats": 4
+                "quality": "Min7",
+                "beats": 4,
+                "numeral": "vi"
               },
               {
-                "numeral": "ii",
                 "root": "D",
-                "quality": "Minor",
-                "beats": 4
+                "quality": "Min7",
+                "beats": 4,
+                "numeral": "ii"
               },
               {
-                "numeral": "V",
                 "root": "G",
                 "quality": "7 (Dom)",
-                "beats": 4
+                "beats": 4,
+                "numeral": "V"
               }
             ],
             "voicing": "shell (R-3-7)",
-            "pattern": "Play a shell voicing (root, 3rd, 7th) on the down beat of each bar, then with your thumb/low string walk a stepwise quarter-note bass line toward the next chord's root, ending each bar with a half-step approach note into the next root.",
+            "pattern": "Play a shell voicing (root, 3rd, 7th) on beat 1 of each bar: Cmaj7 x3x45x, Am7 5x55xx, Dm7 x5x56x, G7 3x34xx. Then walk the low strings in quarter notes toward the next chord's root: two notes from the chord, then a note a half step away that leads into the next root. C B G G♯ | A C E D♯ | D C A G♯ | G B D C♯.",
             "focus": "Connecting chord roots with a smooth stepwise walking bass line."
           }
         }
