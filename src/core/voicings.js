@@ -530,26 +530,6 @@ function chooseTemplateOctaveShift(baseFrets, nf, opts={}) {
   })[0];
 }
 
-function shiftCanonicalBoxByOctave(positions, shift, root, rootIdx) {
-  return positions.map(p => {
-    const fret = p.fret + shift;
-    if (fret < 0 || fret > getInst().frets) return null;
-    const info = getNoteAtFret(customTuning[p.si].note, customTuning[p.si].octave, fret);
-    return { si:p.si, fret, note:info.note, octave:info.octave,
-      midi:info.octave*12+NOTES.indexOf(info.note), isRoot:info.note===root,
-      deg:(NOTES.indexOf(info.note)-rootIdx+12)%12 };
-  }).filter(Boolean).sort((a,b) => b.si-a.si || a.fret-b.fret || a.midi-b.midi);
-}
-
-function maybeApplyCanonicalLowRegisterOverride(root, boxIndex, positions, rootIdx) {
-  if (root !== 'C') return positions;
-  if (boxIndex === 2 || boxIndex === 3 || boxIndex === 4) {
-    const shifted = shiftCanonicalBoxByOctave(positions, -12, root, rootIdx);
-    if (shifted.length === positions.length) return shifted;
-  }
-  return positions;
-}
-
 function buildCanonicalBoxesFromTemplates(root, templates, anchorFret, templateRootFret, opts={}) {
   if (anchorFret === null) return null;
   const delta = anchorFret - templateRootFret;
@@ -596,9 +576,13 @@ function buildCanonicalSubsetBoxesFromReference(root, templates, referenceRoot, 
   return buildCanonicalBoxesFromReference(root, templates, referenceRoot, { ...opts, allowedDegs: new Set(allowedDegs) });
 }
 
+// The major anchor is the root on the low E string nearest fret 3, which for C#, D, D# and E
+// lands at fret 9-12 — so their boxes ran 8-24 with no open-position box for two beginner keys.
+// Each box drops an octave when it sits at fret 12+ and still fits on the neck (the same
+// per-box rule as the mode boxes, and what C's hand-made override did); CAGED order is kept.
 function buildCanonicalMajorBoxes(root) {
   return buildCanonicalBoxesFromTemplates(root, CANONICAL_MAJOR_TEMPLATE_BOXES,
-    getCanonicalMajorAnchorFret(root), 3, { lowRegisterOverride: maybeApplyCanonicalLowRegisterOverride });
+    getCanonicalMajorAnchorFret(root), 3, { lowRegisterOverride: (r, i, positions) => normalizeBoxToLowRegister(positions) });
 }
 function buildCanonicalMajorPentBoxes(root) {
   return buildCanonicalBoxesFromReference(root, CANONICAL_MAJOR_PENT_TEMPLATE_BOXES, 'G',
