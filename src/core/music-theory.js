@@ -211,7 +211,7 @@ export const CANONICAL_MINOR_PENT_TEMPLATE_BOXES = [
   ],
   [
     {si:5,fret:13,deg:10},{si:5,fret:15,deg:0},
-    {si:4,fret:15,deg:5},
+    {si:4,fret:13,deg:3},{si:4,fret:15,deg:5},
     {si:3,fret:12,deg:7},{si:3,fret:15,deg:10},
     {si:2,fret:12,deg:0},{si:2,fret:15,deg:3},
     {si:1,fret:13,deg:5},{si:1,fret:15,deg:7},
