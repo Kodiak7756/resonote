@@ -1,0 +1,50 @@
+/* ── Pop-out windows ────────────────────────────────────────────────────
+   A window opened with ?popout=<pedal id> shows that one pedal filling the
+   window; ?popout=neck shows the neck alone. Everything else the app builds
+   is still there (the pedal and the neck read from it) — just not shown.
+   Layout only: no colours here, the pedal's own paint carries over. */
+
+body.popout #header,
+body.popout #session-bar,
+body.popout #tab-mode,
+body.popout #instrument-bar,
+body.popout #learn-mode,
+body.popout #board-area,
+body.popout #studio-mode,
+body.popout #focus-bar,
+body.popout #pedal-dock,
+body.popout #catalog-drawer,
+body.popout #help-overlay,
+body.popout #board-zoom-ctrl { display: none !important; }
+
+body.popout { overflow: hidden; }
+
+/* One pedal, the whole window */
+body.popout-pedal #instrument-display { display: none !important; }
+body.popout-pedal .pedal-card {
+  position: fixed !important;
+  left: 0 !important; top: 0 !important;
+  width: 100vw !important; height: 100vh !important;
+  border-radius: 0;
+}
+body.popout-pedal .pedal-card .close-btn,
+body.popout-pedal .pedal-card .minimize-btn,
+body.popout-pedal .pedal-card .lock-btn,
+body.popout-pedal .pedal-card .pedal-resize { display: none; }
+body.popout-pedal .pedal-header { cursor: default; }
+
+/* The neck, the whole window */
+body.popout-neck #pedals-container { display: none !important; }
+body.popout-neck #instrument-display { width: 100vw; }
+
+/* Main window: a pedal that is out in its own window keeps its place on the
+   board, quietly, as a stand-in you can bring it back from. */
+.pedal-card.is-popped .pedal-links { visibility: hidden; }
+
+/* NECK ⧉ rides next to FOCUS, the same size, wearing the plain chip look */
+#btn-neck-out {
+  margin-left: 6px;
+  letter-spacing: 1.2px; font-weight: 700;
+  font-size: calc(9px*var(--ui));
+  padding: 4px 10px;
+}

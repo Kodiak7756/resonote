@@ -137,7 +137,9 @@ export function makeResizable(el, onResize) {
 }
 
 // ── Pedal card builder ────────────────────────────────────────────────
-export function createPedalElement(p, catalogEntry, onClose, onMinimize, onMove, onResize, onLock) {
+// `popout` (optional) = { title, onClick } — the ⧉ button that opens this pedal
+// in a window of its own (or, inside that window, sends it back to the board).
+export function createPedalElement(p, catalogEntry, onClose, onMinimize, onMove, onResize, onLock, popout) {
   const el = document.createElement('div');
   el.className = 'pedal-card';
   el.id = `pedal-${p.id}`;
@@ -176,6 +178,7 @@ export function createPedalElement(p, catalogEntry, onClose, onMinimize, onMove,
         <span class="pedal-links" style="display:inline-flex;gap:3px;margin-right:5px"></span>
         ${catalogEntry?.tier === 'pro'   ? '<span class="tier-badge">PRO</span>' : ''}
         ${catalogEntry?.tier === 'studio'? '<span class="tier-badge">STUDIO</span>' : ''}
+        ${popout ? `<button class="pedal-btn popout-btn" title="${popout.title}">⧉</button>` : ''}
         <button class="pedal-btn lock-btn" title="${p.locked ? 'Unlock to move & resize' : 'Lock in place'}">${p.locked ? '🔒' : '🔓'}</button>
         <button class="pedal-btn minimize-btn" title="Minimize">▁</button>
         <button class="pedal-btn close-btn" title="Close">✕</button>
@@ -196,6 +199,11 @@ export function createPedalElement(p, catalogEntry, onClose, onMinimize, onMove,
     e.stopPropagation();
     el.remove();
     if (onClose) onClose(p.id);
+  });
+
+  el.querySelector('.popout-btn')?.addEventListener('click', e => {
+    e.stopPropagation();
+    popout.onClick(p.id);
   });
 
   el.querySelector('.minimize-btn').addEventListener('click', e => {
