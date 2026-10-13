@@ -217,7 +217,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
         const notes = new Set([a.note, b.note, c.note]);
         if (notes.size < 3 || !notes.has(rootNote)) continue;
         const positions = [a, b, c].map(x => ({ si: x.si, fret: x.fret, note: x.note }));
-        const strNames = grp.map(si => 6 - si).join('-');
+        const strNames = grp.map(si => si + 1).join('-');
         addResult(positions, `Triad (${strNames})`, 'triad', 50 - baseFret);
       }
     }
