@@ -1916,7 +1916,7 @@ export const CURRICULUM = {
           "teach": {
             "summary": "Take a minor triad and lower the 5th by a half step too. Now you've stacked two minor 3rds — that's a diminished triad, a tense, unstable sound that begs to resolve.",
             "points": [
-              "Diminished from C = C D# F#. Both intervals are minor 3rds (3 + 3 semitones).",
+              "Diminished from C = C E♭ G♭. Both intervals are minor 3rds (3 + 3 semitones). (E♭ and G♭ share frets with D# and F#, the names the app's note buttons use.)",
               "Compared to minor, the 5th drops from 7 to 6 (a flatted 5th / tritone above the root).",
               "It sounds uneasy on purpose — think suspense or 'something's about to happen'.",
               "It naturally appears on the 7th degree of a major key, pulling hard toward home."
@@ -1926,7 +1926,7 @@ export const CURRICULUM = {
               "root": "C",
               "chordCat": "Triads",
               "chordType": "Dim",
-              "caption": "C diminished: C – D# – F#"
+              "caption": "C diminished: C – E♭ – G♭"
             },
             "earTip": "Diminished is the horror-movie / cliffhanger chord. The flat-5 tritone gives it that 'we're not safe here' tension."
           },
@@ -1960,7 +1960,7 @@ export const CURRICULUM = {
                 3,
                 6
               ],
-              "explain": "C dim = C (0), D# (minor 3rd, 3), F# (flat 5th, 6). Two minor 3rds stacked — the 5th sits a half step below a normal 5th."
+              "explain": "C dim = C (0), E♭ (minor 3rd, 3), G♭ (flat 5th, 6). Two minor 3rds stacked — the 5th sits a half step below a normal 5th. (On the note buttons, E♭ and G♭ are D# and F#: same frets, other names.)"
             }
           ],
           "drill": {
@@ -2071,7 +2071,7 @@ export const CURRICULUM = {
                 4,
                 8
               ],
-              "explain": "E aug = E, G#, C… wait. Those are the SAME three notes as C aug (C E G#)! Because every note is a major 3rd apart, the chord has no real root — C aug, E aug, and G# aug are one shape wearing three names. Learn it once, own it three times."
+              "explain": "E aug = E, G#, B#… wait. B# is C's fret (it's C on the note buttons), so those are the SAME three frets as C aug (C E G#)! Because every note is a major 3rd apart, the chord has no real root — C aug, E aug, and A♭ aug (A♭ C E) are one shape wearing three names. Learn it once, own it three times."
             },
             {
               "kind": "play",
@@ -2956,7 +2956,7 @@ export const CURRICULUM = {
                 6,
                 9
               ],
-              "explain": "D (0), F (3), A♭ (6), B (9)... look again: those are the SAME four notes as the Bdim7 you just heard (B D F A♭)! Because every note is exactly 3 frets apart, any of the four can act as the root — one dim7 is secretly four chords: Bdim7 = Ddim7 = Fdim7 = A♭dim7. Slide the shape up 3 frets and you haven't changed the chord at all."
+              "explain": "D (0), F (3), A♭ (6), C♭ (9). C♭ is B's fret (B on the note buttons), so look again: those are the SAME four frets as the Bdim7 you just heard (B D F A♭)! Because every note is exactly 3 frets apart, any of the four can act as the root — one dim7 is secretly four chords: Bdim7 = Ddim7 = Fdim7 = A♭dim7. Slide the shape up 3 frets and you haven't changed the chord at all."
             },
             {
               "kind": "ear",
@@ -2997,7 +2997,7 @@ export const CURRICULUM = {
                 }
               ],
               "answer": 0,
-              "explain": "A is a minor ii–V–i: Bm7♭5 → E7 → Am. The yearning chord exists to start exactly that handoff — that's why the drill labels it ii. Now open Dynamic Practice, set the key to G, and run the drill there: both chords land on F♯ — F♯m7♭5 is the ii of E minor (G's relative minor), and F♯dim7 is the vii°7 of G."
+              "explain": "A is a minor ii–V–i: Bm7♭5 → E7 → Am. The yearning chord exists to start exactly that handoff — in A minor it's the ii. (The drill counts from C major instead, where the same chord is the viiø7.) Now open Dynamic Practice, set the key to G, and run the drill there: both chords land on F♯ — F♯m7♭5 is G major's own viiø7 (and the ii of E minor, G's relative minor), while F♯dim7 is the vii°7 of G minor, borrowed for extra bite."
             }
           ],
           "drill": {
@@ -3011,7 +3011,7 @@ export const CURRICULUM = {
               {
                 "root": "B",
                 "quality": "m7♭5",
-                "numeral": "ii",
+                "numeral": "viiø7",
                 "beats": 2
               },
               {
@@ -5817,7 +5817,7 @@ export const CURRICULUM = {
                 }
               ],
               "answer": 1,
-              "explain": "B is C augmented: raise the 5th (G to G#) and the triad becomes two stacked major 3rds — C to E, E to G#. Perfectly symmetrical, no home — that's the restlessness you heard. And symmetry hides a bonus: Caug, Eaug, and G#aug are the SAME three notes. One aug shape covers three roots — slide it up 4 frets and you get the very same chord."
+              "explain": "B is C augmented: raise the 5th (G to G#) and the triad becomes two stacked major 3rds — C to E, E to G#. Perfectly symmetrical, no home — that's the restlessness you heard. And symmetry hides a bonus: Caug (C E G#), Eaug (E G# B#) and A♭aug (A♭ C E) land on the SAME three frets. One aug shape covers three roots — slide it up 4 frets and you get the very same chord."
             },
             {
               "kind": "ear",
