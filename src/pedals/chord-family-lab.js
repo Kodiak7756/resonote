@@ -171,11 +171,18 @@ export function buildChordLabContent(p) {
     }
   });
 
-  // Sync root from other pedals / the key bus.
+  // Sync root from the key bus. The Circle of Fifths is the one editor of the master key
+  // (CONTRACTS.md): a root picked here is this lab's own temporary override and is never
+  // broadcast (it used to force "<root> Major" on the whole session). While the lab is
+  // linked, a ⟲ chip takes it back to the master's root.
+  function takeRoot(r) { root = r; selVoicing = null; listen.on = false; persist(); render(); applyHighlight(); }
+  const offMaster = () => !!pedalBus.masterKey.root && pedalBus.follows(p.type) && root !== pedalBus.masterKey.root;
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    if (ev.root !== root) { root = ev.root; selVoicing = null; persist(); render(); applyHighlight(); }
+    if (ev.root !== root) takeRoot(ev.root);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   function applyHighlight() {
     const c = memberChord();
@@ -241,6 +248,7 @@ export function buildChordLabContent(p) {
       const on = n === root;
       h += `<button class="cl-root${on ? ' on' : ''}" data-root="${n}">${n}</button>`;
     });
+    if (offMaster()) h += `<button class="cl-mini cl-master" title="This lab is on its own root — tap to re-sync it to the session key">⟲ Reset to session key · ${pedalBus.masterKey.root}</button>`;
     h += `</div>`;
 
     // Headline chord + notes (colour tone emphasised)
@@ -312,11 +320,8 @@ export function buildChordLabContent(p) {
       e.stopPropagation(); memberIdx = parseInt(b.dataset.mem); selVoicing = null; listen.on = false;
       persist(); render(); applyHighlight();
     });
-    el.querySelectorAll('.cl-root').forEach(b => b.onclick = e => {
-      e.stopPropagation(); root = b.dataset.root; selVoicing = null; listen.on = false;
-      pedalBus.setKey(root, 'Major', { source: p.id });
-      persist(); render(); applyHighlight();
-    });
+    el.querySelectorAll('.cl-root').forEach(b => b.onclick = e => { e.stopPropagation(); takeRoot(b.dataset.root); });
+    el.querySelector('.cl-master')?.addEventListener('click', e => { e.stopPropagation(); takeRoot(pedalBus.masterKey.root); });
     el.querySelectorAll('.cl-voicing').forEach(b => b.onclick = e => {
       e.stopPropagation(); const vi = parseInt(b.dataset.vi);
       selVoicing = selVoicing === vi ? null : vi; render(); applyHighlight();

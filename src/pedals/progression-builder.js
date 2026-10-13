@@ -150,13 +150,26 @@ export function buildProgressionContent(p) {
   let lastClockConfig = metroClock.getConfigSignature();
 
   // ── Cross-pedal root/key broadcasts (opt-in) ─────────────────────────
+  // The Circle of Fifths is the one editor of the master key (CONTRACTS.md): the KEY
+  // row here sets this pedal's own key — a temporary override, never a broadcast.
+  // While the pedal is linked, a ⟲ chip takes it back to the master.
+  function takeKey(k, restart = true) {
+    if (k.root) root = k.root;
+    if (k.keyType && KEY_PATTERNS[k.keyType]) keyType = k.keyType;
+    positionZone = getActiveZone()?.label || getProgressionZones()[0]?.label || positionZone;
+    if (restart && p._progPlaying) { stopPlaying(); startPlaying(); } else render();
+  }
+  function offMaster() {
+    const mk = pedalBus.masterKey;
+    if (!mk.root || !pedalBus.follows(p.type)) return false;
+    return root !== mk.root || (!!KEY_PATTERNS[mk.keyType] && keyType !== mk.keyType);
+  }
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    root = ev.root;
-    if (ev.keyType && KEY_PATTERNS[ev.keyType]) keyType = ev.keyType;
-    positionZone = getActiveZone()?.label || getProgressionZones()[0]?.label || positionZone;
-    render();
+    takeKey(ev, false);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   // ── Metronome sync + unified slave-mode stepping ─────────────────────
   metroClock.on(clock => {
@@ -532,7 +545,12 @@ export function buildProgressionContent(p) {
     KEY_TYPES.forEach(kt => {
       h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">${kt}</button>`;
     });
-    h += `</div></div>`;
+    h += `</div>`;
+    if (offMaster()) {
+      const mk = pedalBus.masterKey;
+      h += `<button class="rk-chip prog-master" title="This progression is in its own key — tap to re-sync it to the session key" style="min-height:calc(28px*var(--ui));align-self:flex-start;margin-top:5px">⟲ Reset to session key · ${mk.root} ${mk.keyType}</button>`;
+    }
+    h += `</div>`;
 
     // ── Readout + transport ──
     // The transport flips to ◼ while it runs, and at that moment it is the halt
@@ -736,20 +754,9 @@ export function buildProgressionContent(p) {
     // ── Wire events ──────────────────────────────────────────────────
     el.querySelector('.numlabel-toggle')?.addEventListener('click', e => { e.stopPropagation(); numLabelMode = numLabelMode === 'NUM' ? 'NAMES' : 'NUM'; render(); });
 
-    el.querySelectorAll('.prog-root').forEach(b => b.onclick = e => {
-      e.stopPropagation();
-      root = b.dataset.r;
-      pedalBus.setKey(root, keyType, { source: p.id });
-      if (!getActiveZone() && getProgressionZones()[0]) positionZone = getProgressionZones()[0].label;
-      if (p._progPlaying) { stopPlaying(); startPlaying(); } else render();
-    });
-    el.querySelectorAll('.prog-kt').forEach(b => b.onclick = e => {
-      e.stopPropagation();
-      keyType = b.dataset.kt;
-      pedalBus.setKey(root, keyType, { source: p.id });
-      if (!getActiveZone() && getProgressionZones()[0]) positionZone = getProgressionZones()[0].label;
-      if (p._progPlaying) { stopPlaying(); startPlaying(); } else render();
-    });
+    el.querySelectorAll('.prog-root').forEach(b => b.onclick = e => { e.stopPropagation(); takeKey({ root: b.dataset.r }); });
+    el.querySelectorAll('.prog-kt').forEach(b => b.onclick = e => { e.stopPropagation(); takeKey({ keyType: b.dataset.kt }); });
+    el.querySelector('.prog-master')?.addEventListener('click', e => { e.stopPropagation(); takeKey(pedalBus.masterKey); });
 
     el.querySelectorAll('.qual-btn').forEach(b => b.onclick = e => {
       e.stopPropagation();
