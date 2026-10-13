@@ -4719,7 +4719,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "arpeggiated",
-            "pattern": "Over Am, run A melodic minor UP (A B C D E F# G#) then come back DOWN with natural minor (A G F E D C B A). Over E, keep the G#: the E chord holds G#, so a G natural would clash. Run up the same way, then come down with harmonic minor instead (A G# F E D C B A). One smooth ascent and descent per two bars.",
+            "pattern": "Over Am, run A melodic minor UP (A B C D E F# G#) then come back DOWN with natural minor (A G F E D C B A). Over E, keep the G#: the E chord holds G#, so a G natural would clash. Run up the same way, then come down with harmonic minor instead (A G# F E D C B A). One smooth ascent and descent per two bars, all in one spot: start on the low A at the 6th string's 5th fret.",
             "focus": "Hearing how raising the 6th and 7th brightens the ascent while the natural-minor descent keeps it dark."
           }
         },
@@ -4897,7 +4897,8 @@ export const CURRICULUM = {
               "root": "D",
               "scaleCat": "Modes",
               "scaleName": "Dorian",
-              "caption": "C major's notes, but D is home → D Dorian"
+              "caption": "C major's notes, but D is home → D Dorian",
+              "drone": true
             },
             "earTip": "Play C-D-E-F-G-A-B-C ending on C: bright and resolved. Now play the same notes D-E-F-G-A-B-C-D ending on D: it leans, slightly minor, unresolved. Same notes, different gravity — that's a mode."
           },
@@ -4925,7 +4926,8 @@ export const CURRICULUM = {
                     "root": "C",
                     "scaleCat": "Modes",
                     "scaleName": "Ionian",
-                    "caption": "centered on C"
+                    "caption": "centered on C",
+                    "drone": true
                   }
                 },
                 {
@@ -4935,7 +4937,8 @@ export const CURRICULUM = {
                     "root": "D",
                     "scaleCat": "Modes",
                     "scaleName": "Dorian",
-                    "caption": "centered on D"
+                    "caption": "centered on D",
+                    "drone": true
                   }
                 }
               ],
@@ -4985,7 +4988,8 @@ export const CURRICULUM = {
               "root": "A",
               "scaleCat": "Modes",
               "scaleName": "Aeolian",
-              "caption": "A Aeolian = A natural minor"
+              "caption": "A Aeolian = A natural minor",
+              "drone": true
             },
             "earTip": "Major (Ionian) sounds like a sunny day; minor (Aeolian) sounds like rain. Hum a happy nursery tune vs. a sad film theme — you're hearing Ionian vs. Aeolian."
           },
@@ -5001,7 +5005,8 @@ export const CURRICULUM = {
                     "root": "C",
                     "scaleCat": "Modes",
                     "scaleName": "Ionian",
-                    "caption": "bright"
+                    "caption": "bright",
+                    "drone": true
                   }
                 },
                 {
@@ -5011,7 +5016,8 @@ export const CURRICULUM = {
                     "root": "C",
                     "scaleCat": "Modes",
                     "scaleName": "Aeolian",
-                    "caption": "dark"
+                    "caption": "dark",
+                    "drone": true
                   }
                 }
               ],
@@ -5077,7 +5083,8 @@ export const CURRICULUM = {
               "root": "D",
               "scaleCat": "Modes",
               "scaleName": "Dorian",
-              "caption": "D Dorian — listen for the bright ♮6 (B)"
+              "caption": "D Dorian — listen for the bright ♮6 (B)",
+              "drone": true
             },
             "earTip": "Compare to plain minor: the raised 6th gives Dorian a wistful, hopeful lift — think 'Scarborough Fair' or Santana's 'Oye Como Va'. It's a smile through a frown."
           },
@@ -5093,7 +5100,8 @@ export const CURRICULUM = {
                     "root": "D",
                     "scaleCat": "Modes",
                     "scaleName": "Aeolian",
-                    "caption": "natural minor, B♭"
+                    "caption": "natural minor, B♭",
+                    "drone": true
                   }
                 },
                 {
@@ -5103,7 +5111,8 @@ export const CURRICULUM = {
                     "root": "D",
                     "scaleCat": "Modes",
                     "scaleName": "Dorian",
-                    "caption": "♮6, B natural"
+                    "caption": "♮6, B natural",
+                    "drone": true
                   }
                 }
               ],
@@ -5161,7 +5170,8 @@ export const CURRICULUM = {
               "root": "F",
               "scaleCat": "Modes",
               "scaleName": "Lydian",
-              "caption": "F Lydian — listen for the floating ♯4 (B)"
+              "caption": "F Lydian — listen for the floating ♯4 (B)",
+              "drone": true
             },
             "earTip": "Lydian ♯4 = 'The Simpsons' theme opening, or any wondrous sci-fi/Pixar cue. Phrygian ♭2 = flamenco guitar and dark metal riffs — that half-step right above the root is pure tension."
           },
@@ -5174,10 +5184,11 @@ export const CURRICULUM = {
                   "label": "A",
                   "audio": {
                     "kind": "scale",
-                    "root": "F",
+                    "root": "E",
                     "scaleCat": "Modes",
                     "scaleName": "Lydian",
-                    "caption": "♯4 — dreamy"
+                    "caption": "♯4 — dreamy",
+                    "drone": true
                   }
                 },
                 {
@@ -5187,12 +5198,13 @@ export const CURRICULUM = {
                     "root": "E",
                     "scaleCat": "Modes",
                     "scaleName": "Phrygian",
-                    "caption": "♭2 — dark"
+                    "caption": "♭2 — dark",
+                    "drone": true
                   }
                 }
               ],
               "answer": 0,
-              "explain": "A is F Lydian — the raised 4th (B) makes it float and shimmer. B is E Phrygian, dark and tense from its lowered 2nd (F)."
+              "explain": "A is E Lydian — the raised 4th (A♯) makes it float and shimmer. B is E Phrygian, dark and tense from its lowered 2nd (F). Both start on E over the same low E, so the mood comes only from those notes."
             },
             {
               "kind": "play",
@@ -5215,17 +5227,17 @@ export const CURRICULUM = {
                 "root": "E",
                 "quality": "Minor",
                 "numeral": "i",
-                "beats": 2
+                "beats": 4
               },
               {
-                "root": "F",
+                "root": "E",
                 "quality": "Major",
                 "numeral": "I",
-                "beats": 2
+                "beats": 4
               }
             ],
             "voicing": "open chords",
-            "pattern": "E Phrygian (E F G A B C D)—the F sits just a half step above the root, giving it a dark, Spanish/metal vibe. Then F Lydian (F G A B C D E)—the B floats like wonder, dreamy and sci-fi. Two extremes, each defined by a single chromatic twist.",
+            "pattern": "Stay on E, in open position, with the E chord sounding as home. Play E natural minor (E F# G A B C D), then E Phrygian: only one note moves, F# drops to F, a half step above the root, and the mood turns dark and Spanish. Then play E major (E F# G# A B C# D#), then E Lydian: again one note moves, A rises to A#, and it floats like wonder. Two extremes, each made by bending one note of a scale you already know.",
             "focus": "Hearing how a single altered note can shift a mode from dark and tense to light and floating."
           }
         },
@@ -5428,7 +5440,8 @@ export const CURRICULUM = {
                     "root": "G",
                     "scaleCat": "Modes",
                     "scaleName": "Ionian",
-                    "caption": "G major — has F#"
+                    "caption": "G major — has F#",
+                    "over": { "root": "G", "quality": "7 (Dom)" }
                   }
                 },
                 {
@@ -5438,7 +5451,8 @@ export const CURRICULUM = {
                     "root": "G",
                     "scaleCat": "Modes",
                     "scaleName": "Mixolydian",
-                    "caption": "G Mixolydian — has F natural"
+                    "caption": "G Mixolydian — has F natural",
+                    "over": { "root": "G", "quality": "7 (Dom)" }
                   }
                 }
               ],

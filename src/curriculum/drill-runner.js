@@ -9,7 +9,7 @@ import { NOTES, SCALE_TYPES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, toSharp, 
 import { customTuning, getNoteAtFret, getInst } from '../core/tuning.js';
 import { setChordHighlight, setGhostHighlight, clearGhostHighlight, setConceptInfo, fretboardView } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
-import { playNote, playChordNotes } from '../core/synth.js';
+import { playNote, playChordNotes, playPitches } from '../core/synth.js';
 import { pickGrip, assignFingers, findScaleBoxes, findTriadsOnSet, TRIAD_QUALITIES } from '../core/voicings.js';
 
 export const SEQ_COLORS = { root: '#5ad1c0', tone: '#3a8f7f', rootStroke: '#7ddccb', toneStroke: '#46897e' };
@@ -175,6 +175,79 @@ function buildBoxConnect(r, ascA, ascB, opts) {
   }
   return null;
 }
+// ── Backing: a home under the run ────────────────────────────────────
+// A scale, and a mode above all, means little until the ear knows where home is. A steps plan
+// may carry plan.backing = [{ t, dur, pitches, gain, hold, label }] (seconds from the start of
+// a pass): audio-only hits the player sounds under the run — the drill's own chords struck on
+// each bar, or a held root-and-5th drone (it names home without giving away major or minor,
+// so an ear question stays fair).
+const _fromMidi = m => ({ note: NOTES[((m % 12) + 12) % 12], octave: Math.floor(m / 12) });
+const _lowMidi = pc => 24 + pc + (pc < 4 ? 12 : 0);   // the pitch class in E2…D♯3, the guitar's bottom octave
+function backingPitches(root, quality) {
+  const r = toSharp(root), q = quality || 'Major', notes = getChordNotes(r, chordIntervalsFor(q));
+  const g = pickGrip(r, notes, q, 'open', 0);
+  const ps = g ? g.positions.filter(p => p.fret >= 0).map(p => noteAt(p.si, p.fret)) : [];
+  if (ps.length >= 3) return ps.sort((a, b) => _pmidi(a) - _pmidi(b));
+  const out = []; let m = _lowMidi(NOTES.indexOf(r)) - 1;   // no grip: stack the tones up from a low root
+  notes.forEach(n => { const pc = NOTES.indexOf(toSharp(n)); m += ((pc - m) % 12 + 12) % 12 || 12; out.push(_fromMidi(m)); });
+  return out;
+}
+const dronePitches = root => { const m = _lowMidi(NOTES.indexOf(toSharp(root))); return [_fromMidi(m), _fromMidi(m + 7)]; };
+// segments: [{ from, to (beats), root, quality, kind: 'chord' | 'drone' }] → one hit per bar
+function backingEvents(segments, spb, bar = 4) {
+  const ev = [];
+  segments.forEach(sg => {
+    const drone = sg.kind === 'drone';
+    const pitches = drone ? dronePitches(sg.root) : backingPitches(sg.root, sg.quality);
+    const label = drone ? `${toSharp(sg.root)} drone` : `${toSharp(sg.root)}${chordSuffix(sg.quality)}`;
+    for (let b = sg.from; b < sg.to - 1e-6; b += bar) {
+      const len = Math.min(bar, sg.to - b);
+      ev.push({ t: b * spb, dur: len * spb, pitches, hold: drone, gain: drone ? 0.05 : 0.055, label });
+    }
+  });
+  return ev;
+}
+const planBeats = (steps, spb) => steps.reduce((t, st) => t + (st.gap || st.dur || spb), 0) / spb;
+// The drill's own chords, in order and for the beats written, looped under the whole run. When
+// they change chord, the run's last note is held so the pass ends with the progression.
+function withProgBacking(plan, prog, spb, bar) {
+  if (!plan || !plan.steps || !plan.steps.length || !prog || !prog.length) return plan;
+  let total = planBeats(plan.steps, spb);
+  const cycle = prog.reduce((t, c) => t + beatsOf(c), 0);
+  if (new Set(prog.map(c => toSharp(c.root) + (c.quality || ''))).size > 1) {
+    const want = Math.ceil(total / cycle - 1e-6) * cycle;
+    if (want - total > 1e-6) {
+      const last = plan.steps[plan.steps.length - 1], slot = (last.gap || last.dur) + (want - total) * spb;
+      plan.steps[plan.steps.length - 1] = { ...last, dur: slot, gap: slot };
+      if (plan.scaleParts) plan.scaleParts[plan.scaleParts.length - 1].to = plan.steps.length;
+      total = want;
+    }
+  }
+  const segs = [];
+  for (let b = 0; b < total - 1e-6;) for (const c of prog) {
+    if (b >= total - 1e-6) break;
+    segs.push({ from: b, to: Math.min(total, b + beatsOf(c)), root: c.root, quality: c.quality });
+    b += beatsOf(c);
+  }
+  plan.backing = backingEvents(segs, spb, bar);
+  return plan;
+}
+function withDrone(plan, root, spb, bar) {
+  if (!plan || !plan.steps || !plan.steps.length) return plan;
+  plan.backing = backingEvents([{ from: 0, to: planBeats(plan.steps, spb), root, kind: 'drone' }], spb, bar);
+  return plan;
+}
+// "A mode needs a vamp": the run over its vamp, then the very same run with the vamp stopped,
+// so the ear hears the colour bloom and then fade back into plain notes.
+function vampThenBare(plan, vampName) {
+  if (!plan || !plan.backing || !plan.steps.length) return plan;
+  const n = plan.steps.length, r = plan.root;
+  const over = `${plan.label.split(' · ')[0]} over the ${vampName}`, bare = 'vamp stopped: the same notes, no home under them';
+  const a = plan.steps.map(st => ({ ...st, label: over })), b = plan.steps.map(st => ({ ...st, label: bare }));
+  return { ...plan, steps: a.concat(b), scaleParts: [{ from: 0, to: n, root: r, label: over }, { from: n, to: 2 * n, root: r, label: bare }] };
+}
+const progLabelNamed = prog => prog.map(c => toSharp(c.root) + chordSuffix(c.quality)).join('–');
+
 function buildChromatic(root, count, opts = {}) {
   const start = opts.si != null
     ? { si: opts.si, fret: opts.fret != null ? opts.fret : Math.max(0, fretOfOn(opts.si, root)) }
@@ -242,18 +315,49 @@ function buildArpeggio(root, ints, opts = {}) {
   return { root: toSharp(root), notes: uniqNotes(ps), label: opts.label || `${root} arpeggio`, positions: ps, steps: seqSteps(seq, 60 / (opts.bpm || 90)) };
 }
 // Melodic minor done right: ascend with the raised 6th & 7th (bright), DESCEND with natural
-// minor (the 6th & 7th fall back) — the classical "up bright, down dark" rule. A single-string
-// run so the learner clearly sees F♯/G♯ on the way up swap to F/G on the way down.
+// minor (the 6th & 7th fall back) — the classical "up bright, down dark" rule. Over the V chord
+// (E in A minor) the way down keeps the raised 7th — harmonic minor — because the chord itself
+// holds G♯ and a G would clash. One position (5th position for A, low root on the 6th string),
+// so only the two changing notes move; eighth notes, up and back in two bars per chord, with
+// the chord sounding under it. opts.prog = the drill's chords (default: the home minor chord).
 function buildMelodicMinorRun(root, opts = {}) {
-  const r = toSharp(root);
-  const start = pickClimbStart(r, 12);
-  const upInts = [0, 2, 3, 5, 7, 9, 11, 12];   // A B C D E F♯ G♯ A — melodic minor ascending
-  const downInts = [10, 8, 7, 5, 3, 2, 0];      // G F E D C B A — natural minor descending
-  const mk = s => posWithNote(start.si, start.fret + s);
-  const seq = upInts.map(mk).concat(downInts.map(mk));
-  const seen = new Set(), positions = [];
-  seq.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
-  return { root: r, notes: uniqNotes(seq), label: opts.label || `${r} melodic minor ↑ · natural minor ↓`, positions, steps: seqSteps(seq, 60 / (opts.bpm || 72)) };
+  const r = toSharp(root), rootPc = NOTES.indexOf(r);
+  const spb = 60 / (opts.bpm || 72), dur = spb / 2;
+  const scale = name => SCALE_TYPES.Diatonic[name], pcs = name => scale(name).map(i => (rootPc + i) % 12);
+  const cands = (findScaleBoxes(r, scale('Nat. Minor'), { scaleCat: 'Diatonic', scaleName: 'Nat. Minor' }) || [])
+    .map(b => _pitchAsc(_boxAsc(b))).filter(a => _rootIdx(a, rootPc).length >= 2);
+  // the octave from the low root, and the position where that root sits under the first finger
+  const octave = asc => { const i = _rootIdx(asc, rootPc); return asc.slice(i[0], i[1] + 1); };
+  const lowRoot = a => a[_rootIdx(a, rootPc)[0]];
+  const base = cands.find(a => lowRoot(a).si === customTuning.length - 1 && lowRoot(a).fret > 0 && Math.min(...octave(a).map(p => p.fret)) >= lowRoot(a).fret)
+    || cands.find(a => lowRoot(a).si === customTuning.length - 1 && lowRoot(a).fret > 0) || cands[0];
+  const mel = base && morphBox(base, pcs('Nat. Minor'), pcs('Mel. Minor'));
+  const harm = base && morphBox(base, pcs('Nat. Minor'), pcs('Harm. Minor'));
+  if (!mel || !harm) return buildScaleClimb(r, scale('Mel. Minor'), { bpm: opts.bpm, label: `${r} melodic minor` });
+  const up = octave(mel.asc), downNat = octave(base).reverse().slice(1), downHarm = octave(harm.asc).reverse().slice(1);
+  const n6 = NOTES[(rootPc + 9) % 12], n7 = NOTES[(rootPc + 11) % 12], b6 = NOTES[(rootPc + 8) % 12], b7 = NOTES[(rootPc + 10) % 12];
+  const prog = opts.prog && opts.prog.length ? opts.prog : [{ root: r, quality: 'Minor', beats: 8 }];
+  const steps = [], scaleParts = [], segs = [], seen = new Set(), positions = [];
+  let beat = 0;
+  prog.forEach(c => {
+    const cr = toSharp(c.root), isV = NOTES.indexOf(cr) === (rootPc + 7) % 12 && !/min|m7|dim|ø/i.test(c.quality || '');
+    const name = `${cr}${chordSuffix(c.quality)}`;
+    const down = isV ? downHarm : downNat;
+    const upLab = `${name}: up with ${n6} and ${n7} (melodic minor)`;
+    const downLab = isV ? `${name}: down keeping ${n7} — ${name} holds it (harmonic minor)` : `${name}: down with ${b7} and ${b6} (natural minor)`;
+    const part = up.map(p => ({ p, label: upLab })).concat(down.map(p => ({ p, label: downLab })))
+      .map(e => ({ focus: [{ si: e.p.si, fret: e.p.fret }], play: [{ note: e.p.note, octave: e.p.octave }], dur, label: e.label }));
+    padToBar(part, dur, Math.max(2, beatsOf(c) * 2));
+    scaleParts.push({ from: steps.length, to: steps.length + part.length, root: r, label: name });
+    steps.push(...part);
+    const len = planBeats(part, spb);
+    segs.push({ from: beat, to: beat + len, root: cr, quality: c.quality });
+    beat += len;
+    up.concat(down).forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  });
+  const plan = { root: r, notes: uniqNotes(positions), label: opts.label || `${r} melodic minor ↑ · natural minor ↓ · ${_posLabel(positions)}`, positions, steps, scaleParts };
+  plan.backing = backingEvents(segs, spb, opts.barBeats || 4);
+  return plan;
 }
 // Guide-tone targeting: for each chord, land on its 3rd on the downbeat, walk the 5th and 7th
 // (the octave root on a plain triad), then step up by a half-step into the NEXT chord's 3rd. Makes the line actually sound the
@@ -514,7 +618,7 @@ function chordSuffix(quality) {
   const q = (quality || 'Major');
   if (q === 'Major') return '';
   if (q === 'Minor') return 'm';
-  return ({ Dim: '°', Aug: '+', Maj7: 'maj7', Min7: 'm7', 'm7♭5': 'ø7', Dim7: '°7', Sus4: 'sus4', Sus2: 'sus2', '7♯9': '7♯9', '7♭9': '7♭9', '9': '9', '13': '13', Add9: 'add9' })[q] || q;
+  return ({ Dim: '°', Aug: '+', Maj7: 'maj7', Min7: 'm7', 'm7♭5': 'ø7', Dim7: '°7', '7 (Dom)': '7', Sus4: 'sus4', Sus2: 'sus2', '7♯9': '7♯9', '7♭9': '7♭9', '9': '9', '13': '13', Add9: 'add9' })[q] || q;
 }
 const progLabel = prog => prog.map(c => c.numeral || (toSharp(c.root) + chordSuffix(c.quality))).join('–');
 
@@ -566,9 +670,15 @@ function contrastFor(sig, prog) {
   // Dorian's ♮6: natural minor THEN Dorian, so the one-note (♭6→♮6) change is heard.
   if (/dorian.s hope|natural minor.*then d dorian/.test(sig) && r0)
     return [{ root: r0, cat: 'Diatonic', name: 'Nat. Minor', label: `${r0} Natural Minor` }, { root: r0, cat: 'Modes', name: 'Dorian', label: `${r0} Dorian` }];
-  // Phrygian (♭2) vs Lydian (♯4): two extreme modes back to back (different roots).
-  if (/dark phrygian.*dreamy lydian|two extremes, each defined/.test(sig) && r0 && r1)
-    return [{ root: r0, cat: 'Modes', name: 'Phrygian', label: `${r0} Phrygian` }, { root: r1, cat: 'Modes', name: 'Lydian', label: `${r1} Lydian` }];
+  // Phrygian (♭2) vs Lydian (♯4), taught in parallel from ONE root, each beside the anchor it
+  // bends: natural minor → Phrygian (the 2nd drops a fret), major → Lydian (the 4th rises one).
+  if (/dark phrygian.*dreamy lydian|two extremes, each defined/.test(sig) && r0)
+    return [
+      { root: r0, cat: 'Diatonic', name: 'Nat. Minor', label: `${r0} natural minor`, home: { root: r0, quality: 'Minor' } },
+      { root: r0, cat: 'Modes', name: 'Phrygian', label: `${r0} Phrygian (♭2)`, home: { root: r0, quality: 'Minor' } },
+      { root: r0, cat: 'Diatonic', name: 'Major', label: `${r0} major`, home: { root: r0, quality: 'Major' } },
+      { root: r0, cat: 'Modes', name: 'Lydian', label: `${r0} Lydian (♯4)`, home: { root: r0, quality: 'Major' } },
+    ];
   // Mixolydian's ♭7: major THEN Mixolydian, so the F♯→F♮ drop is heard.
   if (/major gone bluesy|hear f natural drop in/.test(sig) && r0)
     return [{ root: r0, cat: 'Diatonic', name: 'Major', label: `${r0} Major` }, { root: r0, cat: 'Modes', name: 'Mixolydian', label: `${r0} Mixolydian` }];
@@ -843,7 +953,25 @@ function buildContrast(specs, opts = {}) {
   const where = [...new Set(scaleParts.map(s => s.label.split(' · ').pop()))];
   const label = opts.label || (where.length === 1 ? `${specs.map(sp => sp.label || `${toSharp(sp.root)} ${sp.name}`).join('  →  ')} · ${where[0]}` : scaleParts.map(s => s.label).join('  →  '));
   // plan-level root/notes/positions = the FIRST part's shape (what the board shows before it plays)
-  return { root: first.root, notes: first.notes, label, positions: first.positions, allPositions: allPos, steps, scaleParts };
+  const plan = { root: first.root, notes: first.notes, label, positions: first.positions, allPositions: allPos, steps, scaleParts };
+  // each part over its own home chord (opts.homes[k] = {root, quality}), or over a drone
+  if (opts.homes || opts.drone) {
+    let b = 0;
+    const segs = scaleParts.map((sp, k) => {
+      const len = planBeats(steps.slice(sp.from, sp.to), dur), h = opts.homes && opts.homes[k];
+      const seg = h ? { from: b, to: b + len, root: h.root, quality: h.quality } : { from: b, to: b + len, root: specs[k].root, kind: 'drone' };
+      b += len;
+      return seg;
+    });
+    plan.backing = backingEvents(segs, dur, opts.barBeats || 4);
+  }
+  return plan;
+}
+// The chord a scale calls home, when the lesson doesn't name one.
+function homeChordOf(sp) {
+  const n = sp.name || '';
+  const quality = /Locrian/.test(n) ? 'm7♭5' : /Mixolydian/.test(n) ? '7 (Dom)' : /Minor|Aeolian|Dorian|Phrygian/.test(n) ? 'Minor' : 'Major';
+  return { root: sp.root, quality };
 }
 
 // Triad inversions — arpeggiate root position, then 1st inversion, then 2nd inversion,
@@ -1125,7 +1253,12 @@ export function demoToPlan(demo) {
       return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: 96, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
     }
     const ints = SCALE_TYPES[demo.scaleCat]?.[demo.scaleName] || [0, 2, 4, 5, 7, 9, 11];
-    return buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}`, rootToRoot: true, octaves: 1 });
+    const run = buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}`, rootToRoot: true, octaves: 1 });
+    // a home under the clip: demo.over = {root, quality} strikes that chord each bar (an ear
+    // question can play two scales over the SAME chord); demo.drone holds the root and 5th
+    if (demo.over && demo.over.root) return withProgBacking(run, [{ root: demo.over.root, quality: demo.over.quality, beats: 4 }], 60 / 96, 4);
+    if (demo.drone) return withDrone(run, root, 60 / 96, 4);
+    return run;
   }
   if (demo.kind === 'interval') {
     const semis = (((demo.intervalSemitones || 0) % 24) + 24) % 24;
@@ -1181,7 +1314,12 @@ export function drillToPlan(drill, bpmOverride) {
   // 2.5) TWO-PART CONTRAST — play scale A then scale B (relative maj↔min, sharp vs flat key,
   // major vs parallel mode, major-pent vs minor-pent) so the lesson's whole comparison is heard.
   const contrast = contrastFor(sig, prog);
-  if (contrast) return buildContrast(contrast, { bpm, barBeats: timeSig[0] });
+  if (contrast) {
+    // each part over its home chord: the drill's own chord when it names one per part, else the scale's
+    const same = (a, b) => NOTES.indexOf(toSharp(a)) === NOTES.indexOf(toSharp(b));
+    const homes = contrast.map((sp, k) => sp.home || (prog.length === contrast.length && same(prog[k].root, sp.root) ? prog[k] : homeChordOf(sp)));
+    return buildContrast(contrast, { bpm, barBeats: timeSig[0], homes });
+  }
 
   // 2.6) Triad INVERSIONS — root position → 1st → 2nd of the home triad.
   if (/1st and 2nd inversion|root position, 1st/.test(voicing) && prog.length)
@@ -1195,7 +1333,7 @@ export function drillToPlan(drill, bpmOverride) {
 
   // 2.8) Melodic minor "up bright, down dark" — ascend with raised 6/7, descend natural minor.
   if (/melodic minor/.test(sig) && /up bright|down dark|natural[- ]minor descent|down with natural/.test(sig))
-    return buildMelodicMinorRun(root, { bpm });
+    return buildMelodicMinorRun(root, { bpm, prog, barBeats: timeSig[0] });
 
   // 2.85) Chord-tone arpeggios — root–3rd–5th–3rd through each chord (C-E-G-E over C…).
   if ((/land on chord tones/.test(title) || /root[–-]3rd[–-]5th[–-]3rd/.test(sig)) && prog.length)
@@ -1210,9 +1348,10 @@ export function drillToPlan(drill, bpmOverride) {
   // single-string climb so the whole-step/half-step pattern (2 frets vs 1) reads clearly.
   if (/scale ascending|scale run|scale climb|single-note scale|single note scale|w-w-h|scale degrees|scales|pentatonic|box|five boxes|blue note|aeolian climb|melodic minor/.test(sig)) {
     const sc = scaleFor(sig, prog), ints = SCALE_TYPES[sc.cat][sc.name];
-    if (/w-w-h/.test(sig)) return buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}`, barBeats: timeSig[0] });
+    // the drill's chords sound under the run, so every scale is heard against its home
+    if (/w-w-h/.test(sig)) return withProgBacking(buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}`, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
     const connect = /five boxes|box.to.box|box to box|connecting/.test(sig);
-    return buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect, rootToRoot: true, barBeats: timeSig[0] });
+    return withProgBacking(buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect, rootToRoot: true, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
   }
 
   // 3b) MODE lessons — play the characteristic mode SCALE, rooted on the home chord.
@@ -1225,7 +1364,8 @@ export function drillToPlan(drill, bpmOverride) {
     for (const [kw, name, wantMin] of MODE_KEYS) {
       const hit = kw === 'lydian' ? (sig.includes('lydian') && !sig.includes('mixolydian')) : sig.includes(kw);
       if (hit && wantMin === homeMin) {
-        return buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}`, rootToRoot: true, barBeats: timeSig[0] });
+        const run = withProgBacking(buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}`, rootToRoot: true, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
+        return /stop the vamp/.test(sig) ? vampThenBare(run, `${progLabelNamed(prog)} vamp`) : run;
       }
     }
   }
@@ -1317,6 +1457,11 @@ export function playPlan(plan, opts = {}) {
   });
   function cycle() {
     let t = 0;
+    // the home under the run (chords struck each bar, or a held drone) — audio only, every pass
+    (plan.backing || []).forEach(ev => timers.push(setTimeout(() => {
+      if (stopped || !isAlive()) return;
+      playPitches(ev.pitches, { dur: ev.dur * 0.98, strum: ev.hold ? 0 : 0.025, gain: ev.gain || 0.055, hold: !!ev.hold });
+    }, ev.t * 1000)));
     plan.steps.forEach((st, i) => {
       timers.push(setTimeout(() => {
         if (stopped || !isAlive()) return;
