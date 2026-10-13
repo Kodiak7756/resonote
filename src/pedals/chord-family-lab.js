@@ -71,14 +71,12 @@ export function buildChordLabContent(p) {
       if (spec) rows.push({ label: 'STRUCTURE', value: `${upper} ${spec.upperQual === 'min' ? 'minor' : spec.upperQual === 'dim' ? 'diminished' : 'major'} triad over a ${spec.bass} bass` });
     }
     rows.push({ label: 'NOTES', value: c.notes.join(' · ') });
-    // intervals above the octave read as extensions (14 = 9, not 2) — that's how musicians name them
-    const EXT = { 13: '♭9', 14: '9', 15: '♯9', 17: '11', 18: '♯11', 20: '♭13', 21: '13' };
-    rows.push({ label: 'DEGREES', value: c.intervals.map(iv => EXT[iv] || intervalLabel(c.root, NOTES[(NOTES.indexOf(c.root) + iv) % 12])).join(' · ') + ' of ' + c.root });
+    // intervals above the octave read as extensions (14 = 9, not 2) — that's how musicians name
+    // them — and intervalLabel spells them from the formula it's handed
+    rows.push({ label: 'DEGREES', value: c.intervals.map(iv => intervalLabel(c.root, NOTES[(NOTES.indexOf(c.root) + iv) % 12], c.intervals)).join(' · ') + ' of ' + c.root });
     if (m && m.colorDeg != null) {
       // prefer the extension name (9/♯11/13) when the chord actually stacks that tone above the octave
-      const extIv = c.intervals.find(iv => iv > 12 && iv % 12 === m.colorDeg % 12);
-      const EXT2 = { 13: '♭9', 14: '9', 15: '♯9', 17: '11', 18: '♯11', 20: '♭13', 21: '13' };
-      const dl = extIv ? EXT2[extIv] : intervalLabel(root, transposeRoot(root, m.colorDeg));
+      const dl = intervalLabel(root, transposeRoot(root, m.colorDeg), c.intervals);
       rows.push({ label: 'COLOR TONE', value: `${transposeRoot(root, m.colorDeg)} (${dl})` });
     }
     if (m && m.resolveTo && m.resolveTo.motion) rows.push({ label: 'RESOLVES', value: m.resolveTo.motion });
@@ -253,7 +251,7 @@ export function buildChordLabContent(p) {
     c.notes.forEach(n => {
       const isColor = n === c.colorNote, isRoot = n === root;
       const col = isColor ? acc : isRoot ? 'var(--rk-ink)' : 'var(--rk-ink-dim)';
-      h += `<span class="mono" style="font-size:calc(13px*var(--ui));font-weight:${isColor ? 800 : 600};color:${col}">${n}<span style="font-size:calc(8px*var(--ui));opacity:.65;margin-left:1px">${intervalLabel(root, n)}</span>${isColor ? ' ◆' : ''}</span>`;
+      h += `<span class="mono" style="font-size:calc(13px*var(--ui));font-weight:${isColor ? 800 : 600};color:${col}">${n}<span style="font-size:calc(8px*var(--ui));opacity:.65;margin-left:1px">${intervalLabel(root, n, c.intervals)}</span>${isColor ? ' ◆' : ''}</span>`;
     });
     h += `</div></div>`;
 
@@ -271,7 +269,7 @@ export function buildChordLabContent(p) {
       h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1px;margin-top:2px">SHAPES ON THE NECK · tap to light it up</div>`;
       h += `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:168px;overflow-y:auto;padding:2px 0">`;
       vs.forEach((v, vi) => {
-        h += `<div class="cl-voicing" data-vi="${vi}" style="display:inline-block">${renderMiniDiagram(v, root, selVoicing === vi, true, intervalLabel)}</div>`;
+        h += `<div class="cl-voicing" data-vi="${vi}" style="display:inline-block">${renderMiniDiagram(v, root, selVoicing === vi, true, (r, n) => intervalLabel(r, n, c.intervals))}</div>`;
       });
       h += `</div>`;
     }

@@ -67,9 +67,10 @@ function toSharp(n) {
   return ENHARMONIC[n] || n;
 }
 
-/** Show interval label when the global toggle is on, otherwise raw note name. */
-function displayLabel(note, rootNote) {
-  if (showIntervals && rootNote) return intervalLabel(rootNote, note);
+/** Show interval label when the global toggle is on, otherwise raw note name.
+ *  `formula` = the arpeggio's intervals, so an augmented 5th reads ♯5, not ♭6. */
+function displayLabel(note, rootNote, formula) {
+  if (showIntervals && rootNote) return intervalLabel(rootNote, note, formula);
   return note;
 }
 
@@ -231,7 +232,7 @@ export const getDisplayPositionsForBox = coreGetDisplayPositionsForBox;
 // for the same reason the fretboard's wood does — they are a picture of an
 // instrument, not chrome. The card frame around it is tokenised.
 
-function renderKeyboardBoxDiagram(box, root, isActive, theme) {
+function renderKeyboardBoxDiagram(box, root, isActive, theme, formula) {
   const colorRoot = theme.root;
   const colorTone = theme.tone;
   const border    = isActive ? theme.border    : 'var(--rk-edge-soft)';
@@ -268,7 +269,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
     const opacity   = pos ? 0.95 : 1;
     s += `<rect x="${bx}" y="10" width="6" height="22" rx="1.5" fill="${fill}" opacity="${opacity}" stroke="#000" stroke-width="0.6"/>`;
     if (pos) {
-      const dl = pos.isRoot ? 'R' : displayLabel(pos.note, root);
+      const dl = pos.isRoot ? 'R' : displayLabel(pos.note, root, formula);
       s += `<text x="${bx + 3}" y="26" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
     }
   });
@@ -280,7 +281,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
     const x     = xForWhite(idx) + 4;
     const y     = 38;
     const isRoot = p.isRoot;
-    const dl    = isRoot ? 'R' : displayLabel(p.note, root);
+    const dl    = isRoot ? 'R' : displayLabel(p.note, root, formula);
     s += `<circle cx="${x}" cy="${y}" r="4.2" fill="${isRoot ? colorRoot : colorTone}"/>`;
     s += `<text x="${x}" y="${y + 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
   });
@@ -291,7 +292,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 
 // ─── Arpeggio fretboard box diagram renderer ──────────────────────────────────
 
-export function renderArpBoxDiagram(box, root, isActive) {
+export function renderArpBoxDiagram(box, root, isActive, formula) {
   // Hex boxes carry note+octave positions with no fret, and the string diagram
   // below would size itself from Math.min(...frets) = NaN. The piano strip is
   // an honest picture of the same pitches on any isomorphic board; a hex
@@ -302,12 +303,15 @@ export function renderArpBoxDiagram(box, root, isActive) {
       tone:     ARP_COLORS.tone,
       border:   'var(--rk-accent)',
       bgActive: 'var(--rk-soft)',
-    });
+    }, formula);
   }
 
   const ns       = customTuning.length;
   const startFret = box.lo;
-  const numFrets  = box.hi - box.lo + 1;
+  // Open strings sit ABOVE the nut (as renderMiniDiagram in voicings.js draws them) and the first
+  // space is fret 1 — drawn in that space, every fretted note of the box read one fret high.
+  const firstFret = startFret === 0 ? 1 : startFret;
+  const numFrets  = Math.max(1, box.hi - firstFret + 1);
   const extended  = isExtendedCanonicalStringContext();
   const strW      = extended ? (ns <= 4 ? 18 : 12) : (ns <= 4 ? 12 : ns <= 6 ? 10 : 8);
   const w         = extended ? (24 + ns * strW) : (14 + ns * strW);
@@ -345,9 +349,9 @@ export function renderArpBoxDiagram(box, root, isActive) {
   // Note dots
   box.positions.forEach(p => {
     const x    = sx + (ns - 1 - p.si) * strW;
-    const fy   = sy + (p.fret - startFret) * fh + fh / 2;
+    const fy   = p.fret === 0 ? sy - 6.5 : sy + (p.fret - firstFret) * fh + fh / 2;
     const isR  = p.isRoot;
-    const dl   = isR ? 'R' : displayLabel(p.note, root);
+    const dl   = isR ? 'R' : displayLabel(p.note, root, formula);
     s += `<circle cx="${x}" cy="${fy}" r="4.5" fill="${isR ? ARP_COLORS.root : ARP_COLORS.tone}"/>`;
     s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="var(--rk-ink)">${dl}</text>`;
   });

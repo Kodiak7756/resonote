@@ -18,9 +18,14 @@
 // out of. Lose it and you lose all ten.
 //
 // THE MARCHES walk every diatonic triad of the key through every inversion up
-// ONE string set, moving a single voice per step in the order middle → bottom →
-// top. That cycle is what makes each step a real chord and each move a real
-// voice-leading, and it is the rule the two rebuilt sets were generated from.
+// ONE string set, moving a single voice per step: the voice holding the current
+// triad's 5th rises one scale step, and that makes the next chord (Em's B → C is
+// C major; C's G → A is A minor). The rule reproduces the two printed marches,
+// GBe and EAD, note for note, and the two rebuilt sets are generated from it.
+// (Their first rebuild cycled the voices middle → bottom → top instead, which
+// only works while the 5th starts in the middle voice — 16 of DGB's 25 steps and
+// 18 of ADG's 27 were not chords. Open A·D·G is not a chord either, so ADG starts
+// on B·D·G, the lowest triad on those strings the rule can run from.)
 
 // "lowFret,midFret,hiFret" per step, against the string set named in `set`
 // (si 0 = highest string, so [2,1,0] is G·B·e low→high).
@@ -28,9 +33,9 @@ const M = {
   gbe: { set: [2, 1, 0], verbatim: true, grips:
     '0,0,0 0,1,0 2,1,0 2,1,1 2,3,1 4,3,1 4,3,3 4,5,3 5,5,3 5,5,5 5,6,5 7,6,5 7,6,7 7,8,7 9,8,7 9,8,8 9,10,8 10,10,8 10,10,10 10,12,10 12,12,10 12,12,12 12,13,12' },
   dgb: { set: [3, 2, 1], verbatim: false, grips:
-    '0,0,0 0,2,0 2,2,0 2,2,1 2,4,1 3,4,1 3,4,3 3,5,3 5,5,3 5,5,5 5,7,5 7,7,5 7,7,6 7,9,6 9,9,6 9,9,8 9,10,8 10,10,8 10,10,10 10,12,10 12,12,10 12,12,12 12,14,12 14,14,12 14,14,13' },
+    '0,0,0 2,0,0 2,0,1 2,2,1 3,2,1 3,2,3 3,4,3 5,4,3 5,4,5 5,5,5 7,5,5 7,5,6 7,7,6 9,7,6 9,7,8 9,9,8 10,9,8 10,9,10 10,10,10 12,10,10 12,10,12 12,12,12 14,12,12 14,12,13 14,14,13' },
   adg: { set: [4, 3, 2], verbatim: false, grips:
-    '0,0,0 0,2,0 2,2,0 2,2,2 2,3,2 3,3,2 3,3,4 3,5,4 5,5,4 5,5,5 5,7,5 7,7,5 7,7,7 7,9,7 8,9,7 8,9,9 8,10,9 10,10,9 10,10,10 10,12,10 12,12,10 12,12,12 12,14,12 14,14,12 14,14,14 14,15,14 15,15,14' },
+    '2,0,0 2,2,0 3,2,0 3,2,2 3,3,2 5,3,2 5,3,4 5,5,4 7,5,4 7,5,5 7,7,5 8,7,5 8,7,7 8,9,7 10,9,7 10,9,9 10,10,9 12,10,9 12,10,10 12,12,10 14,12,10 14,12,12 14,14,12 15,14,12 15,14,14 15,15,14' },
   ead: { set: [5, 4, 3], verbatim: true, grips:
     '1,0,0 1,2,0 3,2,0 3,2,2 3,3,2 5,3,2 5,3,3 5,5,3 7,5,3 7,5,5 7,7,5 8,7,5 8,7,7 8,8,7 10,8,7 10,8,9 10,10,9 12,10,9 12,10,10 12,12,10 13,12,10 13,12,12 13,14,12 15,14,12 15,14,14 15,15,14' },
 };
@@ -72,4 +77,25 @@ export function restoreMissing(current = []) {
   const have = new Set(current.map(p => p.id));
   const add = kevinLibrary().filter(p => !have.has(p.id));
   return { library: [...current, ...add], added: add.map(p => p.name) };
+}
+
+// The DGB and ADG marches exactly as they first shipped (mostly not chords — see
+// above). restoreMissing never replaces a piece that is already there, so a saved
+// library still holds these. Swap in the corrected steps only where a stored march
+// is still that stock copy, note for note and with no sections added; one you have
+// edited is your work, and it stays exactly as it is.
+const STALE = {
+  dgb: '0,0,0 0,2,0 2,2,0 2,2,1 2,4,1 3,4,1 3,4,3 3,5,3 5,5,3 5,5,5 5,7,5 7,7,5 7,7,6 7,9,6 9,9,6 9,9,8 9,10,8 10,10,8 10,10,10 10,12,10 12,12,10 12,12,12 12,14,12 14,14,12 14,14,13',
+  adg: '0,0,0 0,2,0 2,2,0 2,2,2 2,3,2 3,3,2 3,3,4 3,5,4 5,5,4 5,5,5 5,7,5 7,7,5 7,7,7 7,9,7 8,9,7 8,9,9 8,10,9 10,10,9 10,10,10 10,12,10 12,12,10 12,12,12 12,14,12 14,14,12 14,14,14 14,15,14 15,15,14',
+};
+export function replaceStaleMarches(current = []) {
+  const replaced = [];
+  const library = current.map(p => {
+    const k = Object.keys(STALE).find(key => p && p.id === 'kv-march-' + key);
+    if (!k || (p.sections || []).length) return p;
+    if (JSON.stringify(p.steps) !== JSON.stringify(marchSteps({ set: M[k].set, grips: STALE[k] }))) return p;
+    replaced.push(p.name);
+    return { ...p, steps: marchSteps(M[k]) };
+  });
+  return { library, replaced };
 }

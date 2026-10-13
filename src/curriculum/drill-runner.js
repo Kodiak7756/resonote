@@ -5,7 +5,7 @@
 // Practice Manager's Theory library (looping practice exercises) so both speak
 // the exact same engine. A "plan" is { root, notes, label, positions, steps }
 // where each step is { focus:[{si,fret}], play:[{note,octave}], dur, gap? }.
-import { NOTES, SCALE_TYPES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, toSharp, toFlat, intervalLabel } from '../core/music-theory.js';
+import { NOTES, SCALE_TYPES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, toSharp, toFlat, intervalLabel, semitonesAbove } from '../core/music-theory.js';
 import { customTuning, getNoteAtFret, getInst } from '../core/tuning.js';
 import { setChordHighlight, setGhostHighlight, clearGhostHighlight, setConceptInfo, fretboardView } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
@@ -1051,7 +1051,7 @@ export function playPlan(plan, opts = {}) {
       // theory of the moment is restated under the neck all through a looping practice.
       if (c.notes && c.notes.length) {
         const rows = [{ label: 'NOTES', value: c.notes.join(' · ') }];
-        if (c.root) rows.push({ label: 'DEGREES', value: c.notes.map(n => intervalLabel(c.root, n)).join(' · ') + ' of ' + c.root });
+        if (c.root) rows.push({ label: 'DEGREES', value: c.notes.map(n => intervalLabel(c.root, n, semitonesAbove(c.root, c.notes))).join(' · ') + ' of ' + c.root });
         setConceptInfo({ title: c.label || c.root || '', rows });
       }
       if (fretboardView === 'voice') {   // Voice-Leading view: the voice-led grip + the next chord ghosted

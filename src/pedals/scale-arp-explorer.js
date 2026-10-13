@@ -165,7 +165,7 @@ export function buildScaleArpContent(p) {
       <span class="mono" style="color:var(--rk-accent);font-size:calc(12px*var(--ui));font-weight:800">${root} ${name}${mode === 'arps' ? ' arp' : ''}</span>
       <span class="mono" style="color:var(--rk-edge);font-size:calc(9px*var(--ui))">│</span>`;
     notes.forEach((n, i) => {
-      h += `<span class="mono" style="color:${i === 0 ? cfg.COLORS.root : cfg.COLORS.tone};font-size:calc(10px*var(--ui));font-weight:${i === 0 ? 800 : 600}">${showIntervals ? intervalLabel(root, n) : n}</span>`;
+      h += `<span class="mono" style="color:${i === 0 ? cfg.COLORS.root : cfg.COLORS.tone};font-size:calc(10px*var(--ui));font-weight:${i === 0 ? 800 : 600}">${showIntervals ? intervalLabel(root, n, intervals) : n}</span>`;
     });
     h += `</div></div>`;
 
@@ -180,7 +180,7 @@ export function buildScaleArpContent(p) {
       if (boxes.length) {
         h += `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:230px;overflow-y:auto;padding:4px 0">`;
         boxes.forEach((box, bi) => {
-          h += `<div class="sa-box-card" data-bi="${bi}" style="display:inline-block">${cfg.renderBox(box, root, selBox === bi)}</div>`;
+          h += `<div class="sa-box-card" data-bi="${bi}" style="display:inline-block">${cfg.renderBox(box, root, selBox === bi, intervals)}</div>`;
         });
         h += `</div>`;
         if (selBox !== null && boxes[selBox]) {
@@ -195,7 +195,7 @@ export function buildScaleArpContent(p) {
       h += `<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:2px 0">`;
       notes.forEach((n, i) => {
         const isR = i === 0;
-        h += `<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${isR ? cfg.COLORS.root : cfg.COLORS.tone}"></span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${isR ? 'R' : (showIntervals ? intervalLabel(root, n) : i + 1)}=${n}</span></span>`;
+        h += `<span style="display:inline-flex;align-items:center;gap:3px"><span style="width:8px;height:8px;border-radius:50%;background:${isR ? cfg.COLORS.root : cfg.COLORS.tone}"></span><span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui))">${isR ? 'R' : (showIntervals ? intervalLabel(root, n, intervals) : i + 1)}=${n}</span></span>`;
       });
       h += `</div>`;
     }
@@ -247,7 +247,7 @@ export function buildScaleArpContent(p) {
     const suffix = mode === 'arps' ? ' Arpeggio' : '';
     // publish the objective facts to the strip under the fretboard
     const rows = [{ label: 'NOTES', value: notes.join(' · ') }];
-    rows.push({ label: 'DEGREES', value: intervals.map(iv => intervalLabel(root, NOTES[(NOTES.indexOf(root) + iv) % 12])).join(' · ') });
+    rows.push({ label: 'DEGREES', value: intervals.map(iv => intervalLabel(root, NOTES[(NOTES.indexOf(root) + iv) % 12], intervals)).join(' · ') });
     if (mode === 'arps') {
       rows.push({ label: 'STRUCTURE', value: `the chord tones of ${root} ${name}, played melodically` });
     } else {
