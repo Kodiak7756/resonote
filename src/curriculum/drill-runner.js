@@ -298,7 +298,8 @@ function buildSlashFlavors(opts = {}) {
 // (Am/G = Am7) tuck the ♭7 underneath. Authored in open position for C; other roots slide
 // every grip capo-style (open strings become fretted), so the bass LINE survives any key.
 function buildWalkdown(opts = {}) {
-  const bpm = opts.bpm || 66, dur = (2 * 60) / bpm;
+  const bpm = opts.bpm || 66, spb = 60 / bpm;
+  const beatsAt = i => (opts.beats && opts.beats[i] > 0 ? opts.beats[i] : 2);   // the drill's own bar plan, two beats a grip by default
   const rootName = toSharp(opts.root || 'C');
   const delta = ((NOTES.indexOf(rootName) - NOTES.indexOf('C')) % 12 + 12) % 12;
   // [numeral·name label, chord root, chord tones, grip [si,fret] low→high — si 5 = low E]
@@ -313,14 +314,14 @@ function buildWalkdown(opts = {}) {
     ['V · G7 — bass G, turns home',  'G', ['G','B','D','F'], [[5,3],[4,2],[3,0],[2,0],[1,0],[0,1]]],
   ];
   const shift = n => NOTES[(NOTES.indexOf(n) + delta) % 12];
-  const chords = WALK.map(([label, cRoot, tones, grip]) => ({
+  const chords = WALK.map(([label, cRoot, tones, grip], i) => ({
     root: shift(cRoot),
     notes: tones.map(shift),
     label: delta ? label.replace(/[A-G][♭#]?/g, m => shift(toSharp(m))) : label,
-    dur,
+    dur: beatsAt(i) * spb,
     positions: assignFingers(grip.map(([si, f]) => posWithNote(si, f + delta))),
   }));
-  return { type: 'chords', label: opts.label || `The walkdown — walking bass through ${rootName}`, chords };
+  return { type: 'chords', label: opts.label || `The walkdown — walking bass through ${rootName}`, chords, timeSig: opts.timeSig };
 }
 
 function twoNotePlan(lo, hi, label, dur) {
@@ -534,8 +535,18 @@ function positionStrategyFor(sig) {
 // ── Chord-progression drill: walk the chords in time (loops via playPlan) ──
 // Each chord shows ONE specific, fingered voicing (not every note on the neck), placed by the
 // position strategy — so a learner sees exactly WHERE on the neck and WHAT to fret.
+// Each chord lasts the beats the drill gives it (4 — one bar of 4/4 — when it gives none), so
+// "4 beats each", a two-bar home chord and a 3/4 waltz all play at the length they are written.
+const beatsOf = c => (c && c.beats > 0 ? c.beats : 4);
+// The drill's time signature as [beats per bar, unit]. Data writes it as an array ([3,4]);
+// accept "3/4" too so a hand-edited lesson can't silently fall back to 4.
+export function timeSigOf(ts) {
+  if (Array.isArray(ts) && ts[0] > 0) return [+ts[0], +ts[1] || 4];
+  const m = /(\d+)\s*\/\s*(\d+)/.exec(String(ts || ''));
+  return m ? [+m[1], +m[2]] : [4, 4];
+}
 function buildProgression(prog, opts = {}) {
-  const bpm = opts.bpm || 90, dur = (2 * 60) / bpm;   // ~two beats per chord
+  const bpm = opts.bpm || 90, spb = 60 / bpm;
   const strategy = opts.position || 'open';
   let floor = 0;
   const chords = prog.map(c => {
@@ -550,9 +561,9 @@ function buildProgression(prog, opts = {}) {
     const where = mf <= 0 ? ' · open'
       : (strategy === 'open' && hasOpen) ? ' · open'
       : ` · ${mf}fr`;
-    return { root: r, notes, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)}${where}`, dur, positions };
+    return { root: r, notes, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)}${where}`, dur: beatsOf(c) * spb, positions };
   });
-  return { type: 'chords', label: opts.label || progLabel(prog), chords };
+  return { type: 'chords', label: opts.label || progLabel(prog), chords, timeSig: opts.timeSig };
 }
 
 // ── Requested scale-pattern variations (broken 3rds/4ths, N-per-string, string skip) ──
@@ -979,6 +990,7 @@ export function drillToPlan(drill, bpmOverride) {
   const prog = Array.isArray(drill.progression) ? drill.progression : [];
   const root = toSharp(prog[0]?.root || 'C');
   const bpm = bpmOverride || drill.bpm || 90;
+  const timeSig = timeSigOf(drill.timeSig);
 
   // 1) Single-note FOUNDATION drills (named, unambiguous)
   if (/alphabet/.test(title)) return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: bpmOverride || 120, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
@@ -994,7 +1006,7 @@ export function drillToPlan(drill, bpmOverride) {
   // 1.4) The WALKDOWN étude — authored open-position descent (bass = the scale, down). Keyed on
   // "walkdown" only: the Walking Bass Lines lesson (I–vi–ii–V) also says "walking bass" and
   // must fall through to its own progression, not borrow this étude.
-  if (/walkdown/.test(sig)) return buildWalkdown({ bpm, root });
+  if (/walkdown/.test(sig)) return buildWalkdown({ bpm, root, beats: prog.map(c => c.beats), timeSig });
 
   // 1.5) SLASH-CHORD flavors — one held bass, cycling upper-structure triads above it.
   // "A string / 5th string" in the drill text moves the bass to the second authored position.
@@ -1063,7 +1075,7 @@ export function drillToPlan(drill, bpmOverride) {
   }
 
   // 5) CHORD-PROGRESSION drills (the majority) — walk the changes, one voicing per chord
-  if (prog.length) return buildProgression(prog, { bpm, label: progLabel(prog), position: positionStrategyFor(sig) });
+  if (prog.length) return buildProgression(prog, { bpm, label: progLabel(prog), position: positionStrategyFor(sig), timeSig });
 
   // 6) fallback
   return buildScaleClimb(root, SCALE_TYPES.Diatonic.Major, { bpm, downToo: true, label: `${root} Major` });
@@ -1119,7 +1131,8 @@ export function playPlan(plan, opts = {}) {
         }, t * 1000));
         t += c.dur || 1;
       });
-      if (loop) timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycleChords(); } }, t * 1000 + 350));
+      // the next pass starts exactly one chord-length after the last chord — no dead air at the seam
+      if (loop) timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycleChords(); } }, t * 1000));
     }
     showChord(plan.chords[0], 0);
     cycleChords();
@@ -1157,8 +1170,8 @@ export function playPlan(plan, opts = {}) {
       }, t * 1000));
       t += st.gap || st.dur || 0.4;
     });
-    if (loop) {
-      timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycle(); } }, t * 1000 + 400));
+    if (loop) {   // seamless: the next pass lands on the beat after the last step's slot
+      timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycle(); } }, t * 1000));
     } else {
       timers.push(setTimeout(() => { clearGhostHighlight(); set(null); }, t * 1000 + 250));  // settle on the whole shape
     }
