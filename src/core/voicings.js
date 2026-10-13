@@ -164,6 +164,7 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
     const key = positions.map(p => `${p.si}:${p.fret}`).sort().join('|');
     if (seen.has(key)) return;
     seen.add(key);
+    if (!planFingers(positions)) return;              // no hand can hold it — don't offer it
     const fretted = positions.filter(p => p.fret > 0);
     results.push({
       positions, name, cat, priority,
@@ -228,26 +229,65 @@ export function findVoicings(rootNote, chordNotes, qualityName) {
 }
 
 // ── Fingering + single-grip selection (drills / progressions) ────────
-// Assign fretting-hand fingers (1-4; 0 = open) to a voicing: a low-fret barre takes finger 1,
-// the rest fill in by fret then string. Heuristic, but matches the common open/barre grips —
-// so a learner can see WHICH finger frets WHICH note. Audit-driven 2026-06-14.
+// Plan fretting-hand fingers for a grip: a Map "si:fret" → 1-4, or null when no hand can play it.
+// One finger holds several strings only at ONE fret, and only if every string it lies across is
+// fretted at that fret or higher — a barre over an open or muted string would stop that string.
+// The index barres the lowest fret when something is fretted above it and the barre is either
+// needed (five or more fretted notes) or tight (same-fret notes on neighbouring strings, as in
+// Dm7 x x 0 2 1 1); open D keeps 1-3-2, open Gmaj7 lays no finger across its open strings.
+// The rest go by fret, then low string → high. Still over four? Other legal same-fret runs are
+// barred (the aug shape's G·B pair, the 6 shape's A·D pair); if even that isn't enough, null.
+function planFingers(positions) {
+  const fretted = positions.filter(p => p.fret > 0);
+  const fm = new Map();
+  if (!fretted.length) return fm;
+  const fretOn = new Map(positions.map(p => [p.si, p.fret]));
+  const canSpan = (a, b, fret) => {
+    for (let s = Math.min(a, b) + 1; s < Math.max(a, b); s++) if (!(fretOn.get(s) >= fret)) return false;
+    return true;
+  };
+  // maximal same-fret runs one finger could hold, low string first
+  const runsAt = fret => fretted.filter(p => p.fret === fret).sort((a, b) => b.si - a.si).reduce((runs, p) => {
+    const run = runs[runs.length - 1];
+    if (run && canSpan(run[run.length - 1].si, p.si, fret)) run.push(p); else runs.push([p]);
+    return runs;
+  }, []);
+  const groupOf = new Map(fretted.map(p => [p, [p]]));
+  const fingers = () => new Set(groupOf.values()).size;
+  const bar = run => run.forEach(p => groupOf.set(p, run));
+  const frets = [...new Set(fretted.map(p => p.fret))].sort((a, b) => a - b);
+  let index = null;
+  if (frets.length > 1) {
+    const best = runsAt(frets[0]).filter(r => r.length > 1).sort((a, b) => b.length - a.length)[0];
+    const tight = best && best[0].si - best[best.length - 1].si === best.length - 1;
+    if (best && (tight || fingers() > 4)) { bar(best); index = best; }
+  }
+  if (fingers() > 4) {
+    frets.flatMap(runsAt).filter(r => r.length > 1).sort((a, b) => b.length - a.length || a[0].fret - b[0].fret)
+      .forEach(r => { if (fingers() > 4 && new Set(r.map(p => groupOf.get(p))).size > 1) bar(r); });
+  }
+  if (fingers() > 4) return null;
+  // Number them in that order, one finger per fret from the lowest as far as four allow:
+  // a power chord reads 1-3-4 and an Em-shape barre 1-3-4-1-1-1, not 1-2-3.
+  const lowest = g => Math.max(...g.map(p => p.si));
+  const order = [...new Set(groupOf.values())]
+    .sort((a, b) => (b === index) - (a === index) || a[0].fret - b[0].fret || lowest(b) - lowest(a));
+  let prev = 0;
+  order.forEach((g, i) => {
+    const finger = Math.max(prev + 1, Math.min(1 + g[0].fret - frets[0], 4 - (order.length - 1 - i)));
+    g.forEach(p => fm.set(`${p.si}:${p.fret}`, finger));
+    prev = finger;
+  });
+  return fm;
+}
+
+// Assign fretting-hand fingers (1-4; 0 = open) to a voicing, so a learner can see WHICH finger
+// frets WHICH note. A grip no hand can hold gets no numbers on its fretted notes (finger: null)
+// rather than impossible ones. Audit-driven 2026-06-14; barre rules 2026-10-13.
 export function assignFingers(positions) {
   if (!positions || !positions.length) return positions || [];
-  const fretted = positions.filter(p => p.fret > 0).sort((a, b) => a.fret - b.fret || b.si - a.si);
-  if (!fretted.length) return positions.map(p => ({ ...p, finger: 0 }));
-  const minF = fretted[0].fret;
-  const atMin = fretted.filter(p => p.fret === minF);
-  // a real barre = 2+ notes share the lowest fret AND something is fretted above it
-  const isBarre = atMin.length >= 2 && fretted.some(p => p.fret > minF);
-  const fm = new Map();
-  if (isBarre) atMin.forEach(p => fm.set(`${p.si}:${p.fret}`, 1));
-  let next = isBarre ? 2 : 1;
-  fretted.forEach(p => {
-    const key = `${p.si}:${p.fret}`;
-    if (fm.has(key)) return;
-    fm.set(key, Math.min(4, next)); next++;
-  });
-  return positions.map(p => ({ ...p, finger: p.fret > 0 ? (fm.get(`${p.si}:${p.fret}`) || 1) : 0 }));
+  const fm = planFingers(positions);
+  return positions.map(p => ({ ...p, finger: p.fret > 0 ? (fm ? fm.get(`${p.si}:${p.fret}`) : null) : 0 }));
 }
 
 // Pick ONE playable voicing (with fingers) for a chord, by position strategy:
