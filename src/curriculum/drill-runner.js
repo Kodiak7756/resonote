@@ -186,26 +186,35 @@ function buildGuideTones(prog, opts = {}) {
   });
   return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Guide tones — land on the 3rd', positions, steps };
 }
-// Chord-tone arpeggios: hold each chord's grip and pick root–3rd–5th–3rd, one note per beat,
-// so the safe landing notes are heard (and seen) moving when the chord changes. The notes come
-// from the grip itself (lowest root, then the next 3rd and 5th above it), so the hand stays put.
+// Chord-tone arpeggios: root–3rd–5th–3rd for each chord, one note per beat, in close position
+// (the 3rd and 5th straight above the grip's lowest root), so the safe landing notes are heard
+// (and seen) moving when the chord changes. A tone the grip already holds is played where the
+// grip has it; otherwise it goes on the fret nearest the root (open strings count as in position
+// down low), so the hand stays in one spot.
 function buildChordToneArps(prog, opts = {}) {
   const dur = 60 / (opts.bpm || 70);
   const midi = p => p.octave * 12 + NOTES.indexOf(p.note);
   const positions = [], steps = [], seen = new Set();
   prog.forEach(c => {
-    const r = toSharp(c.root), ints = chordIntervalsFor(c.quality), rootPc = NOTES.indexOf(r);
+    const r = toSharp(c.root), ints = chordIntervalsFor(c.quality);
     const notes = getChordNotes(r, ints);
-    const pcAt = semi => NOTES[(rootPc + semi) % 12];
     const third = ints.find(s => s === 3 || s === 4) ?? ints[1] ?? 4, fifth = ints.find(s => s >= 6 && s <= 8) ?? 7;
     const grip = pickGrip(r, notes, c.quality, 'open', 0);
     const pool = (grip ? grip.positions : chordVoicing(notes)).filter(p => p.fret >= 0)
       .map(p => posWithNote(p.si, p.fret)).sort((a, b) => midi(a) - midi(b));
     const lo = pool.find(p => p.note === r) || lowestPos(r);
-    // next chord tone above `from` inside the grip; if the grip lacks it, the same string further up
-    const above = (from, semi) => pool.find(p => p.note === pcAt(semi) && midi(p) > midi(from))
-      || posWithNote(lo.si, lo.fret + semi);
-    const t3 = above(lo, third), t5 = above(t3, fifth);
+    const cost = p => (p.fret === 0 && lo.fret <= 4) ? 0 : Math.abs(p.fret - lo.fret);
+    const at = semi => {   // the pitch exactly `semi` above the root: in the grip if it's there, else nearest the root's fret
+      const want = midi(lo) + semi, inGrip = pool.find(p => midi(p) === want);
+      if (inGrip) return inGrip;
+      let best = null;
+      for (let si = customTuning.length - 1; si >= 0; si--) for (let f = 0; f <= Math.min(nfrets(), 15); f++) {
+        const p = posWithNote(si, f);
+        if (midi(p) === want && (!best || cost(p) < cost(best))) best = p;
+      }
+      return best || posWithNote(lo.si, lo.fret + semi);
+    };
+    const t3 = at(third), t5 = at(fifth);
     [lo, t3, t5, t3].forEach((p, idx) => {
       const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); }
       steps.push({ focus: [{ si: p.si, fret: p.fret }], play: [{ note: p.note, octave: p.octave }], dur, label: idx === 0 ? `${r}${chordSuffix(c.quality)}: root–3rd–5th–3rd` : undefined });
