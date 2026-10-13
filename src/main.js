@@ -3,7 +3,7 @@ import { setCurrentInstrument, setCustomTuning, applyTuning, currentInstrument, 
 import { loadState, saveState, setShowIntervals, setShowNoteMap, chordHighlight, pedalBus, metroClock, fretboardView } from './core/state.js';
 import { boardHistory, restoreBoard, snapshotBoardNow, inventory, read as storeRead, write as storeWrite, KEYS } from './core/store.js';
 import { restoreMissing, replaceStaleMarches } from './core/kevin-library.js';
-import { buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, hexGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
+import { setBoardRenderH, buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, hexGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
 import { renderHeader, renderInstrumentBar, renderInstrumentDisplay, renderCatalog, renderHelp, loadoutDone } from './ui/header.js';
 import { createPedalElement, bringToFront, LINK_PROFILE } from './ui/pedal-system.js';
 import { buildPositionBar, isDefining, addShapeFret } from './ui/position-bar.js';
@@ -11,6 +11,8 @@ import { buildContent, CATALOG } from './pedals/index.js';
 import { renderVocalsDisplay } from './pedals/vocals.js';
 import { startCoach } from './ui/coach.js';
 import { initRemote } from './core/remote.js';
+import { initSync, post as syncPost, onSyncMessage } from './core/sync.js';
+import { POPOUT, NECK, canPopOut, popOut, closePopOut, isPopped, initPopoutMain, initPopoutWindow } from './ui/popout.js';
 
 // ── Drill routing: send a Theory-Path drill to the pedal that fits its TYPE ──
 // (NOTES is imported lower in this file; imports are hoisted so it's available here.)
@@ -236,6 +238,10 @@ function restoreState() {
 
 // ── Persist state ─────────────────────────────────────────────────────
 function save() {
+  // A pop-out window holds one pedal (or none); writing that over the board
+  // would wipe it. The main window owns the saved board — pop-outs hand their
+  // pedal's settings back to it instead (ui/popout.js).
+  if (POPOUT) return;
   saveState(pedals, {
     boardV: BOARD_V,
     layerV: LAYER_V,
@@ -894,6 +900,12 @@ function refreshCatalog() {
   });
 }
 
+// Rebuild a pedal wherever it is running: here, or in its own window.
+function rebuild(p) {
+  if (isPopped(p.id)) syncPost('popout-rebuild', { id: p.id, settings: p.settings || {} });
+  else buildContent(p);
+}
+
 // ── Mount a pedal to the DOM ──────────────────────────────────────────
 function mountPedal(p) {
   const container = document.getElementById('pedals-container');
@@ -915,7 +927,8 @@ function mountPedal(p) {
     p, entry,
     // A pedal that keeps a clock or a mic hook running defines _teardown; the
     // ✕ is the one moment it can be told, so it is told here.
-    (id) => { const pd = pedals.find(x => x.id === id); if (pd && typeof pd._teardown === 'function') { try { pd._teardown(); } catch (e) {} }
+    (id) => { if (isPopped(id)) closePopOut(id);
+              const pd = pedals.find(x => x.id === id); if (pd && typeof pd._teardown === 'function') { try { pd._teardown(); } catch (e) {} }
               pedals = pedals.filter(x => x.id !== id); save(); renderSessionBar(); refreshCatalog(); },
     // Minimize now means DOCK. applyLayoutToDom hides the card and rebuilds the
     // rail, so the ▁ button and the dock chip are two ends of one mechanism
@@ -935,7 +948,11 @@ function mountPedal(p) {
     // rather than only repainting the rail: a bare renderPanRail would hide the rail
     // and leave the old pan holding the board above the screen.
     (id, w, h)  => { const pd = pedals.find(x => x.id === id); if (pd) { pd.w = w; pd.h = h; } setBoardPan(boardPan); save(); },
-    (id, locked) => { const pd = pedals.find(x => x.id === id); if (pd) pd.locked = locked; save(); }
+    (id, locked) => { const pd = pedals.find(x => x.id === id); if (pd) pd.locked = locked; save(); },
+    // ⧉ — on the board it opens the pedal in its own window; inside that window
+    // it sends the pedal back. The Input pedal holds the mic, so it stays put.
+    POPOUT ? { title: 'Put it back on the board', onClick: () => window.close() }
+           : canPopOut(p.type) ? { title: 'Open in its own window', onClick: popOut } : null
   );
   container.appendChild(el);
   // createPedalElement writes p.y straight into `top`; a card mounted while the
@@ -1318,6 +1335,9 @@ function renderIntervalPicks() {
 }
 
 function dispatchFretboardClick(info) {
+  // A pedal in its own window may be listening for neck clicks (Ear Trainer,
+  // Write It); it hears them through sync and runs only its own handler.
+  syncPost('fbclick', { info });
   // While defining a custom hand-shape, clicks build the shape instead of playing.
   if (isDefining() && info.si !== undefined && info.fret !== undefined) {
     addShapeFret(info.si, info.fret);
@@ -1336,6 +1356,13 @@ function dispatchFretboardClick(info) {
   playClickedNote(info.note, info.octave ?? 3);
   setLastClickedNote(info);
   updateOverlays();
+  if (onFretboardClick) onFretboardClick(info);
+}
+
+// A click on the neck in ANOTHER window: the note was already played and the
+// neck already lit there, so only a pedal listening here needs to hear it.
+function remoteFretboardClick(info) {
+  if (!info || isDefining() || fretboardView === 'interval') return;
   if (onFretboardClick) onFretboardClick(info);
 }
 
@@ -1512,7 +1539,7 @@ async function init() {
     }
     if (!pd) return;
     if (settings) Object.assign(pd.settings || (pd.settings = {}), settings);
-    buildContent(pd);
+    rebuild(pd);
   };
 
   // "Learn the theory →" from any pedal's smart Theory panel → open Theory Path at that lesson.
@@ -1535,7 +1562,7 @@ async function init() {
     if (!target) return;
     target.settings = target.settings || {};
     Object.assign(target.settings, route.settings);
-    buildContent(target);
+    rebuild(target);
     raise(target.id);
     save();
   });
@@ -1555,7 +1582,7 @@ async function init() {
     if (!pm) return;
     pm.settings = pm.settings || {};
     pm.settings._theoryOpenLesson = lessonId;
-    buildContent(pm);
+    rebuild(pm);
     raise(pm.id);
     save();
   });
@@ -1603,7 +1630,10 @@ async function init() {
   });
 
   // Stream Deck / F13-F24 / console — all three enter through one router.
-  initRemote({ apply: applyCommand, state: readRemoteState });
+  // Main window only: a pop-out answering the deck too would do everything twice.
+  if (!POPOUT) initRemote({ apply: applyCommand, state: readRemoteState });
+
+  if (POPOUT) { bootPopout(); return; }
 
   // "First run" means: no arrangement of your own is in play — either nothing was
   // saved, or what was saved belongs to an older board version and was discarded.
@@ -1662,6 +1692,12 @@ async function init() {
     updateOverlays();
   });
 
+  // Pop-out windows: keep them in step with this one.
+  initSync('main');
+  initPopoutMain({ pedals: () => pedals, buildContent, save, onChange: renderSessionBar });
+  onSyncMessage(m => { if (m.kind === 'fbclick') remoteFretboardClick(m.info); });
+  document.getElementById('btn-neck-out')?.addEventListener('click', e => { e.stopPropagation(); popOut(NECK); });
+
   // First visit → the 🎒 load-out picker (pick a kit before reading anything);
   // once that's been through, the reference guide still gets its one showing.
   if (!loadoutDone()) {
@@ -1672,6 +1708,44 @@ async function init() {
     document.getElementById('help-overlay')?.classList.add('open');
     localStorage.setItem('resonote-seen', '1');
   }
+}
+
+// ── Pop-out window boot ───────────────────────────────────────────────
+// This window was opened by ⧉ with ?popout=<pedal id> (or =neck). The board
+// came from the save; keep only the one pedal and let sync bring the rest of
+// the state (key, tempo, hand position, what the neck shows) from the main window.
+function bootPopout() {
+  if (POPOUT === NECK) {
+    pedals = [];
+    // Its own window, so the neck takes the whole width — not the height the
+    // main window's splitter capped it to. (Not persisted: that cap is main's.)
+    setBoardRenderH(0);
+    initSync('neck');
+    initPopoutWindow({ pedal: null, title: 'Neck' });
+  } else {
+    const p = pedals.find(x => x.id === POPOUT);
+    pedals = p ? [p] : [];
+    initSync('pedal');
+    if (p) {
+      p.minimized = false;
+      try { mountPedal(p); } catch (e) { console.error('pedal failed to mount:', p.type, e); }
+    } else {
+      const c = document.getElementById('pedals-container');
+      if (c) c.innerHTML = `<div class="mono" style="pointer-events:auto;padding:20px;font-size:13px;color:var(--rk-ink-dim)">This pedal isn't on the board any more. Close this window.</div>`;
+    }
+    const entry = p && CATALOG.find(c => c.type === p.type);
+    initPopoutWindow({ pedal: p || null, title: entry?.title || 'Pedal' });
+    onSyncMessage(m => {
+      if (m.kind === 'fbclick') remoteFretboardClick(m.info);
+      else if (m.kind === 'popout-rebuild' && p && m.id === p.id) {
+        p.settings = { ...(p.settings || {}), ...(m.settings || {}) };
+        buildContent(p);
+      }
+    });
+  }
+  // The audio overlays still need drawing here (the neck window) — the notes
+  // the mic hears arrive through sync and call audio.emit().
+  audio.on(() => updateOverlays());
 }
 
 // A hand-hold on the store, from the browser console. Not a feature — a fire

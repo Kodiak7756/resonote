@@ -30,7 +30,10 @@ function createWindow() {
   }
 
   // Open external links in browser, not Electron
+  // except Resonote's own pop-out windows (a pedal or the neck in a window of
+  // its own), which must stay in this app to keep in sync with the main window.
   win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.includes('?popout=')) return { action: 'allow' };
     shell.openExternal(url);
     return { action: 'deny' };
   });
