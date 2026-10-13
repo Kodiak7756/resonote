@@ -13,7 +13,7 @@ import { updateOverlays, setLastClickedNote } from '../ui/fretboard.js';
 import { setFretboardClickHandler } from '../main.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
-import { CHORD_FAMILIES, buildChord, slashVoicingSpec } from '../harmony/chord-vocabulary.js';
+import { CHORD_FAMILIES, buildChord, slashVoicing } from '../harmony/chord-vocabulary.js';
 import { setChordHighlight, clearChordHighlight } from '../core/state.js';
 import { bus } from '../core/mixer.js';
 import { audioCtx } from '../core/pulse.js';
@@ -110,14 +110,6 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 function playSpread(root, intervals, oct, gap) {
   const base = noteToFreq(root, oct);
   intervals.forEach((iv, i) => setTimeout(() => playTone(base * Math.pow(2, iv / 12), 1.1, 'sine', 0.19), i * (gap || 80)));
-}
-// Slash members are authored bass-first: the bass note alone underneath, its triad
-// stacked above. Voiced any other way they lose the sound their tension is rated on.
-function slashVoicing(root, type) {
-  const spec = slashVoicingSpec(type, root);
-  if (!spec) return { root, intervals: [0, 4, 7], oct: 3 };
-  const tri = spec.upperQual === 'min' ? [0, 3, 7] : spec.upperQual === 'dim' ? [0, 3, 6] : [0, 4, 7];
-  return { root: spec.bass, intervals: [0, ...tri.map(t => 12 + spec.upperSemis + t)], oct: 2 };
 }
 
 export function buildFunctionalEarContent(p) {

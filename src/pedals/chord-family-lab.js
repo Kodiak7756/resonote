@@ -9,8 +9,8 @@ import { setChordHighlight, clearChordHighlight, setConceptInfo, pedalBus } from
 import { findVoicings, findSlashVoicings, renderMiniDiagram } from '../core/voicings.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { audio } from '../core/audio.js';
-import { CHORD_FAMILIES, getFamily, chordName, transposeRoot, buildChord, slashVoicingSpec } from '../harmony/chord-vocabulary.js';
-import { playChordNotes, playNote } from '../core/synth.js';
+import { CHORD_FAMILIES, getFamily, chordName, transposeRoot, buildChord, slashVoicingSpec, slashVoicing } from '../harmony/chord-vocabulary.js';
+import { playChordNotes, playNote, playPitches } from '../core/synth.js';
 
 // Fretboard overlay palettes — the neck's own language (tense vs released), not
 // pedal chrome. They stay literal on purpose: the panel wears the card's accent,
@@ -98,6 +98,16 @@ export function buildChordLabContent(p) {
     if (lab) lab.textContent = hot ? `tension ${Math.round(val * 100)}%` : `resolved`;
   }
 
+  // Sound the member chord. playChordNotes puts notes[0] — the chord's ROOT — in the
+  // bass, and C/E is built as C·E·G, so every inversion used to sound in root
+  // position. A slash member is voiced bass-first instead (the Ear Trainer's
+  // slashVoicing): the named bass alone underneath, its triad above.
+  function playMember(c) {
+    if (c.mem.cat !== 'Slash') return playChordNotes(c.notes);
+    const v = slashVoicing(root, c.mem.type), b = NOTES.indexOf(v.root);
+    return playPitches(v.intervals.map(iv => ({ note: NOTES[(b + iv) % 12], octave: v.oct + Math.floor((b + iv) / 12) })));
+  }
+
   function showColored() {
     const c = memberChord();
     const vs = voicings();   // slash: light the actual grip so the bass-under-triad build stays visible
@@ -105,7 +115,7 @@ export function buildChordLabContent(p) {
     setConceptInfo(conceptFacts(c, member()));
     highlight(c, `${c.name}  ·  ${c.mem.name}`, TENSION_COLORS, pos);
     setMeter(c.mem.tension, true);
-    playChordNotes(c.notes);
+    playMember(c);
   }
   function showPlain() {
     const b = baseChord();
@@ -120,7 +130,7 @@ export function buildChordLabContent(p) {
     const pos = member().cat === 'Slash' && selVoicing !== null && vs[selVoicing] ? vs[selVoicing].positions : null;
     highlight(c, `${c.name}  (tension)`, TENSION_COLORS, pos);
     setMeter(c.mem.tension, true);
-    const d = playChordNotes(c.notes);
+    const d = playMember(c);
     setTimeout(() => {
       if (!document.getElementById(`body-${p.id}`)) return;
       setConceptInfo(conceptFacts(t, null));
