@@ -1,8 +1,11 @@
-import { NOTES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, getKeyChords, intervalLabel } from '../core/music-theory.js';
+import { NOTES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, getKeyChords, intervalLabel, semitonesAbove } from '../core/music-theory.js';
 import { showIntervals, setChordHighlight, clearChordHighlight, pedalBus } from '../core/state.js';
 import { findVoicings, renderMiniDiagram, getKeyPositionZones } from '../core/voicings.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
+
+// Diagram degree labels spelled from the chord's own formula: 7♯9's D♯ reads ♯9, an aug 5th ♯5.
+const labelsFor = formula => (r, n) => intervalLabel(r, n, formula);
 
 const CD_BLURB = {
   chord: `Pick any chord and see <b>every playable shape</b> for it on the neck. Tap a shape to light it up on the fretboard — the labels show each note's <b>degree</b> (R · 3 · 5 · 7) so you learn what you're fretting, not just where.`,
@@ -156,7 +159,7 @@ export function buildChordContent(p) {
       if (view === 'positions' && voicings.length > 0) {
         h += `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:180px;overflow-y:auto;padding:4px 0">`;
         voicings.forEach((v, vi) => {
-          h += `<div class="voicing-card" data-vi="${vi}" style="display:inline-block">${renderMiniDiagram(v, root, selVoicing === vi, true, intervalLabel)}</div>`;
+          h += `<div class="voicing-card" data-vi="${vi}" style="display:inline-block">${renderMiniDiagram(v, root, selVoicing === vi, true, labelsFor(intervals))}</div>`;
         });
         h += `</div>`;
         if (selVoicing !== null && voicings[selVoicing]) {
@@ -224,7 +227,7 @@ export function buildChordContent(p) {
           if (zAct) {
             h += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;justify-content:center">`;
             zone.chords.forEach((zc, zci) => {
-              h += `<div class="zone-voicing-card" data-kz="${zi}" data-zci="${zci}" style="display:inline-block;opacity:${selZoneChord===zci||selZoneChord===null?1:.4}">${renderMiniDiagram(zc, zc.root, selZoneChord === zci, true, intervalLabel)}</div>`;
+              h += `<div class="zone-voicing-card" data-kz="${zi}" data-zci="${zci}" style="display:inline-block;opacity:${selZoneChord===zci||selZoneChord===null?1:.4}">${renderMiniDiagram(zc, zc.root, selZoneChord === zci, true, labelsFor(semitonesAbove(zc.root, zc.notes)))}</div>`;
             });
             h += `</div>`;
           }
@@ -243,7 +246,7 @@ export function buildChordContent(p) {
           if (chVoicings.length > 0) {
             h += `<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:180px;overflow-y:auto;padding:4px 0">`;
             chVoicings.forEach((v, vi) => {
-              h += `<div class="key-voicing-card" data-kvi="${vi}" style="display:inline-block">${renderMiniDiagram(v, ch.root, selKeyVoicing === vi, true, intervalLabel)}</div>`;
+              h += `<div class="key-voicing-card" data-kvi="${vi}" style="display:inline-block">${renderMiniDiagram(v, ch.root, selKeyVoicing === vi, true, labelsFor(semitonesAbove(ch.root, ch.notes)))}</div>`;
             });
             h += `</div>`;
           } else {

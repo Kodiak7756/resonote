@@ -1,4 +1,4 @@
-import { NOTES, intervalLabel, DEGREE_COLORS, KEY_PATTERNS, SCALE_TYPES, toSharp } from '../core/music-theory.js';
+import { NOTES, intervalLabel, semitonesAbove, DEGREE_COLORS, KEY_PATTERNS, SCALE_TYPES, toSharp } from '../core/music-theory.js';
 import { INTERVAL_COLORS, INTERVAL_TEXT, INTERVAL_LABELS } from '../core/colors.js';
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
 import { applyLook, pianoKeyColor } from '../core/looks.js';
@@ -452,7 +452,7 @@ function paintHexKeys(g) {
     poly.setAttribute('stroke-width', isTonic ? '2' : '1');
     txt.setAttribute('fill', st.text);
     txt.setAttribute('font-weight', isTonic ? '900' : '700');
-    txt.textContent = showNoteMap && showIntervals ? intervalLabel(key.root, k.note) : hexLabel(k.note);
+    txt.textContent = showNoteMap && showIntervals ? intervalLabel(key.root, k.note, key.iv) : hexLabel(k.note);
     el.setAttribute('opacity', out ? '0.18' : k.off ? '0.22' : '1');
     el.style.cursor = k.off ? 'default' : 'pointer';
   });
@@ -540,14 +540,14 @@ function updateHexOverlays() {
     + `<text x="${k.x}" y="${k.y+3.5}" text-anchor="middle" font-size="${exact ? 11 : 9}" font-family="'JetBrains Mono',monospace" font-weight="800" fill="#fff" style="pointer-events:none">${_displayLabel(k.note, arn)}</text></g>`;
   const ctxLine = note => {
     if (!chordHighlight.active) return '';
-    const inCtx = chordHighlight.chordNotes.includes(note), ivl = intervalLabel(chordHighlight.rootNote, note);
+    const inCtx = chordHighlight.chordNotes.includes(note), ivl = hlInterval(chordHighlight.rootNote, note);
     return `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span><span class="mono" style="color:${inCtx?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl} ${inCtx?'✓':'✗'}</span>`;
   };
   if (det) {
     ov.innerHTML = g.find(det.note).map(k => ring(k, k.octave === det.octave, k.octave === det.octave ? '#ff4466' : '#0099cc', k.octave === det.octave ? '#ff8899' : 'none')).join('');
     if (rd) {
       const cc = Math.abs(det.cents) < 5 ? '#00ff88' : Math.abs(det.cents) < 15 ? '#ffaa00' : '#ff4466';
-      const detLabel = showIntervals && arn ? intervalLabel(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
+      const detLabel = showIntervals && arn ? hlInterval(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
       rd.innerHTML = `<span class="mono" style="color:#ff4466;font-size:calc(24px*var(--ui));font-weight:900;text-shadow:0 0 20px rgba(255,68,102,0.5)">${detLabel}</span>`
         + `<span class="mono" style="color:#555;font-size:calc(11px*var(--ui))">${det.freq.toFixed(1)} Hz</span>`
         + `<span class="mono" style="color:${cc};font-size:calc(11px*var(--ui));font-weight:700">${det.cents > 0 ? '+' : ''}${det.cents}¢</span>` + ctxLine(det.note);
@@ -558,7 +558,7 @@ function updateHexOverlays() {
     const cn = lastClickedNote;
     ov.innerHTML = g.find(cn.note).map(k => ring(k, cn.octave == null || k.octave === cn.octave, '#44aaff', '#88ccff')).join('');
     if (rd) {
-      const rdLabel = showIntervals && arn ? intervalLabel(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
+      const rdLabel = showIntervals && arn ? hlInterval(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
       rd.innerHTML = `<span class="mono" style="color:#44aaff;font-size:calc(20px*var(--ui));font-weight:900">${rdLabel}</span>` + ctxLine(cn.note);
     }
     return;
@@ -714,8 +714,15 @@ export function buildTuningBar(saveStateFn) {
 export let lastClickedNote = null;
 export function setLastClickedNote(n) { lastClickedNote = n; }
 
+// A degree against the highlighted chord/scale is spelled from that chord's own notes, so an
+// augmented chord's 8 reads ♯5 (not ♭6) and a highlighted key reads by degree (Lydian's ♯4).
+function hlInterval(rootNote, note) {
+  const own = chordHighlight.active && chordHighlight.rootNote === rootNote ? semitonesAbove(rootNote, chordHighlight.chordNotes) : null;
+  return intervalLabel(rootNote, note, own);
+}
+
 function _displayLabel(note, rootNote, disp) {
-  if (showIntervals && rootNote) return intervalLabel(rootNote, note);
+  if (showIntervals && rootNote) return hlInterval(rootNote, note);
   return disp || note;   // disp = caller's preferred spelling (e.g. E♭ for a minor 3rd over C)
 }
 
@@ -754,7 +761,7 @@ export function mapKey() {
   const iv = KEY_PATTERNS[keyType]?.intervals
     || Object.values(SCALE_TYPES).reduce((found, cat) => found || cat[keyType], null)
     || KEY_PATTERNS.Major.intervals;
-  return { root, pcs: new Set(iv.map(i => NOTES[(NOTES.indexOf(root) + i) % 12])) };
+  return { root, iv, pcs: new Set(iv.map(i => NOTES[(NOTES.indexOf(root) + i) % 12])) };
 }
 
 // Change the session key and an in-key map is instantly a map of somewhere else —
@@ -792,7 +799,7 @@ function updateKeyboardOverlays() {
         const kp = keyPos(k.note, k.octave);
         if (!kp) return;
         const isTonic = k.note === key.root;
-        const label = showIntervals ? intervalLabel(key.root, k.note) : k.note;
+        const label = showIntervals ? intervalLabel(key.root, k.note, key.iv) : k.note;
         const fill = k.isBlack
           ? (isTonic ? 'rgba(245,245,245,.95)' : 'rgba(200,200,200,.7)')
           : (isTonic ? 'rgba(30,30,30,.95)'    : 'rgba(80,80,80,.7)');
@@ -838,7 +845,7 @@ function updateKeyboardOverlays() {
     const arn = chordHighlight.active ? chordHighlight.rootNote : null;
     const ctxLine = note => {
       if (!chordHighlight.active) return '';
-      const inCtx = chordHighlight.chordNotes.includes(note), ivl = intervalLabel(chordHighlight.rootNote, note);
+      const inCtx = chordHighlight.chordNotes.includes(note), ivl = hlInterval(chordHighlight.rootNote, note);
       return `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span><span class="mono" style="color:${inCtx?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl} ${inCtx?'✓':'✗'}</span>`;
     };
     // rings sit on the key's lower half, under the chord layer's labels
@@ -852,7 +859,7 @@ function updateKeyboardOverlays() {
       ov.innerHTML = rings(det.note, det.octave, '#ff4466', '#0099cc', '#ff8899');
       if (rd) {
         const cc = Math.abs(det.cents) < 5 ? '#00ff88' : Math.abs(det.cents) < 15 ? '#ffaa00' : '#ff4466';
-        const detLabel = showIntervals && arn ? intervalLabel(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
+        const detLabel = showIntervals && arn ? hlInterval(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
         rd.innerHTML = `<span class="mono" style="color:#ff4466;font-size:calc(24px*var(--ui));font-weight:900;text-shadow:0 0 20px rgba(255,68,102,0.5)">${detLabel}</span>`
           + `<span class="mono" style="color:#555;font-size:calc(11px*var(--ui))">${det.freq.toFixed(1)} Hz</span>`
           + `<span class="mono" style="color:${cc};font-size:calc(11px*var(--ui));font-weight:700">${det.cents > 0 ? '+' : ''}${det.cents}¢</span>` + ctxLine(det.note);
@@ -861,7 +868,7 @@ function updateKeyboardOverlays() {
       const cn = lastClickedNote;
       ov.innerHTML = rings(cn.note, cn.octave, '#44aaff', '#44aaff', '#88ccff');
       if (rd) {
-        const rdLabel = showIntervals && arn ? intervalLabel(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
+        const rdLabel = showIntervals && arn ? hlInterval(arn, cn.note) + ' (' + cn.note + ')' : cn.note + (cn.octave ?? '');
         rd.innerHTML = `<span class="mono" style="color:#44aaff;font-size:calc(20px*var(--ui));font-weight:900">${rdLabel}</span>` + ctxLine(cn.note);
       }
     } else {
@@ -931,7 +938,7 @@ export function updateOverlays() {
           const cx = g.fm(f), isOpen = f === 0;
           const r = isOpen ? 7 : 5.5, ty = isOpen ? 2.5 : 2, fs = isOpen ? 7 : 5.5;
           const isTonic = note === key.root;
-          const label = showIntervals ? intervalLabel(key.root, note) : note;
+          const label = showIntervals ? intervalLabel(key.root, note, key.iv) : note;
           // Declutter: when a chord/scale is highlighted, fade the full note-name
           // map to a faint reference so the highlighted shape reads clearly.
           const mapDim = chordHighlight.active && !shp ? dim * 0.25 : dim;
@@ -1200,12 +1207,12 @@ export function updateOverlays() {
     ov.innerHTML = ch2;
     if (rd) {
       const rdLabel = showIntervals && chordHighlight.active?.rootNote
-        ? intervalLabel(chordHighlight.rootNote, cn.note) + ' (' + cn.note + ')'
+        ? hlInterval(chordHighlight.rootNote, cn.note) + ' (' + cn.note + ')'
         : cn.note + (cn.octave || '');
       rd.innerHTML = `<span class="mono" style="color:#44aaff;font-size:calc(20px*var(--ui));font-weight:900">${rdLabel}</span>`;
       if (chordHighlight.active) {
         const inCtx = chordHighlight.chordNotes.includes(cn.note);
-        const ivl   = intervalLabel(chordHighlight.rootNote, cn.note);
+        const ivl   = hlInterval(chordHighlight.rootNote, cn.note);
         rd.innerHTML += `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span><span class="mono" style="color:${inCtx?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl} ${inCtx?'✓':'✗'}</span>`;
       }
     }
@@ -1252,13 +1259,13 @@ export function updateOverlays() {
 
   if (rd) {
     const cc = Math.abs(det.cents) < 5 ? '#00ff88' : Math.abs(det.cents) < 15 ? '#ffaa00' : '#ff4466';
-    const detLabel = showIntervals && arn ? intervalLabel(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
+    const detLabel = showIntervals && arn ? hlInterval(arn, det.note) + ' (' + det.note + det.octave + ')' : det.note + det.octave;
     let rdh = `<span class="mono" style="color:#ff4466;font-size:calc(24px*var(--ui));font-weight:900;text-shadow:0 0 20px rgba(255,68,102,0.5)">${detLabel}</span>`;
     rdh += `<span class="mono" style="color:#555;font-size:calc(11px*var(--ui))">${det.freq.toFixed(1)} Hz</span>`;
     rdh += `<span class="mono" style="color:${cc};font-size:calc(11px*var(--ui));font-weight:700">${det.cents > 0 ? '+' : ''}${det.cents}¢</span>`;
     if (chordHighlight.active) {
       const inContext = chordHighlight.chordNotes.includes(det.note);
-      const ivl = intervalLabel(chordHighlight.rootNote, det.note);
+      const ivl = hlInterval(chordHighlight.rootNote, det.note);
       rdh += `<span class="mono" style="color:#333;font-size:calc(12px*var(--ui));margin:0 4px">│</span>`;
       rdh += `<span class="mono" style="color:${inContext?'#00ff88':'#ff4466'};font-size:calc(11px*var(--ui));font-weight:700">${ivl}</span>`;
       rdh += `<span class="mono" style="color:#555;font-size:calc(9px*var(--ui));margin-left:4px">${inContext?'✓':'✗'} ${chordHighlight.label}</span>`;

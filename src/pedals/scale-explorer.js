@@ -44,8 +44,9 @@ function toSharp(n) {
   return ENHARMONIC[n] || n;
 }
 
-function displayLabel(note, rootNote) {
-  if (showIntervals && rootNote) return intervalLabel(rootNote, note);
+// `formula` = the scale's intervals, so a degree is spelled by its place in the scale (Lydian ♯4)
+function displayLabel(note, rootNote, formula) {
+  if (showIntervals && rootNote) return intervalLabel(rootNote, note, formula);
   return note;
 }
 
@@ -74,7 +75,7 @@ export const getDisplayPositionsForBox = coreGetDisplayPositionsForBox;
 // This one draws a PIANO, so its ivory, its key outline and its unlit black keys
 // stay literal for the same reason the fretboard's wood does: they are a picture
 // of an instrument, not chrome. The card frame around it is tokenised.
-function renderKeyboardBoxDiagram(box, root, isActive, theme) {
+function renderKeyboardBoxDiagram(box, root, isActive, theme, formula) {
   const colorRoot = theme.root;
   const colorTone = theme.tone;
   const border = isActive ? theme.border : 'var(--rk-edge-soft)';
@@ -104,7 +105,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
     const opacity = pos ? 0.95 : 1;
     s += `<rect x="${bx}" y="10" width="6" height="22" rx="1.5" fill="${fill}" opacity="${opacity}" stroke="#000" stroke-width="0.6"/>`;
     if (pos) {
-      const dl = pos.isRoot ? 'R' : displayLabel(pos.note, root);
+      const dl = pos.isRoot ? 'R' : displayLabel(pos.note, root, formula);
       s += `<text x="${bx + 3}" y="26" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
     }
   });
@@ -116,7 +117,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
       const x = xForWhite(idx) + 4;
       const y = 38;
       const isRoot = p.isRoot;
-      const dl = isRoot ? 'R' : displayLabel(p.note, root);
+      const dl = isRoot ? 'R' : displayLabel(p.note, root, formula);
       s += `<circle cx="${x}" cy="${y}" r="4.2" fill="${isRoot ? colorRoot : colorTone}"/>`;
       s += `<text x="${x}" y="${y + 2}" text-anchor="middle" font-size="5" font-family="'JetBrains Mono',monospace" font-weight="700" fill="#fff">${dl}</text>`;
     });
@@ -125,7 +126,7 @@ function renderKeyboardBoxDiagram(box, root, isActive, theme) {
 }
 
 // ── Mini scale box diagram ────────────────────────────────────────────
-export function renderScaleBoxDiagram(box, root, isActive) {
+export function renderScaleBoxDiagram(box, root, isActive, formula) {
   // Anything that is not strings-and-frets gets the piano card: voicings.js
   // hands the keyboard AND the Lumatone hex grid octave-window boxes (lo/hi
   // octaves, note+octave positions, no fret), and the string diagram below
@@ -138,7 +139,7 @@ export function renderScaleBoxDiagram(box, root, isActive) {
       tone: SCALE_COLORS.tone,
       border: 'var(--rk-accent)',
       bgActive: 'var(--rk-soft)'
-    });
+    }, formula);
   }
   const ns = customTuning.length;
   const extended = isExtendedCanonicalStringContext();
@@ -191,7 +192,7 @@ export function renderScaleBoxDiagram(box, root, isActive) {
     const x = sx + (ns - 1 - p.si) * strW;
     const fy = sy + (p.fret - startFret) * fh + fh / 2;
     const isR = p.isRoot;
-    const dl = isR ? 'R' : displayLabel(p.note, root);
+    const dl = isR ? 'R' : displayLabel(p.note, root, formula);
     s += `<circle cx="${x}" cy="${fy}" r="${extended ? (isBass ? 5.4 : 5) : 4.5}" fill="${isR ? SCALE_COLORS.root : SCALE_COLORS.tone}"/>`;
     s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="${extended ? (isBass ? 5.8 : 5.5) : 5}" font-family="'JetBrains Mono',monospace" font-weight="700" fill="var(--rk-ink)">${dl}</text>`;
   });
