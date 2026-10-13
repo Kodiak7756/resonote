@@ -115,9 +115,9 @@ export function buildCircle5Content(p) {
 
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !document.getElementById(`body-${p.id}`)) return;
-    // The circle only has a major and a minor ring. Dorian is a minor key (its
-    // home chord is minor), so it sits on the minor ring under its own root.
-    const minor = ['Minor', 'Harm. Minor', 'Dorian'].includes(ev.keyType);
+    // The circle only has a major and a minor ring. Every key whose home chord
+    // is minor (or diminished) sits on the minor ring under its own root.
+    const minor = ['Minor', 'Aeolian', 'Harm. Minor', 'Mel. Minor', 'Dorian', 'Phrygian', 'Locrian'].includes(ev.keyType);
     const idx = findCircleIndex(ev.root, minor);
     if (idx < 0) return;
     selKey = idx;
