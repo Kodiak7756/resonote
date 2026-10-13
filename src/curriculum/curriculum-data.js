@@ -7374,7 +7374,7 @@ export const CURRICULUM = {
             "summary": "Add ONE note to the minor pentatonic — the b5 — and you get the blues scale. That single passing note is 'the blue note', the source of nearly every bluesy, vocal, crying lick on guitar.",
             "points": [
               "Blues (minor) scale = minor pentatonic + the b5: R, b3, 4, b5, 5, b7.",
-              "In A that added note is D# (the b5) — it sits right between the 4 (D) and the 5 (E).",
+              "In A that added note is E♭ (the b5) — it sits right between the 4 (D) and the 5 (E). The fretboard labels it D#: same fret, other name.",
               "The blue note is tense, so it works best as a PASSING note: slide or bend through it, don't sit on it.",
               "Used sparingly it adds attitude; overused it just sounds out of tune — a little goes a long way."
             ],
@@ -7412,14 +7412,14 @@ export const CURRICULUM = {
                 }
               ],
               "answer": 1,
-              "explain": "B is the blues scale — the extra b5 (D#) slipping between the 4 and 5 gives that tense, gritty passing-note color. A is the smooth, clean pentatonic."
+              "explain": "B is the blues scale — the extra b5 (E♭) slipping between the 4 and 5 gives that tense, gritty passing-note color. A is the smooth, clean pentatonic."
             },
             {
               "kind": "play",
               "prompt": "In A, play the blue note — the b5 that turns the minor pentatonic into the blues scale.",
               "root": "A",
               "targetIntervalFromRoot": 6,
-              "explain": "The blue note in A is D# (the b5, 6 semitones up from A). It lives between D (the 4) and E (the 5) — best used as a quick passing tone, not a resting place."
+              "explain": "The blue note in A is E♭ (the b5, 6 semitones up from A; the app shows it as D#, the same fret). It lives between D (the 4) and E (the 5) — best used as a quick passing tone, not a resting place."
             }
           ],
           "drill": {
@@ -7438,7 +7438,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "single-note scale run",
-            "pattern": "Climb D (the 4) → D# (blue note) → E (the 5) so the blue note is only ever PASSED THROUGH, never held; resolve up to the root. Repeat, sliding into the D# each time for a vocal feel.",
+            "pattern": "Climb D (the 4) → E♭ (blue note) → E (the 5) so the blue note is only ever PASSED THROUGH, never held; resolve up to the root. Repeat, sliding into the E♭ each time for a vocal feel.",
             "focus": "Using the blue note as a quick passing tone for grit without sounding out of tune."
           }
         },
@@ -7633,7 +7633,7 @@ export const CURRICULUM = {
               "options": [
                 "B — the 2nd",
                 "C — the ♭3",
-                "D♯ — the blue note",
+                "E♭ — the blue note",
                 "F — the ♭6"
               ],
               "answer": 1,
@@ -7733,7 +7733,7 @@ export const CURRICULUM = {
           "scaleCat": "Blues",
           "scaleName": "Blues Minor"
         },
-        "prompt": "This is a 12-bar blues in A — solo over it with the A blues scale and use everything from this unit. Start with a short motif and answer it, leave space to breathe, slip the blue note (D#) through as a quick passing tone, and try to land on each chord's 3rd when it changes (C# over A7, F# over D7, G# over E7). Don't chase notes — tell a little story and let the shuffle carry you."
+        "prompt": "This is a 12-bar blues in A — solo over it with the A blues scale and use everything from this unit. Start with a short motif and answer it, leave space to breathe, and slip the blue note (E♭) through as a quick passing tone. Then make the A7 bars sound like A7: its 3rd, C#, isn't in the blues scale, so reach it from the scale's C. In Box 1 that's the G string, fret 5 to 6: bend the C up a half step, or hammer on to C# — the classic sour-to-sweet blues move. Over D7 and E7, land on notes the box already has: D or C over D7 (its root and ♭7), E or D over E7. Want it sweeter? Mix in A major pentatonic (A B C# E F#) over the A7 bars. Don't chase notes — tell a little story and let the shuffle carry you."
       }
     },
     {
