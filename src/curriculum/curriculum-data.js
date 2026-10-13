@@ -6534,20 +6534,22 @@ export const CURRICULUM = {
                       {
                         "root": "C",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Major",
+                        "frets": "x320xx"
                       },
                       {
-                        "root": "F",
+                        "root": "A",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Minor",
+                        "frets": "xx755x"
                       }
                     ],
-                    "caption": "C → F (only C is shared, everything else jumps)"
+                    "caption": "C → Am (every note jumps to a new place)"
                   }
                 }
               ],
               "answer": 0,
-              "explain": "C → Am shares two notes (C and E), so it glides. C → F shares only C, so more voices leap and it sounds like a bigger step. More common tones held = smoother."
+              "explain": "Both clips are C then Am, and the chords share C and E. In A those two notes stay exactly where they are and only G steps up to A, so it glides. In B every note jumps to a new place on the neck, so the same change lurches. Holding the shared notes still = smoother."
             }
           ],
           "drill": {
@@ -6864,17 +6866,20 @@ export const CURRICULUM = {
                 {
                   "root": "D",
                   "cat": "Triads",
-                  "type": "Sus4"
+                  "type": "Sus4",
+                  "frets": "xx0233"
                 },
                 {
                   "root": "G",
                   "cat": "Triads",
-                  "type": "Sus2"
+                  "type": "Sus2",
+                  "frets": "3x0233"
                 },
                 {
                   "root": "G",
                   "cat": "Triads",
-                  "type": "Major"
+                  "type": "Major",
+                  "frets": "320033"
                 }
               ],
               "caption": "Dsus4 (D-G-A) → Gsus2 (G-A-D, the same three notes) as the root jumps up a 4th, then resolves to G major"
@@ -6895,12 +6900,14 @@ export const CURRICULUM = {
                       {
                         "root": "D",
                         "cat": "Triads",
-                        "type": "Sus4"
+                        "type": "Sus4",
+                        "frets": "xx0233"
                       },
                       {
                         "root": "G",
                         "cat": "Triads",
-                        "type": "Sus2"
+                        "type": "Sus2",
+                        "frets": "3x0233"
                       }
                     ],
                     "caption": "Dsus4 → Gsus2 (same notes, suspended color carries over)"
@@ -6915,12 +6922,14 @@ export const CURRICULUM = {
                       {
                         "root": "D",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Major",
+                        "frets": "xx0232"
                       },
                       {
                         "root": "G",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Major",
+                        "frets": "320033"
                       }
                     ],
                     "caption": "D → G (plain triads)"
@@ -6996,22 +7005,26 @@ export const CURRICULUM = {
                 {
                   "root": "C",
                   "cat": "Triads",
-                  "type": "Major"
+                  "type": "Major",
+                  "frets": "x32013"
                 },
                 {
                   "root": "E",
                   "cat": "Triads",
-                  "type": "Minor"
+                  "type": "Minor",
+                  "frets": "xx2000"
                 },
                 {
                   "root": "F",
                   "cat": "Triads",
-                  "type": "Major"
+                  "type": "Major",
+                  "frets": "xx321x"
                 },
                 {
                   "root": "G",
                   "cat": "Triads",
-                  "type": "Major"
+                  "type": "Major",
+                  "frets": "xx54xx"
                 }
               ],
               "caption": "Bass climbs C-E-F-G while you let the top voice drift downward — lines moving in opposite directions"
@@ -7044,17 +7057,20 @@ export const CURRICULUM = {
                       {
                         "root": "C",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Major",
+                        "frets": "x32013"
                       },
                       {
                         "root": "E",
                         "cat": "Triads",
-                        "type": "Minor"
+                        "type": "Minor",
+                        "frets": "xx2000"
                       },
                       {
                         "root": "F",
                         "cat": "Triads",
-                        "type": "Major"
+                        "type": "Major",
+                        "frets": "xx321x"
                       }
                     ],
                     "caption": "Bass rises C-E-F while the top voice drifts down (contrary)"

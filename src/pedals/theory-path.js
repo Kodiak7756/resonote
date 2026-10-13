@@ -122,7 +122,7 @@ function layerPlan(plan, layer, bpm) {
 }
 import { audio } from '../core/audio.js';
 import { playChordNotes, playNote } from '../core/synth.js';
-import { demoToPlan, drillToPlan, playPlan, SEQ_COLORS, timeSigOf } from '../curriculum/drill-runner.js';
+import { demoToPlan, audioToPlan, drillToPlan, playPlan, playChord, playStep, SEQ_COLORS, timeSigOf } from '../curriculum/drill-runner.js';
 import { CURRICULUM } from '../curriculum/curriculum-data.js';
 import { getProgress, recordAttempt, markComplete, setCurrent, setPlaced, isComplete, recommendNext } from '../curriculum/progress-store.js';
 
@@ -227,6 +227,9 @@ export function buildTheoryContent(p) {
   function playDemo(d) {
     const dn = demoToNotes(d); if (!dn) return;
     if (d.kind === 'progression') {
+      // voice-led and shown on the neck: shared notes held, the rest moving to the nearest note
+      const plan = audioToPlan(d);
+      if (plan) { playPath(plan); return; }
       let t = 0;
       dn.chords.forEach(c => {
         setTimeout(() => {
@@ -584,13 +587,13 @@ export function buildTheoryContent(p) {
     if (plan.type === 'chords') {
       const c = (plan.chords || [])[i]; if (!c) return;
       setChordHighlight(c.root, c.notes, c.label, c.positions || null, SEQ_COLORS); updateOverlays();
-      playChordNotes(c.notes, { dur: 1.0, strum: 0.03, gain: 0.16 });
+      playChord(c, { dur: 1.0, gain: 0.16 });
     } else {
       const st = (plan.steps || [])[i]; if (!st) return;
       const sh = st.shape || plan;   // a comparison step lights the scale it belongs to
       setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, st.label || plan.label, sh.positions || plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
       updateOverlays();
-      (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain: 0.2 }));
+      playStep(st, { gain: 0.2 });
     }
   }
 

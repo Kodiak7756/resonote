@@ -1660,6 +1660,104 @@ export function demoToPlan(demo) {
   return null;
 }
 
+// ── Progression ear clips, voice-led ─────────────────────────────────
+// A clip of chords (teach.demo / exercise audio of kind 'progression') played the way the
+// voice-leading lessons describe: the first chord as a close voicing on three or four
+// neighbouring strings, then every next chord re-voiced from it so shared notes stay put and the
+// rest move to the nearest chord tone (C x320xx → Am x322xx: C and E held, G up to A). A chord
+// that comes back keeps the voicing it had (so a blues doesn't drift up the neck), and a chord
+// entry that gives its own `frets` plays exactly that grip.
+function closeVoicing(notes) {
+  const pcs = notes.map(n => NOTES.indexOf(toSharp(n)));
+  const k = pcs.length;
+  if (k < 2 || k > 4 || customTuning.length < 5) return chordVoicing(notes);
+  const sets = k === 4 ? [[4, 3, 2, 1], [3, 2, 1, 0]] : k === 3 ? [[4, 3, 2], [3, 2, 1]] : [[4, 3], [3, 2]];
+  let best = null, bc = Infinity;
+  sets.forEach(set => permsOf(pcs).forEach(perm => {
+    const frets = set.map((si, i) => { for (let f = 0; f <= 11; f++) if (NOTES.indexOf(noteAt(si, f).note) === perm[i]) return f; return -1; });
+    if (frets.includes(-1)) return;
+    const ps = set.map((si, i) => posWithNote(si, frets[i]));
+    const low = ps.reduce((a, b) => (_pmidi(b) < _pmidi(a) ? b : a));
+    const cost = (Math.max(...frets) - Math.min(...frets)) + (NOTES.indexOf(low.note) !== pcs[0] ? 4.5 : 0) + 0.3 * frets.reduce((t, f) => t + f, 0) / frets.length;
+    if (cost < bc) { bc = cost; best = ps; }
+  }));
+  return best || chordVoicing(notes);
+}
+// voiceLead for chords of different sizes: a triad going to a 7th chord takes one more string
+// next to the shape; a 7th chord going to a triad lets the voice that would move most drop out
+// (G7 xx5431 → C: B steps up to C, F steps down to E, G holds, D drops out).
+function leadVoices(prev, notes) {
+  let pv = (prev || []).filter(p => p && p.fret >= 0);
+  const k = notes.length;
+  if (!pv.length || k > 4) return closeVoicing(notes);
+  while (pv.length < k) {
+    const sis = pv.map(p => p.si), up = Math.min(...sis) - 1, down = Math.max(...sis) + 1;
+    const si = up >= 0 ? up : down < customTuning.length ? down : -1;
+    if (si < 0) return closeVoicing(notes);
+    pv = pv.concat([{ si, fret: Math.round(pv.reduce((t, p) => t + p.fret, 0) / pv.length) }]).sort((a, b) => b.si - a.si);
+  }
+  if (pv.length === k) return voiceLead(pv, notes);
+  const lowSi = Math.max(...pv.map(p => p.si));
+  let best = null, bc = Infinity;
+  const pick = (start, acc) => {
+    if (acc.length === k) {
+      const v = voiceLead(acc, notes);
+      const cost = v.reduce((t, p, i) => t + Math.abs(p.fret - acc[i].fret), 0) + (acc.some(p => p.si === lowSi) ? 0 : 0.5);
+      if (cost < bc) { bc = cost; best = v; }
+      return;
+    }
+    for (let i = start; i < pv.length; i++) pick(i + 1, acc.concat([pv[i]]));
+  };
+  pick(0, []);
+  return best || closeVoicing(notes);
+}
+// teach.demo / exercise audio → a plan when the runner can play it. Progressions become a
+// voice-led chords plan (about 1.15 s a chord, the last one held longer); everything else goes
+// through demoToPlan.
+export function audioToPlan(demo) {
+  if (!demo) return null;
+  if (demo.kind !== 'progression') return demoToPlan(demo);
+  const list = demo.progression || [];
+  if (!list.length) return null;
+  const spb = 1.15, had = new Map();
+  let prev = null;
+  const chords = list.map((c, i) => {
+    const r = toSharp(c.root), q = c.type || c.quality || 'Major';
+    const ints = (CHORD_TYPES[c.cat] && CHORD_TYPES[c.cat][q]) || chordIntervalsFor(q);
+    const notes = getChordNotes(r, ints);
+    const own = c.frets != null ? gripFromTab(c.frets, r, q) : null;
+    const key = `${r}|${q}`;
+    const positions = own ? own.positions : had.get(key) || (prev ? leadVoices(prev, notes) : closeVoicing(notes));
+    if (!own && !had.has(key)) had.set(key, positions);
+    prev = positions;
+    return { root: r, notes, quality: q, label: `${r}${chordSuffix(q)}`, dur: spb * (i === list.length - 1 ? 1.5 : 1), positions: assignFingers(positions.map(p => ({ ...p }))) };
+  });
+  return { type: 'chords', label: demo.caption || chords.map(c => c.label).join(' → '), chords, spb };
+}
+
+// ── Sounding a chord or a step exactly as it is fretted ──────────────
+// A chord with positions plays those pitches, low → high, strummed (or rolled, c.strum), so what
+// you hear is the grip on the neck — shells sound thin, a power chord sounds like one. A chord
+// without positions falls back to a close voicing of its notes.
+export function chordPitches(c) {
+  const ps = ((c && c.positions) || []).filter(p => p && p.fret >= 0);
+  if (!ps.length) return null;
+  return ps.map(p => noteAt(p.si, p.fret)).sort((a, b) => _pmidi(a) - _pmidi(b));
+}
+export function playChord(c, opts = {}) {
+  const dur = opts.dur ?? 1, gain = opts.gain ?? 0.16;
+  const pitches = chordPitches(c);
+  if (!pitches) return playChordNotes(c.notes, { dur, strum: opts.strum ?? 0.03, gain });
+  return playPitches(pitches, { dur, strum: c.strum ?? opts.strum ?? 0.03, gain: gain * Math.min(1, Math.sqrt(4 / pitches.length)) });
+}
+export function playStep(st, opts = {}) {
+  const dur = opts.dur ?? (st.dur || 0.4) * 0.96, gain = opts.gain ?? 0.2;
+  const play = st.play || [];
+  // a strummed step (st.strum = seconds between strings) rolls low → high like a pick
+  if (st.strum && play.length > 1) playPitches(play.map(pl => ({ note: pl.note, octave: pl.octave ?? 3 })), { dur, strum: st.strum, gain: gain * 0.8 });
+  else play.forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur, gain }));
+}
+
 // drill → synced plan. `bpmOverride` lets the Practice Manager re-time the same
 // exercise to a chosen tempo without changing the curriculum data.
 export function drillToPlan(drill, bpmOverride) {
@@ -1837,7 +1935,7 @@ export function playPlan(plan, opts = {}) {
         timers.push(setTimeout(() => {
           if (stopped || !isAlive()) return;
           showChord(c, idx);
-          playChordNotes(c.notes, { dur: (c.dur || 1) * 0.92, strum: 0.03, gain: 0.16 });
+          playChord(c, { dur: (c.dur || 1) * 0.92, gain: 0.16 });
           // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
           window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: c.notes.slice(), root: c.root, label: c.label } }));
         }, t * 1000));
@@ -1888,9 +1986,7 @@ export function playPlan(plan, opts = {}) {
         const trail = prv && prv !== st && prv.focus ? prv.focus.map(f => ({ si: f.si, fret: f.fret })) : null;
         set(st.focus, st.label, trail, st);
         if (opts.onStep) opts.onStep(i);   // let a pedal sync its own UI (NOW/NEXT readout) to playback
-        // a strummed step (st.strum = seconds between strings) rolls low → high like a pick
-        if (st.strum && (st.play || []).length > 1) playPitches(st.play.map(pl => ({ note: pl.note, octave: pl.octave ?? 3 })), { dur: (st.dur || 0.4) * 0.96, strum: st.strum, gain: gain * 0.8 });
-        else (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain }));
+        playStep(st, { gain });
         // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
         if (st.play && st.play.length) window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: st.play.map(pl => pl.note), label: st.label || plan.label } }));
       }, t * 1000));
