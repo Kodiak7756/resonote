@@ -31,15 +31,29 @@ export function buildChordContent(p) {
   let keyView      = s.keyView || 'positions';
   let selKeyZone   = null, selZoneChord = null, selKeyVoicing = null, keyPositionData = null;
 
-  pedalBus.on(ev => {
-    if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    root = ev.root;
-    if (ev.keyType && KEY_PATTERNS[ev.keyType]) keyMode = ev.keyType;
-    if (ev.keyType && KEY_PATTERNS[ev.keyType]) mode = 'key';
+  // The Circle of Fifths is the one editor of the master key (CONTRACTS.md). A root or
+  // key picked HERE — in either mode — is this pedal's own temporary override and is
+  // never broadcast: browsing G7 used to make "G 7 (Dom)" the session key. While the
+  // pedal is linked, a ⟲ chip takes it back to the master.
+  function takeKey(k, showKey) {
+    root = k.root;
+    if (k.keyType && KEY_PATTERNS[k.keyType]) { keyMode = k.keyType; if (showKey) mode = 'key'; }
     if (mode === 'chord') computeVoicings();
     keyPositionData = null; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null;
     applyHighlight(); render();
+  }
+  function offMaster() {
+    const mk = pedalBus.masterKey;
+    if (!mk.root || !pedalBus.follows(p.type)) return false;
+    return root !== mk.root || (mode === 'key' && !!KEY_PATTERNS[mk.keyType] && keyMode !== mk.keyType);
+  }
+
+  pedalBus.on(ev => {
+    if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
+    takeKey(ev, true);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   function computeVoicings() {
     const intervals = CHORD_TYPES[chordCat]?.[chordType] || [0,4,7];
@@ -129,6 +143,10 @@ export function buildChordContent(p) {
     h += `<button class="rk-seg-btn ${mode==='key'?'is-active':''}" data-mode="key" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui));padding:6px 0">🔑 KEY</button>`;
     h += `</div>`;
     h += `<div style="font-size:calc(10px*var(--ui));line-height:1.5;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:7px 9px;border-radius:4px">${CD_BLURB[mode]}</div>`;
+    if (offMaster()) {
+      const mk = pedalBus.masterKey;
+      h += `<button class="rk-chip cd-master" title="This pedal is showing its own root — tap to re-sync it to the session key" style="min-height:calc(28px*var(--ui));align-self:center">⟲ Reset to session key · ${mk.root} ${mk.keyType}</button>`;
+    }
 
     h += `<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center">`;
     NOTES.forEach(n => { h += `<button class="chord-btn root-btn ${n===root?'active':''}" data-root="${n}" style="min-height:calc(28px*var(--ui));min-width:28px;font-size:calc(10px*var(--ui))">${n}</button>`; });
@@ -262,11 +280,12 @@ export function buildChordContent(p) {
     wireTheoryPanel(el);
 
     el.querySelectorAll('[data-mode]').forEach(b => b.onclick = e => { e.stopPropagation(); mode = b.dataset.mode; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; if (mode === 'chord') computeVoicings(); applyHighlight(); render(); });
-    el.querySelectorAll('.root-btn').forEach(b => b.onclick = e => { e.stopPropagation(); root = b.dataset.root; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; keyPositionData = null; if (mode === 'chord') computeVoicings(); pedalBus.setKey(root, mode === 'key' ? keyMode : chordType, { source: p.id }); applyHighlight(); render(); });
+    el.querySelectorAll('.root-btn').forEach(b => b.onclick = e => { e.stopPropagation(); root = b.dataset.root; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; keyPositionData = null; if (mode === 'chord') computeVoicings(); applyHighlight(); render(); });
     el.querySelectorAll('.type-btn').forEach(b => b.onclick = e => { e.stopPropagation(); chordType = b.dataset.type; chordCat = b.dataset.cat; computeVoicings(); applyHighlight(); render(); });
     el.querySelectorAll('[data-view]').forEach(b => b.onclick = e => { e.stopPropagation(); view = b.dataset.view; applyHighlight(); render(); });
     el.querySelectorAll('.voicing-card').forEach(b => b.onclick = e => { e.stopPropagation(); const vi = parseInt(b.dataset.vi); selVoicing = selVoicing === vi ? null : vi; applyHighlight(); render(); });
-    el.querySelectorAll('.key-type-btn').forEach(b => b.onclick = e => { e.stopPropagation(); keyMode = b.dataset.km; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; keyPositionData = null; pedalBus.setKey(root, keyMode, { source: p.id }); applyHighlight(); render(); });
+    el.querySelectorAll('.key-type-btn').forEach(b => b.onclick = e => { e.stopPropagation(); keyMode = b.dataset.km; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; keyPositionData = null; applyHighlight(); render(); });
+    el.querySelector('.cd-master')?.addEventListener('click', e => { e.stopPropagation(); takeKey(pedalBus.masterKey, false); });
     el.querySelectorAll('[data-kv]').forEach(b => b.onclick = e => { e.stopPropagation(); keyView = b.dataset.kv; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; applyHighlight(); render(); });
     el.querySelectorAll('.key-chord-btn').forEach(b => b.onclick = e => { e.stopPropagation(); const i = parseInt(b.dataset.kci); selKeyChord = selKeyChord === i ? null : i; selKeyVoicing = null; applyHighlight(); render(); });
     el.querySelectorAll('.key-zone').forEach(b => {

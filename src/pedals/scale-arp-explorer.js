@@ -6,7 +6,7 @@
 //  a smart Theory panel.
 // ════════════════════════════════════════════════════════════════════
 import { NOTES, SCALE_TYPES, getScaleNotes, getChordNotes, intervalLabel } from '../core/music-theory.js';
-import { showIntervals, setChordHighlight, clearChordHighlight, setConceptInfo, pedalBus, keyTypeToScale, keyTypeToArpeggio, normalizeKeyType } from '../core/state.js';
+import { showIntervals, setChordHighlight, clearChordHighlight, setConceptInfo, pedalBus, keyTypeToScale, keyTypeToArpeggio } from '../core/state.js';
 
 // ── Objective facts for the concept strip under the fretboard ────────────────
 // Defining tones per scale — stated as theory facts, not impressions.
@@ -104,19 +104,34 @@ export function buildScaleArpContent(p) {
     return cfg.TYPES[cat]?.[name] || (mode === 'arps' ? [0, 4, 7] : [0, 2, 4, 5, 7, 9, 11]);
   }
 
-  pedalBus.on(ev => {
-    if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    root = ev.root;
-    if (ev.keyType) {
-      const cfg = modeConfig(mode);
-      const mapped = cfg.keyMap(ev.keyType);
+  // The Circle of Fifths is the one editor of the master key (CONTRACTS.md). A root,
+  // scale or arpeggio picked HERE is this pedal's own temporary override and is never
+  // broadcast — an E Min7 arpeggio used to make "E Minor" the session key. While the
+  // pedal is linked, a ⟲ chip takes it back to the master.
+  function takeKey(k) {
+    root = k.root;
+    if (k.keyType) {
+      const mapped = modeConfig(mode).keyMap(k.keyType);
       if (mode === 'arps') { arpCat = mapped.arpCat; arpName = mapped.arpName; }
       else { scaleCat = mapped.scaleCat; scaleName = mapped.scaleName; }
     }
     selBox = null;
     applyHighlight();
     render();
+  }
+  function offMaster() {
+    const mk = pedalBus.masterKey;
+    if (!mk.root || !pedalBus.follows(p.type)) return false;
+    const mapped = modeConfig(mode).keyMap(mk.keyType), { name, cat } = cur();
+    return root !== mk.root || name !== (mapped.arpName || mapped.scaleName) || cat !== (mapped.arpCat || mapped.scaleCat);
+  }
+
+  pedalBus.on(ev => {
+    if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
+    takeKey(ev);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   function render() {
     const cfg = modeConfig(mode);
@@ -140,6 +155,11 @@ export function buildScaleArpContent(p) {
     h += `<div style="font-size:calc(9.5px*var(--ui));line-height:1.45;color:var(--rk-ink);background:var(--rk-soft);border-left:2px solid var(--rk-accent);padding:6px 8px;border-radius:4px">${mode === 'arps'
       ? 'An <b>arpeggio</b> is a chord played one note at a time — just the chord tones. Solo with these to land on the strongest notes over each chord.'
       : 'A <b>scale</b> is the note palette your melodies and solos draw from. The cards show it as five hand-shapes up the neck — tap one to light it up.'}</div>`;
+
+    if (offMaster()) {
+      const mk = pedalBus.masterKey;
+      h += `<button class="rk-chip sa-master" title="This pedal is showing its own root or ${mode === 'arps' ? 'arpeggio' : 'scale'} — tap to re-sync it to the session key" style="min-height:calc(28px*var(--ui));align-self:center">⟲ Reset to session key · ${mk.root} ${mk.keyType}</button>`;
+    }
 
     // Root selector
     h += `<div class="rk-section"><div class="rk-label">ROOT</div><div class="rk-seg" style="gap:3px">`;
@@ -212,8 +232,6 @@ export function buildScaleArpContent(p) {
     el.querySelectorAll('.sa-root').forEach(b => b.onclick = e => {
       e.stopPropagation();
       root = b.dataset.root; selBox = null;
-      const c2 = modeConfig(mode);
-      pedalBus.setKey(root, normalizeKeyType(name), { source: p.id, ...c2.optsFor(cat, name) });
       applyHighlight(); render();
     });
     el.querySelectorAll('.sa-type').forEach(b => b.onclick = e => {
@@ -221,10 +239,9 @@ export function buildScaleArpContent(p) {
       const nm = b.dataset.n, c = b.dataset.c;
       if (mode === 'arps') { arpName = nm; arpCat = c; } else { scaleName = nm; scaleCat = c; }
       selBox = null;
-      const c2 = modeConfig(mode);
-      pedalBus.setKey(root, normalizeKeyType(nm), { source: p.id, ...c2.optsFor(c, nm) });
       applyHighlight(); render();
     });
+    el.querySelector('.sa-master')?.addEventListener('click', e => { e.stopPropagation(); takeKey(pedalBus.masterKey); });
     el.querySelectorAll('.sa-view').forEach(b => b.onclick = e => {
       e.stopPropagation(); view = b.dataset.v; selBox = null; applyHighlight(); render();
     });

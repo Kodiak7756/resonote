@@ -69,9 +69,16 @@ export function buildVoicingLabContent(p, mountEl) {
   }
   const curSet = () => { const ss = stringSets(); return ss[Math.min(s.setIdx, ss.length - 1)]; };
 
-  // ── key + diatonic triads (follows the session key) ──
-  const keyInfo = () => ({ root: pedalBus.masterKey?.root || 'C', type: pedalBus.masterKey?.keyType || 'Major' });
-  const keyPat = () => KEY_PATTERNS[keyInfo().type] || KEY_PATTERNS.Major;
+  // ── key + diatonic triads: the session key while this pedal is linked to it (opt-in,
+  // CONTRACTS.md), else the last one it followed (C major until then). Only keys with a
+  // diatonic chord table qualify; the label names the key actually used, never one it
+  // quietly swapped for major.
+  const linked = () => pedalBus.follows(p.type) && !!pedalBus.masterKey?.root;
+  const keyInfo = () => {
+    if (linked() && KEY_PATTERNS[pedalBus.masterKey.keyType]) s.key = { root: pedalBus.masterKey.root, type: pedalBus.masterKey.keyType };
+    return s.key && KEY_PATTERNS[s.key.type] ? s.key : { root: 'C', type: 'Major' };
+  };
+  const keyPat = () => KEY_PATTERNS[keyInfo().type];
   function diatonic(deg) {
     const k = keyInfo(), pat = keyPat();
     const rootPc = (NOTES.indexOf(k.root) + pat.intervals[deg]) % 12;
@@ -163,9 +170,11 @@ export function buildVoicingLabContent(p, mountEl) {
   }
 
   pedalBus.on(ev => {
-    if (!ev.root || ev.source === p.id || !alive()) return;
+    if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !alive()) return;
     render(); preview();
   });
+  // linking picks the session key up straight away (and unlinking relabels it)
+  pedalBus.onLinks(() => { if (alive() && !playing) { render(); preview(); } });
 
   // ── render ──
   function render() {
@@ -176,7 +185,10 @@ export function buildVoicingLabContent(p, mountEl) {
     // mounts this as its 🧵 tab the accent it reads is the Workshop's, so the tab
     // stops looking like a different product.
     let h = `<div class="rk" style="display:flex;flex-direction:column;gap:7px">`;
-    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">in <b style="color:var(--rk-dim)">${k.root} ${k.type}</b> (session key) · shapes live only on <b style="color:var(--rk-dim)">${set.label}</b></div>`;
+    const mk = pedalBus.masterKey || {};
+    const whose = !linked() ? 'own key · 🔑 link to follow the session'
+      : (mk.root === k.root && mk.keyType === k.type) ? 'session key' : `last key it could follow · no triads for ${mk.keyType}`;
+    h += `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(8px*var(--ui));text-align:center">in <b style="color:var(--rk-dim)">${k.root} ${k.type}</b> (${whose}) · shapes live only on <b style="color:var(--rk-dim)">${set.label}</b></div>`;
 
     h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));letter-spacing:1.5px">STRING SET</div>`;
     h += `<div style="display:flex;gap:4px;flex-wrap:wrap">` + stringSets().map((ss, i) => btn('vl-set', `data-i="${i}"`, ss.label, i === s.setIdx)).join('') + `</div>`;

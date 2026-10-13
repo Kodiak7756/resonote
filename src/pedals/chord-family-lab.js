@@ -9,8 +9,8 @@ import { setChordHighlight, clearChordHighlight, setConceptInfo, pedalBus } from
 import { findVoicings, findSlashVoicings, renderMiniDiagram } from '../core/voicings.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { audio } from '../core/audio.js';
-import { CHORD_FAMILIES, getFamily, chordName, transposeRoot, buildChord, slashVoicingSpec } from '../harmony/chord-vocabulary.js';
-import { playChordNotes, playNote } from '../core/synth.js';
+import { CHORD_FAMILIES, getFamily, chordName, transposeRoot, buildChord, slashVoicingSpec, slashVoicing } from '../harmony/chord-vocabulary.js';
+import { playChordNotes, playNote, playPitches } from '../core/synth.js';
 
 // Fretboard overlay palettes — the neck's own language (tense vs released), not
 // pedal chrome. They stay literal on purpose: the panel wears the card's accent,
@@ -98,6 +98,16 @@ export function buildChordLabContent(p) {
     if (lab) lab.textContent = hot ? `tension ${Math.round(val * 100)}%` : `resolved`;
   }
 
+  // Sound the member chord. playChordNotes puts notes[0] — the chord's ROOT — in the
+  // bass, and C/E is built as C·E·G, so every inversion used to sound in root
+  // position. A slash member is voiced bass-first instead (the Ear Trainer's
+  // slashVoicing): the named bass alone underneath, its triad above.
+  function playMember(c) {
+    if (c.mem.cat !== 'Slash') return playChordNotes(c.notes);
+    const v = slashVoicing(root, c.mem.type), b = NOTES.indexOf(v.root);
+    return playPitches(v.intervals.map(iv => ({ note: NOTES[(b + iv) % 12], octave: v.oct + Math.floor((b + iv) / 12) })));
+  }
+
   function showColored() {
     const c = memberChord();
     const vs = voicings();   // slash: light the actual grip so the bass-under-triad build stays visible
@@ -105,7 +115,7 @@ export function buildChordLabContent(p) {
     setConceptInfo(conceptFacts(c, member()));
     highlight(c, `${c.name}  ·  ${c.mem.name}`, TENSION_COLORS, pos);
     setMeter(c.mem.tension, true);
-    playChordNotes(c.notes);
+    playMember(c);
   }
   function showPlain() {
     const b = baseChord();
@@ -120,7 +130,7 @@ export function buildChordLabContent(p) {
     const pos = member().cat === 'Slash' && selVoicing !== null && vs[selVoicing] ? vs[selVoicing].positions : null;
     highlight(c, `${c.name}  (tension)`, TENSION_COLORS, pos);
     setMeter(c.mem.tension, true);
-    const d = playChordNotes(c.notes);
+    const d = playMember(c);
     setTimeout(() => {
       if (!document.getElementById(`body-${p.id}`)) return;
       setConceptInfo(conceptFacts(t, null));
@@ -171,11 +181,18 @@ export function buildChordLabContent(p) {
     }
   });
 
-  // Sync root from other pedals / the key bus.
+  // Sync root from the key bus. The Circle of Fifths is the one editor of the master key
+  // (CONTRACTS.md): a root picked here is this lab's own temporary override and is never
+  // broadcast (it used to force "<root> Major" on the whole session). While the lab is
+  // linked, a ⟲ chip takes it back to the master's root.
+  function takeRoot(r) { root = r; selVoicing = null; listen.on = false; persist(); render(); applyHighlight(); }
+  const offMaster = () => !!pedalBus.masterKey.root && pedalBus.follows(p.type) && root !== pedalBus.masterKey.root;
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    if (ev.root !== root) { root = ev.root; selVoicing = null; persist(); render(); applyHighlight(); }
+    if (ev.root !== root) takeRoot(ev.root);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   function applyHighlight() {
     const c = memberChord();
@@ -241,6 +258,7 @@ export function buildChordLabContent(p) {
       const on = n === root;
       h += `<button class="cl-root${on ? ' on' : ''}" data-root="${n}">${n}</button>`;
     });
+    if (offMaster()) h += `<button class="cl-mini cl-master" title="This lab is on its own root — tap to re-sync it to the session key">⟲ Reset to session key · ${pedalBus.masterKey.root}</button>`;
     h += `</div>`;
 
     // Headline chord + notes (colour tone emphasised)
@@ -312,11 +330,8 @@ export function buildChordLabContent(p) {
       e.stopPropagation(); memberIdx = parseInt(b.dataset.mem); selVoicing = null; listen.on = false;
       persist(); render(); applyHighlight();
     });
-    el.querySelectorAll('.cl-root').forEach(b => b.onclick = e => {
-      e.stopPropagation(); root = b.dataset.root; selVoicing = null; listen.on = false;
-      pedalBus.setKey(root, 'Major', { source: p.id });
-      persist(); render(); applyHighlight();
-    });
+    el.querySelectorAll('.cl-root').forEach(b => b.onclick = e => { e.stopPropagation(); takeRoot(b.dataset.root); });
+    el.querySelector('.cl-master')?.addEventListener('click', e => { e.stopPropagation(); takeRoot(pedalBus.masterKey.root); });
     el.querySelectorAll('.cl-voicing').forEach(b => b.onclick = e => {
       e.stopPropagation(); const vi = parseInt(b.dataset.vi);
       selVoicing = selVoicing === vi ? null : vi; render(); applyHighlight();

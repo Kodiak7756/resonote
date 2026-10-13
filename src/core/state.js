@@ -1,4 +1,4 @@
-import { toSharp, intervalLabel } from './music-theory.js';
+import { toSharp, intervalLabel, KEY_PATTERNS, SCALE_TYPES } from './music-theory.js';
 import { INSTRUMENTS } from './tuning.js';
 import { saveBoard, loadBoard, snapshotBoardNow } from './store.js';
 
@@ -71,27 +71,67 @@ export const pedalBus = {
   }
 };
 
+// ── Key types ────────────────────────────────────────────────────────
+// A key type is a key or mode the app has a scale for: Major, Minor, Harm. Minor,
+// Mel. Minor, the modes (Dorian, Phrygian, Lydian, Mixolydian, Locrian) and the
+// symmetric scales. Names are matched WHOLE — the full name first, then word by
+// word — so a mode keeps its own name instead of collapsing into Major, and
+// 'Dominant' no longer reads as minor because it happens to contain "min".
+// Pentatonic and blues scales live in the key they come from. Anything that is
+// not a key at all (a chord quality like '7 (Dom)') falls back to Major rather
+// than reaching the session bar as one.
+const KEY_TYPE_ALIASES = {
+  'ionian': 'Major', 'aeolian': 'Minor', 'nat. minor': 'Minor', 'natural minor': 'Minor',
+  'harmonic minor': 'Harm. Minor', 'melodic minor': 'Mel. Minor',
+  'major pent.': 'Major', 'blues major': 'Major', 'minor pent.': 'Minor', 'blues minor': 'Minor',
+};
+const MODE_WORDS = {
+  ionian: 'Major', dorian: 'Dorian', phrygian: 'Phrygian', lydian: 'Lydian',
+  mixolydian: 'Mixolydian', aeolian: 'Minor', locrian: 'Locrian',
+};
+const KEY_TYPE_NAMES = [...Object.keys(KEY_PATTERNS), ...Object.values(SCALE_TYPES).flatMap(t => Object.keys(t))];
+
 export function normalizeKeyType(keyType) {
-  const k = String(keyType || '').toLowerCase();
-  if (k.includes('dorian')) return 'Dorian';
-  if (k.includes('harm')) return 'Harm. Minor';
-  if (k.includes('minor') || k.includes('min') || k.includes('aeolian') || k.includes('blues minor')) return 'Minor';
-  if (k.includes('major') || k.includes('maj') || k.includes('ionian') || k.includes('pent')) return 'Major';
-  return keyType || 'Major';
+  const k = String(keyType || '').trim().toLowerCase();
+  if (!k) return 'Major';
+  if (KEY_TYPE_ALIASES[k]) return KEY_TYPE_ALIASES[k];
+  const named = KEY_TYPE_NAMES.find(n => n.toLowerCase() === k);
+  if (named) return named;
+  const words = k.split(/[^a-z0-9]+/).filter(Boolean);
+  const mode = words.find(w => MODE_WORDS[w]);
+  if (mode) return MODE_WORDS[mode];
+  const has = w => words.includes(w);
+  if (has('minor') || has('min') || has('m')) {
+    if (has('harm') || has('harmonic')) return 'Harm. Minor';
+    if (has('mel') || has('melodic'))   return 'Mel. Minor';
+    return 'Minor';
+  }
+  return 'Major';
 }
 
 export function keyTypeToScale(keyType) {
   const kt = normalizeKeyType(keyType);
-  if (kt === 'Minor') return { scaleCat: 'Diatonic', scaleName: 'Nat. Minor' };
-  if (kt === 'Harm. Minor') return { scaleCat: 'Diatonic', scaleName: 'Harm. Minor' };
-  if (kt === 'Dorian') return { scaleCat: 'Modes', scaleName: 'Dorian' };
+  const scaleName = kt === 'Minor' ? 'Nat. Minor' : kt;
+  for (const [scaleCat, types] of Object.entries(SCALE_TYPES)) if (types[scaleName]) return { scaleCat, scaleName };
   return { scaleCat: 'Diatonic', scaleName: 'Major' };
 }
 
-export function keyTypeToArpeggio(keyType) {
+// The scale a key type spells, as semitones above its root (E Phrygian → 0 1 3 5 7 8 10).
+export function keyTypeIntervals(keyType) {
   const kt = normalizeKeyType(keyType);
-  if (kt === 'Minor' || kt === 'Dorian' || kt === 'Harm. Minor') return { arpCat: 'Triads', arpName: 'Minor' };
-  return { arpCat: 'Triads', arpName: 'Major' };
+  if (KEY_PATTERNS[kt]) return KEY_PATTERNS[kt].intervals;
+  const { scaleCat, scaleName } = keyTypeToScale(kt);
+  return SCALE_TYPES[scaleCat][scaleName];
+}
+
+// The key's home chord as an arpeggio — its tonic triad, read off the key's own
+// scale: Dorian and Phrygian are minor, Lydian and Mixolydian major, Locrian diminished.
+export function keyTypeToArpeggio(keyType) {
+  const iv = keyTypeIntervals(keyType), has = s => iv.includes(s);
+  const minor = has(3) && !has(4);
+  const arpName = has(7) ? (minor ? 'Minor' : 'Major')
+    : minor ? (has(6) ? 'Dim' : 'Minor') : (has(8) ? 'Aug' : 'Major');
+  return { arpCat: 'Triads', arpName };
 }
 
 // ── Shared metronome clock ───────────────────────────────────────────

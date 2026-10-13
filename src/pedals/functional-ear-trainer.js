@@ -13,9 +13,10 @@ import { updateOverlays, setLastClickedNote } from '../ui/fretboard.js';
 import { setFretboardClickHandler } from '../main.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
 import { FIFTHS, pcColor, pcTextOn } from '../core/colors.js';
-import { CHORD_FAMILIES, buildChord, slashVoicingSpec } from '../harmony/chord-vocabulary.js';
+import { CHORD_FAMILIES, buildChord, slashVoicing } from '../harmony/chord-vocabulary.js';
 import { setChordHighlight, clearChordHighlight } from '../core/state.js';
 import { bus } from '../core/mixer.js';
+import { audioCtx } from '../core/pulse.js';
 
 // ── Static data ──────────────────────────────────────────────────────
 const INTERVALS_EASY = [[0,'Unison'],[3,'m3'],[4,'M3'],[5,'P4'],[7,'P5'],[12,'Octave']];
@@ -34,6 +35,13 @@ const KEY_SIG_DATA = [
   {key:'A',type:'Minor',sharps:0,flats:0},{key:'E',type:'Minor',sharps:1,flats:0},{key:'B',type:'Minor',sharps:2,flats:0},
   {key:'D',type:'Minor',sharps:0,flats:1},{key:'G',type:'Minor',sharps:0,flats:2},{key:'C',type:'Minor',sharps:0,flats:3},
 ];
+// Answers for "which key has …?": every key name as its signature spells it — a flat
+// key by its flat name (B♭, not A♯, which would need ten sharps) — round the circle.
+const KEY_SIG_NAMES = {
+  Major: ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F'],
+  Minor: ['A','E','B','F#','C#','G#','Eb','Bb','F','C','G','D'],
+};
+const flatName = k => k.replace(/^([A-G])b$/, '$1♭');
 const NUMERALS_MAJ = ['I','ii','iii','IV','V','vi','vii°'];
 const NUMERALS_MIN = ['i','ii°','III','iv','v','VI','VII'];
 const DEGREE_NAMES = ['1st','2nd','3rd','4th','5th','6th','7th'];
@@ -80,9 +88,12 @@ const BUILD_WIDE = [
 // deliberately not a token (core/colors.js owns the note spectrum itself).
 const BUILD_COLORS = { root:'#66cc88', tone:'#1f4a30', rootStroke:'#a6f0c0', toneStroke:'#4a9a6a' };
 
+// On the app's one shared AudioContext. Opening a new context per tone (and never
+// closing it) hit the browser's cap within a few questions, after which the
+// try/catch swallowed the error and the trainer went silent.
 function playTone(freq, dur, type, vol) {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = audioCtx();
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = type || 'sine'; o.frequency.value = freq;
     g.gain.value = vol || 0.3;
@@ -99,14 +110,6 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 function playSpread(root, intervals, oct, gap) {
   const base = noteToFreq(root, oct);
   intervals.forEach((iv, i) => setTimeout(() => playTone(base * Math.pow(2, iv / 12), 1.1, 'sine', 0.19), i * (gap || 80)));
-}
-// Slash members are authored bass-first: the bass note alone underneath, its triad
-// stacked above. Voiced any other way they lose the sound their tension is rated on.
-function slashVoicing(root, type) {
-  const spec = slashVoicingSpec(type, root);
-  if (!spec) return { root, intervals: [0, 4, 7], oct: 3 };
-  const tri = spec.upperQual === 'min' ? [0, 3, 7] : spec.upperQual === 'dim' ? [0, 3, 6] : [0, 4, 7];
-  return { root: spec.bass, intervals: [0, ...tri.map(t => 12 + spec.upperSemis + t)], oct: 2 };
 }
 
 export function buildFunctionalEarContent(p) {
@@ -224,9 +227,10 @@ export function buildFunctionalEarContent(p) {
       else { setLastClickedNote({ note, octave, si, fret }); updateOverlays(); }
     } else if (quizMode === 'keysig') {
       const ks = pick(KEY_SIG_DATA), askDir = Math.random() > 0.5, accCount = ks.sharps || ks.flats, accType = ks.sharps ? 'sharps' : 'flats';
-      if (askDir) question = { mode: 'keysig', prompt: `How many sharps/flats in ${ks.key} ${ks.type}?`, answer: `${accCount} ${accCount === 0 ? '(none)' : accType}`, answerVal: accCount, ks };
-      else if (accCount === 0) question = { mode: 'keysig', prompt: `Which major key has no sharps or flats?`, answer: `${ks.key} ${ks.type}`, answerVal: ks.key, ks };
-      else question = { mode: 'keysig', prompt: `Which ${ks.type.toLowerCase()} key has ${accCount} ${accType}?`, answer: `${ks.key} ${ks.type}`, answerVal: ks.key, ks };
+      const keyName = `${flatName(ks.key)} ${ks.type}`;
+      if (askDir) question = { mode: 'keysig', prompt: `How many sharps/flats in ${keyName}?`, answer: `${accCount} ${accCount === 0 ? '(none)' : accType}`, answerVal: accCount, ks };
+      // the question names the key's own type: A minor is the MINOR key with none
+      else question = { mode: 'keysig', prompt: `Which ${ks.type.toLowerCase()} key has ${accCount === 0 ? 'no sharps or flats' : `${accCount} ${accType}`}?`, answer: keyName, answerVal: ks.key, ks };
     } else if (quizMode === 'chordfn') {
       const isMajor = Math.random() > 0.4, kt = isMajor ? 'Major' : 'Minor', rootKey = pick(NOTES);
       const chords = getKeyChords(rootKey, kt), idx = Math.floor(Math.random() * chords.length), ch = chords[idx], nums = isMajor ? NUMERALS_MAJ : NUMERALS_MIN, askDir = Math.random() > 0.5;
@@ -581,6 +585,7 @@ export function buildFunctionalEarContent(p) {
   function theoryOptions() {
     const q = question;
     if (quizMode === 'keysig' && q.answerVal !== undefined && typeof q.answerVal === 'number') return Array.from({ length: 7 }, (_, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:24px;padding:2px 5px">${i}</button>`).join('');
+    if (quizMode === 'keysig' && q.ks) return KEY_SIG_NAMES[q.ks.type].map(k => `<button class="rk-chip fet-qtheory" data-ta="${k}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));min-width:24px;padding:2px 4px">${flatName(k)}</button>`).join('');
     if (quizMode === 'chordfn' && q.nums) return q.nums.map((nm, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">${nm}</button>`).join('');
     if (quizMode === 'degree' && q.answerDeg !== undefined) return DEGREE_NAMES.map((dn, i) => `<button class="rk-chip fet-qtheory" data-ta="${i}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 6px">${dn}</button>`).join('');
     if (quizMode === 'ivlname' && q.semitones !== undefined && !q.startNote) return INTERVAL_NAMES.filter(x => x[0] > 0).map(([, nm]) => `<button class="rk-chip fet-qtheory" data-ta="${nm}" style="min-height:calc(28px*var(--ui));font-size:calc(10px*var(--ui));padding:2px 5px">${nm}</button>`).join('');

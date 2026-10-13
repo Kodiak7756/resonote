@@ -58,6 +58,17 @@ export function slashVoicingSpec(type, root) {
   return { bass: root, upperSemis: sl.upperInt, upperQual: sl.dim ? 'dim' : sl.minor ? 'min' : 'maj' };
 }
 
+// How a slash type SOUNDS on a given root: the bass alone underneath, its triad
+// stacked above — { root: the bass note, intervals: semitones above it, oct }.
+// Voiced any other way the named bass stops being the lowest note (C/E built as
+// C·E·G is just C again) and the chord loses the sound its tension is rated on.
+export function slashVoicing(root, type) {
+  const spec = slashVoicingSpec(type, root);
+  if (!spec) return { root, intervals: [0, 4, 7], oct: 3 };
+  const tri = spec.upperQual === 'min' ? [0, 3, 7] : spec.upperQual === 'dim' ? [0, 3, 6] : [0, 4, 7];
+  return { root: spec.bass, intervals: [0, ...tri.map(t => 12 + spec.upperSemis + t)], oct: 2 };
+}
+
 export function chordName(root, type) {
   const sl = SLASH[type];
   if (sl) {
