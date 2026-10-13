@@ -4310,7 +4310,7 @@ export const CURRICULUM = {
               ],
               "caption": "i ii° III iv v VI VII in A minor"
             },
-            "earTip": "Run up the seven chords. The two majors (C and F) glow like little patches of sun, the diminished B° wobbles, and everything still feels anchored to that opening Am — that's the minor key's gravity."
+            "earTip": "Run up the seven chords. The three majors (C, F and G) glow like little patches of sun, the diminished B° wobbles, and everything still feels anchored to that opening Am — that's the minor key's gravity."
           },
           "exercises": [
             {
@@ -4323,7 +4323,7 @@ export const CURRICULUM = {
                 "Augmented"
               ],
               "answer": 1,
-              "explain": "III is major — in A minor that's C, the relative major. The two 'bright' chords in a minor key are III and VI."
+              "explain": "III is major — in A minor that's C, the relative major. A natural minor key has three 'bright' major chords: III, VI and VII (C, F and G in A minor)."
             },
             {
               "kind": "ear",
@@ -4363,7 +4363,7 @@ export const CURRICULUM = {
                 3,
                 6
               ],
-              "explain": "Two stacked MINOR 3rds (B→D, then D→F) is the recipe for a diminished triad. That double-minor stack is exactly why ii° is the one wobbly chord in every minor key — and why III and VI get left as the only majors."
+              "explain": "Two stacked MINOR 3rds (B→D, then D→F) is the recipe for a diminished triad. That double-minor stack is exactly why ii° is the one wobbly chord in every natural minor key. The majors sit on III, VI and VII."
             },
             {
               "kind": "mcq",
@@ -4719,7 +4719,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "arpeggiated",
-            "pattern": "Over Am, run A melodic minor UP (A B C D E F# G#) then come back DOWN with natural minor (A G F E D C B A). Over E, do the same shape one phrase at a time. One smooth ascent and descent per two bars.",
+            "pattern": "Over Am, run A melodic minor UP (A B C D E F# G#) then come back DOWN with natural minor (A G F E D C B A). Over E, keep the G#: the E chord holds G#, so a G natural would clash. Run up the same way, then come down with harmonic minor instead (A G# F E D C B A). One smooth ascent and descent per two bars.",
             "focus": "Hearing how raising the 6th and 7th brightens the ascent while the natural-minor descent keeps it dark."
           }
         },
