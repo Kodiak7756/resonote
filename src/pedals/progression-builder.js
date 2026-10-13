@@ -1,7 +1,7 @@
 import { NOTES, toSharp, CHORD_TYPES, KEY_PATTERNS, SCALE_TYPES, intervalLabel, getChordNotes, getKeyChords, getScaleNotes } from '../core/music-theory.js';
 import { INSTRUMENTS, currentInstrument, customTuning, getInst, getNoteAtFret } from '../core/tuning.js';
 import { showIntervals, setChordHighlight, clearChordHighlight, pedalBus, metroClock } from '../core/state.js';
-import { playClickedNote } from '../core/audio.js';
+import { playChordNotes, playPitches } from '../core/synth.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { findVoicings, renderMiniDiagram, getKeyPositionZones, assignFingers, pickGrip } from '../core/voicings.js';
 import { catOfType, qualSuffix, getKeySeventhChords, getBorrowedChords, getSecondaryDominants } from '../harmony/functional-harmony.js';
@@ -10,6 +10,9 @@ import { encodeMidi, downloadMidi, midiFilename, stringFretToMidi, PPQ } from '.
 import { bus } from '../core/mixer.js';
 
 // ── Progression presets (degrees into the diatonic 7) ────────────────
+// `qualities` overrides a degree's diatonic chord where the name asks for another
+// one (null = the key's own chord): a capital III is the MAJOR chord on the 3rd
+// degree (E in C — the iii borrowed bright), and iv the minor chord on the 4th.
 export const PROG_PRESETS = [
   { name: 'I-IV-V-I',       degrees: [0, 3, 4, 0] },
   { name: 'I-V-vi-IV',      degrees: [0, 4, 5, 3] },
@@ -18,8 +21,8 @@ export const PROG_PRESETS = [
   { name: 'I-IV-vi-V',      degrees: [0, 3, 5, 4] },
   { name: '12-Bar Blues',   degrees: [0, 0, 0, 0, 3, 3, 0, 0, 4, 3, 0, 4] },
   { name: 'vi-IV-I-V',      degrees: [5, 3, 0, 4] },
-  { name: 'I-III-IV-iv',    degrees: [0, 2, 3, 3] },
-  { name: 'I-V-vi-III-IV',  degrees: [0, 4, 5, 2, 3] },
+  { name: 'I-III-IV-iv',    degrees: [0, 2, 3, 3],    qualities: [null, 'Major', null, 'Minor'] },
+  { name: 'I-V-vi-III-IV',  degrees: [0, 4, 5, 2, 3], qualities: [null, null, null, 'Major', null] },
 ];
 
 // Fretboard overlay palette — the neck's language, not the panel's. Chrome in
@@ -64,8 +67,101 @@ const sfx = q => EXT_SUFFIX[q] ?? qualSuffix(q);
 
 // Roman numerals by semitone above the key root (for out-of-key labels).
 const ROMAN = ['I', '♭II', 'II', '♭III', 'III', 'IV', '♭V', 'V', '♭VI', 'VI', '♭VII', 'VII'];
+const ROMAN_DEG = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
 // Likely next-degree successors (degree index 0..6) — drives Smart Next ranking.
 const DEG_NEXT = { 0: [3, 4, 5, 1], 1: [4, 6, 3], 2: [5, 3], 3: [4, 1, 0, 6], 4: [0, 5, 3], 5: [1, 3, 4], 6: [0, 2] };
+
+function chordIntervals(quality) {
+  for (const group of Object.values(CHORD_TYPES)) if (group[quality]) return group[quality];
+  return [0, 4, 7];
+}
+
+// ── Grid cells: a chord as its place in the key ──────────────────────
+// A painted cell is { semi, quality }: the scale degree the chord stands on, as
+// semitones above the key's tonic (what its Roman numeral names, accidental
+// included), plus its chord type. Nothing absolute is stored, so the progression
+// moves with the key — the KEY row, a followed master key, a reload — and its
+// numeral is read off the current key when drawn, so the label, the sound and the
+// grip on the neck always agree. `fn` keeps an applied chord's own name (V7/V),
+// which the degree alone cannot say.
+
+// The numeral of a chord `semi` above the tonic in a key of this type: the scale
+// degree it sits on (a root off the scale is named from the major scale — ♭VII,
+// ♭III — and marked ♮ where a minor key's own III/VI/VII already means the flat
+// one), upper case for a major 3rd, lower for a minor 3rd, ° diminished, + augmented.
+// A chord with no 3rd (sus, 5) takes the case of the key's own chord there.
+export function progNumeral(keyType, semi, quality) {
+  const pat = KEY_PATTERNS[keyType] || KEY_PATTERNS.Major;
+  const s = ((semi % 12) + 12) % 12, deg = pat.intervals.indexOf(s);
+  let rn = deg >= 0 ? ROMAN_DEG[deg] : ROMAN[s];
+  if (deg < 0 && !/^[♭♯]/.test(rn)) rn = '♮' + rn;
+  const iv = chordIntervals(quality), m3 = iv.includes(3), M3 = iv.includes(4);
+  const lower = (m3 && !M3) || (!m3 && !M3 && deg >= 0 && pat.numerals[deg] === pat.numerals[deg].toLowerCase());
+  if (lower) rn = rn.toLowerCase();
+  if (lower && iv.includes(6) && !iv.includes(7)) rn += '°';
+  else if (!lower && M3 && iv.includes(8) && !iv.includes(7)) rn += '+';
+  return rn;
+}
+
+const ROMAN_RE = /^([♭♯♮b#]?)(vii|vi|v|iv|iii|ii|i)(?![iv])/i;
+const DEG_OF = { i: 0, ii: 1, iii: 2, iv: 3, v: 4, vi: 5, vii: 6 };
+
+// A chord {root, quality, numeral?} as a cell of a grid whose key root is keyRoot.
+export function progCell(keyRoot, ch) {
+  const r = NOTES.indexOf(toSharp(ch.root || '')), k = NOTES.indexOf(toSharp(keyRoot || ''));
+  if (r < 0 || k < 0) return null;
+  const cell = { semi: (r - k + 12) % 12, quality: ch.quality || 'Major' };
+  if (/\//.test(ch.numeral || '') && ROMAN_RE.test(ch.numeral)) cell.fn = ch.numeral;
+  return cell;
+}
+
+// A cell as the chord it is in a given key: { root, quality, numeral }.
+export function progChord(keyRoot, keyType, cell) {
+  if (!cell) return null;
+  return {
+    root: NOTES[(NOTES.indexOf(toSharp(keyRoot)) + cell.semi) % 12],
+    quality: cell.quality,
+    numeral: cell.fn || progNumeral(keyType, cell.semi, cell.quality),
+  };
+}
+
+// Semitones above the tonic that a written numeral names in a key of this type, or
+// null when it is not a plain numeral (a chord symbol, an applied V/x). Accidentals
+// count from the major scale, the way ♭VII and ♭III are spelled.
+function numeralSemi(numeral, keyType) {
+  const m = String(numeral || '').match(ROMAN_RE);
+  if (!m || /\//.test(numeral)) return null;
+  const d = DEG_OF[m[2].toLowerCase()];
+  if (!m[1]) return KEY_PATTERNS[keyType].intervals[d];
+  const acc = /[♭b]/.test(m[1]) ? -1 : /[♯#]/.test(m[1]) ? 1 : 0;
+  return (KEY_PATTERNS.Major.intervals[d] + acc + 12) % 12;
+}
+
+// Grids saved before cells were relative held absolute roots with numerals that
+// went stale on every key change; grids handed over by the song, lesson and
+// practice routes still arrive that way. Find the key they were written in from
+// their numerals — the key type whose degrees put every numeral on its own chord,
+// preferring the one whose upper/lower case matches — else keep the pedal's key,
+// and re-express each chord against it, so it sounds exactly as written.
+export function migrateProgGrid(grid, keyRoot, keyType) {
+  let key = { root: keyRoot, keyType };
+  if (!grid.some(c => c && c.semi != null)) {
+    let best = -1;
+    [keyType, ...Object.keys(KEY_PATTERNS).filter(k => k !== keyType)].forEach(kt => {
+      let ref = null, ok = true, fit = 0;
+      grid.forEach(c => {
+        const s = c && numeralSemi(c.numeral, kt), r = c ? NOTES.indexOf(toSharp(c.root || '')) : -1;
+        if (s == null || r < 0 || !ok) return;
+        const kr = (r - s + 12) % 12;
+        if (ref === null) ref = kr; else if (kr !== ref) ok = false;
+        const m = c.numeral.match(ROMAN_RE), own = KEY_PATTERNS[kt].numerals[DEG_OF[m[2].toLowerCase()]];
+        if (!m[1] && (m[2] === m[2].toLowerCase()) === (own === own.toLowerCase())) fit++;
+      });
+      if (ok && ref !== null && fit > best) { best = fit; key = { root: NOTES[ref], keyType: kt }; }
+    });
+  }
+  return { ...key, grid: grid.map(c => !c ? null : c.semi != null ? c : progCell(key.root, c)) };
+}
 
 const PROG_THEORY = {
   kicker: 'HARMONY',
@@ -82,7 +178,7 @@ export function buildProgressionContent(p) {
 
   const s = p.settings || (p.settings = {});
 
-  let root         = s.root         || 'C';
+  let root         = toSharp(s.root || 'C');
   let keyType      = KEY_PATTERNS[s.keyType] ? s.keyType : 'Major';
   let barsPerChord = s.barsPerChord || 2;        // legacy (preset-payload shim only)
   let progName     = s.progName     || 'I-IV-V-I';
@@ -95,8 +191,14 @@ export function buildProgressionContent(p) {
   let beatsPerBar = Math.max(1, Math.min(32, metroClock.ts || 4));
 
   const hadGrid = Array.isArray(s.customGrid) && s.customGrid.some(x => x);
-  // Array of length gridBars * beatsPerBar — each entry null (sustain) or {root, quality, numeral}
+  // Array of length gridBars * beatsPerBar — each entry null (sustain) or a cell
+  // {semi, quality, fn?} relative to the key (see progCell). Absolute cells — an old
+  // save, or a grid another pedal handed over — are converted on the way in.
   let customGrid = s.customGrid || null;
+  if (Array.isArray(customGrid) && customGrid.some(c => c && c.semi == null)) {
+    ({ grid: customGrid, root, keyType } = migrateProgGrid(customGrid, root, keyType));
+  }
+  const cellChord = c => progChord(root, keyType, c);
 
   // New picker state
   let qualityMode  = QUALITY_MODES.includes(s.qualityMode) ? s.qualityMode : 'TRIAD';
@@ -150,13 +252,29 @@ export function buildProgressionContent(p) {
   let lastClockConfig = metroClock.getConfigSignature();
 
   // ── Cross-pedal root/key broadcasts (opt-in) ─────────────────────────
+  // The Circle of Fifths is the one editor of the master key (CONTRACTS.md): the KEY
+  // row here sets this pedal's own key — a temporary override, never a broadcast.
+  // While the pedal is linked, a ⟲ chip takes it back to the master.
+  // The grid is stored relative to the key, so it transposes by itself; only the armed
+  // brush (an absolute chord from the old key's buttons) has to go.
+  function takeKey(k, restart = true) {
+    if (k.root) root = toSharp(k.root);
+    if (k.keyType && KEY_PATTERNS[k.keyType]) keyType = k.keyType;
+    armedChord = null;
+    positionZone = getActiveZone()?.label || getProgressionZones()[0]?.label || positionZone;
+    if (restart && p._progPlaying) { stopPlaying(); startPlaying(); } else render();
+  }
+  function offMaster() {
+    const mk = pedalBus.masterKey;
+    if (!mk.root || !pedalBus.follows(p.type)) return false;
+    return root !== mk.root || (!!KEY_PATTERNS[mk.keyType] && keyType !== mk.keyType);
+  }
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
-    root = ev.root;
-    if (ev.keyType && KEY_PATTERNS[ev.keyType]) keyType = ev.keyType;
-    positionZone = getActiveZone()?.label || getProgressionZones()[0]?.label || positionZone;
-    render();
+    takeKey(ev, false);
   });
+  // (un)linking shows or hides the ⟲ chip
+  pedalBus.onLinks(() => { if (document.getElementById(`body-${p.id}`) === el) render(); });
 
   // ── Metronome sync + unified slave-mode stepping ─────────────────────
   metroClock.on(clock => {
@@ -181,27 +299,25 @@ export function buildProgressionContent(p) {
       beat = slaveBeats;
       if (customGrid[beat]) {
         const ch = getGridChordAt(beat);
-        if (ch) { highlightChord(ch); if (drillMode) drillScore.changes++; }
+        if (ch) { strumChord(highlightChord(ch), beat); if (drillMode) drillScore.changes++; }
       }
       updateLiveDisplay();
     }
   });
 
   // ── Helpers ──────────────────────────────────────────────────────────
-  function getPresetDegrees() {
-    const pr = PROG_PRESETS.find(x => x.name === progName);
-    return pr ? pr.degrees : [0, 3, 4, 0];
+  function getPreset() {
+    return PROG_PRESETS.find(x => x.name === progName) || PROG_PRESETS[0];
   }
 
   function seedCustomGridFromPreset() {
-    const chords = getKeyChords(root, keyType);
-    const degs = getPresetDegrees();
-    gridBars = Math.max(4, degs.length);
+    const pat = KEY_PATTERNS[keyType];
+    const pr = getPreset();
+    gridBars = Math.max(4, pr.degrees.length);
     customGrid = new Array(gridBars * beatsPerBar).fill(null);
-    degs.forEach((di, bar) => {
-      if (di >= chords.length) return;
-      const ch = chords[di];
-      customGrid[bar * beatsPerBar] = { root: ch.root, quality: ch.quality, numeral: ch.numeral };
+    pr.degrees.forEach((di, bar) => {
+      if (di >= pat.intervals.length) return;
+      customGrid[bar * beatsPerBar] = { semi: pat.intervals[di], quality: pr.qualities?.[bar] || pat.qualities[di] };
     });
     selectedBeat = null;
   }
@@ -220,7 +336,7 @@ export function buildProgressionContent(p) {
       old.forEach((item, i) => { customGrid[i] = item; });
       barIdx = gridBars - 1;
     }
-    customGrid[barIdx * beatsPerBar] = { root: ch.root, quality: ch.quality, numeral: ch.numeral || '' };
+    customGrid[barIdx * beatsPerBar] = progCell(root, ch);
     selectedBeat = null;
   }
 
@@ -236,13 +352,13 @@ export function buildProgressionContent(p) {
     const zones = getProgressionZones();
     return zones.find(z => z.label === positionZone) || zones[0] || null;
   }
+  // The zone's grip for this exact chord. Matched on root + quality, never on the
+  // numeral alone: a numeral match put the key's I grip under any chord labelled I.
   function applyZoneToChord(chInfo) {
     if (!chInfo) return null;
     const zone = getActiveZone();
     if (!zone) return chInfo;
-    const match =
-      zone.chords.find(zc => zc.numeral === chInfo.numeral) ||
-      zone.chords.find(zc => zc.root === chInfo.root && zc.quality === chInfo.quality);
+    const match = zone.chords.find(zc => zc.root === chInfo.root && zc.quality === chInfo.quality);
     return match ? { ...chInfo, positions: match.positions, zoneLabel: zone.label } : chInfo;
   }
 
@@ -286,20 +402,37 @@ export function buildProgressionContent(p) {
       : (pickGrip(chInfo.root, notes, chInfo.quality, 'open')?.positions || null);
     setChordHighlight(chInfo.root, notes, label, grip, PROG_COLORS);
     updateOverlays();
+    return { root: chInfo.root, notes, label, grip };
   }
 
-  // Walk back to the active (sounding) chord at beat index bi.
+  // ── Sound: strum the grip that is lit, low string first ──────────────
+  // On the app's shared synth, ringing until the next painted beat (capped), and
+  // announced as 'resonote:played' like every pedal that sounds notes, so the
+  // Circle's trace and the Mirror can follow the changes.
+  function strumChord(shown, fromBeat) {
+    if (!shown) return;
+    let span = 1;
+    while (fromBeat + span < customGrid.length && !customGrid[fromBeat + span]) span++;
+    const dur = Math.min(3.2, span * 60 / (metroClock.bpm || 100)) * 0.95;
+    const midi = n => NOTES.indexOf(n.note) + 12 * n.octave;
+    const pitches = (shown.grip || [])
+      .filter(g => g.fret >= 0 && customTuning[g.si])
+      .map(g => getNoteAtFret(customTuning[g.si].note, customTuning[g.si].octave, g.fret))
+      .sort((a, b) => midi(a) - midi(b));
+    try {
+      if (pitches.length) playPitches(pitches, { dur, strum: 0.025, gain: 0.12 });
+      else playChordNotes(shown.notes, { dur, strum: 0.03 });
+    } catch (e) {}
+    window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: shown.notes.slice(), root: shown.root, label: shown.label } }));
+  }
+
+  // Walk back to the active (sounding) chord at beat index bi, as a chord in the current key.
   function getGridChordAt(bi) {
-    for (let i = bi; i >= 0; i--) if (customGrid[i]) return customGrid[i];
+    for (let i = bi; i >= 0; i--) if (customGrid[i]) return cellChord(customGrid[i]);
     return null;
   }
 
   // ── REAPER Bridge: export the painted grid as MIDI ───────────────────
-  function chordIntervalsFor(quality) {
-    for (const group of Object.values(CHORD_TYPES)) if (group[quality]) return group[quality];
-    return [0, 4, 7];
-  }
-
   function exportProgressionMidi() {
     const style = s.midiStyle || 'guitar';
     const total = gridBars * beatsPerBar;
@@ -309,7 +442,7 @@ export function buildProgressionContent(p) {
       if (!customGrid[i]) continue;
       let end = total;
       for (let j = i + 1; j < total; j++) if (customGrid[j]) { end = j; break; }
-      spans.push({ cell: customGrid[i], start: i, beats: end - i });
+      spans.push({ cell: cellChord(customGrid[i]), start: i, beats: end - i });
     }
     const msgEl = el.querySelector('.prog-export-msg');
     if (!spans.length) {
@@ -319,7 +452,7 @@ export function buildProgressionContent(p) {
     const notes = [];
     for (const sp of spans) {
       const chRoot = toSharp(sp.cell.root);
-      const iv = chordIntervalsFor(sp.cell.quality);
+      const iv = chordIntervals(sp.cell.quality);
       const startTick = sp.start * beatTick;
       const durTick = sp.beats * beatTick;
       const base = 48 + NOTES.indexOf(chRoot);           // chord root near C3 — guitar territory
@@ -374,19 +507,8 @@ export function buildProgressionContent(p) {
   function degreeOf(rootNote) {
     return getKeyChords(root, keyType).findIndex(c => c.root === rootNote);
   }
-  function deriveNumeral(rootNote, quality) {
-    const hit = getKeyChords(root, keyType).find(c => c.root === rootNote);
-    if (hit && hit.quality === quality) return hit.numeral;
-    const semi = (NOTES.indexOf(rootNote) - NOTES.indexOf(root) + 12) % 12;
-    let rn = ROMAN[semi] || '?';
-    if (/Min|^m7|m7♭5|Dim/.test(quality)) rn = rn.toLowerCase();
-    if (/Dim|m7♭5/.test(quality)) rn += '°';
-    return rn;
-  }
   function writeBeat(bi, ch) {
-    customGrid[bi] = ch
-      ? { root: ch.root, quality: ch.quality, numeral: ch.numeral || deriveNumeral(ch.root, ch.quality) }
-      : null;
+    customGrid[bi] = ch ? progCell(root, ch) : null;
   }
   function nextEmptyFrom(start) {
     for (let i = start; i < customGrid.length; i++) if (!customGrid[i]) return i;
@@ -395,8 +517,8 @@ export function buildProgressionContent(p) {
   // Rank the seven diatonic chords for the slot at bi, with a one-line reason.
   function rankSmartNext(bi) {
     const dia = getKeyChords(root, keyType);
-    let prevCh = null; for (let i = bi - 1; i >= 0; i--) if (customGrid[i]) { prevCh = customGrid[i]; break; }
-    let nextCh = null; for (let i = bi + 1; i < customGrid.length; i++) if (customGrid[i]) { nextCh = customGrid[i]; break; }
+    let prevCh = null; for (let i = bi - 1; i >= 0; i--) if (customGrid[i]) { prevCh = cellChord(customGrid[i]); break; }
+    let nextCh = null; for (let i = bi + 1; i < customGrid.length; i++) if (customGrid[i]) { nextCh = cellChord(customGrid[i]); break; }
     const prevDeg = prevCh ? degreeOf(prevCh.root) : -1;
     const nextDeg = nextCh ? degreeOf(nextCh.root) : -1;
     const succ = prevDeg >= 0 ? (DEG_NEXT[prevDeg] || []) : [0, 3, 4, 5];
@@ -431,7 +553,7 @@ export function buildProgressionContent(p) {
     lastChangeTime = Date.now();
 
     const ch0 = getGridChordAt(0);
-    if (ch0) highlightChord(ch0);
+    if (ch0) strumChord(highlightChord(ch0), 0);
 
     // Slave mode — chord advances arrive from metroClock.on
     if (metroClock.masterSource === 'metronome') { p._progIntv = null; render(); return; }
@@ -447,7 +569,7 @@ export function buildProgressionContent(p) {
       pulseSharedClock(beatIdx);
       tick(beatIdx === 0, beatIdx);
       const ch = getGridChordAt(beat);
-      if (ch && customGrid[beat]) { highlightChord(ch); if (drillMode) drillScore.changes++; }
+      if (ch && customGrid[beat]) { strumChord(highlightChord(ch), beat); if (drillMode) drillScore.changes++; }
       updateLiveDisplay();
       beat++;
     }, 60000 / useBpm);
@@ -532,7 +654,12 @@ export function buildProgressionContent(p) {
     KEY_TYPES.forEach(kt => {
       h += `<button class="rk-seg-btn prog-kt${kt === keyType ? ' is-active' : ''}" data-kt="${kt}" style="min-height:calc(28px*var(--ui));flex:1;font-size:calc(10px*var(--ui))">${kt}</button>`;
     });
-    h += `</div></div>`;
+    h += `</div>`;
+    if (offMaster()) {
+      const mk = pedalBus.masterKey;
+      h += `<button class="rk-chip prog-master" title="This progression is in its own key — tap to re-sync it to the session key" style="min-height:calc(28px*var(--ui));align-self:flex-start;margin-top:5px">⟲ Reset to session key · ${mk.root} ${mk.keyType}</button>`;
+    }
+    h += `</div>`;
 
     // ── Readout + transport ──
     // The transport flips to ◼ while it runs, and at that moment it is the halt
@@ -622,7 +749,7 @@ export function buildProgressionContent(p) {
       h += `<span class="mono" style="color:var(--rk-ink-mute);font-size:calc(8px*var(--ui));min-width:14px;text-align:right">${bar + 1}</span>`;
       for (let b = 0; b < beatsPerBar; b++) {
         const bi     = bar * beatsPerBar + b;
-        const ch     = customGrid[bi];
+        const ch     = cellChord(customGrid[bi]);
         const active = getGridChordAt(bi);
         const isCur  = p._progPlaying && bi === beat;
         const isSel  = selectedBeat === bi;
@@ -736,20 +863,9 @@ export function buildProgressionContent(p) {
     // ── Wire events ──────────────────────────────────────────────────
     el.querySelector('.numlabel-toggle')?.addEventListener('click', e => { e.stopPropagation(); numLabelMode = numLabelMode === 'NUM' ? 'NAMES' : 'NUM'; render(); });
 
-    el.querySelectorAll('.prog-root').forEach(b => b.onclick = e => {
-      e.stopPropagation();
-      root = b.dataset.r;
-      pedalBus.setKey(root, keyType, { source: p.id });
-      if (!getActiveZone() && getProgressionZones()[0]) positionZone = getProgressionZones()[0].label;
-      if (p._progPlaying) { stopPlaying(); startPlaying(); } else render();
-    });
-    el.querySelectorAll('.prog-kt').forEach(b => b.onclick = e => {
-      e.stopPropagation();
-      keyType = b.dataset.kt;
-      pedalBus.setKey(root, keyType, { source: p.id });
-      if (!getActiveZone() && getProgressionZones()[0]) positionZone = getProgressionZones()[0].label;
-      if (p._progPlaying) { stopPlaying(); startPlaying(); } else render();
-    });
+    el.querySelectorAll('.prog-root').forEach(b => b.onclick = e => { e.stopPropagation(); takeKey({ root: b.dataset.r }); });
+    el.querySelectorAll('.prog-kt').forEach(b => b.onclick = e => { e.stopPropagation(); takeKey({ keyType: b.dataset.kt }); });
+    el.querySelector('.prog-master')?.addEventListener('click', e => { e.stopPropagation(); takeKey(pedalBus.masterKey); });
 
     el.querySelectorAll('.qual-btn').forEach(b => b.onclick = e => {
       e.stopPropagation();
@@ -780,7 +896,7 @@ export function buildProgressionContent(p) {
         const bi = parseInt(cell.dataset.bi);
         if (armedChord) {
           writeBeat(bi, armedChord);
-          highlightChord(customGrid[bi]);
+          highlightChord(cellChord(customGrid[bi]));
           render();
         } else {
           selectedBeat = selectedBeat === bi ? null : bi;
@@ -801,7 +917,7 @@ export function buildProgressionContent(p) {
       e.stopPropagation();
       if (selectedBeat === null) return;
       writeBeat(selectedBeat, { root: b.dataset.root, quality: b.dataset.q, numeral: b.dataset.num });
-      highlightChord(customGrid[selectedBeat]);
+      highlightChord(cellChord(customGrid[selectedBeat]));
       const nxt = nextEmptyFrom(selectedBeat + 1);
       selectedBeat = nxt;
       render();

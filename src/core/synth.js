@@ -1,7 +1,8 @@
 // ── Tiny chord/voice synth ───────────────────────────────────────────
 // A single shared AudioContext that voices chords as gently-strummed
 // triangle tones. Used by the Chord-Family Lab to "reveal" a chord's colour
-// and to play tension → resolution. Kept deliberately simple (no samples).
+// and to play tension → resolution, and by the Progression Studio to strum
+// its changes. Kept deliberately simple (no samples).
 import { NOTES } from './music-theory.js';
 import { bus } from './mixer.js';
 
@@ -33,12 +34,21 @@ export function voiceUp(notes, baseOct = 3) {
 // Play a chord (array of pitch-class note names). Returns the note duration (s).
 export function playChordNotes(notes, opts = {}) {
   if (!notes || !notes.length) return 0;
-  const { baseOct = 3, dur = 1.4, strum = 0.04, wave = 'triangle', gain = 0.15, bass = true } = opts;
-  const c = ctx();
-  const t0 = c.currentTime + 0.02;
+  const { baseOct = 3, bass = true } = opts;
   const voiced = voiceUp(notes, baseOct);
   if (bass) voiced.unshift({ note: notes[0], octave: baseOct - 1 });
-  voiced.forEach((v, i) => {
+  return playPitches(voiced, opts);
+}
+
+// Play exact pitches — [{ note, octave }], strummed in the order given — such as a
+// grip read off the neck, or a voicing whose named bass has to sound lowest.
+// Returns the note duration (s).
+export function playPitches(pitches, opts = {}) {
+  if (!pitches || !pitches.length) return 0;
+  const { dur = 1.4, strum = 0.04, wave = 'triangle', gain = 0.15 } = opts;
+  const c = ctx();
+  const t0 = c.currentTime + 0.02;
+  pitches.forEach((v, i) => {
     const o = c.createOscillator(), g = c.createGain();
     o.type = wave;
     o.frequency.value = freqOf(v.note, v.octave);
