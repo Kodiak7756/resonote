@@ -160,13 +160,14 @@ function buildMelodicMinorRun(root, opts = {}) {
   seq.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
   return { root: r, notes: uniqNotes(seq), label: opts.label || `${r} melodic minor ↑ · natural minor ↓`, positions, steps: seqSteps(seq, 60 / (opts.bpm || 72)) };
 }
-// Guide-tone targeting: for each chord, land on its 3rd on the downbeat, walk the 5th and ♭7,
-// then step up by a half-step into the NEXT chord's 3rd. Makes the line actually sound the
+// Guide-tone targeting: for each chord, land on its 3rd on the downbeat, walk the 5th and 7th
+// (the octave root on a plain triad), then step up by a half-step into the NEXT chord's 3rd. Makes the line actually sound the
 // guide tones the lesson names (e.g. B over G7, E over C7) instead of a generic scale run.
 function buildGuideTones(prog, opts = {}) {
   const dur = 60 / (opts.bpm || 60);
-  const isMin = c => /min|^m|m7|dim|°|ø|♭5|b5/.test((c.quality || '').toLowerCase());
-  const thirdOf = c => isMin(c) ? 3 : 4;
+  // The 3rd comes from the chord's real intervals — a quality-name regex can't tell "Major"
+  // or "Maj7" from minor (both start with "m"), which turned every major chord minor.
+  const thirdOf = c => { const ints = chordIntervalsFor(c.quality); return ints.find(s => s === 3 || s === 4) ?? ints[1] ?? 4; };
   const positions = [], steps = [];
   prog.forEach((c, i) => {
     const r = toSharp(c.root), rootPc = NOTES.indexOf(r);
@@ -174,7 +175,8 @@ function buildGuideTones(prog, opts = {}) {
     const next = prog[(i + 1) % prog.length];
     const nextThirdPc = (NOTES.indexOf(toSharp(next.root)) + thirdOf(next)) % 12;
     const approachSemi = (((nextThirdPc - 1 + 12) % 12) - rootPc + 24) % 12;   // half step below the next 3rd
-    const cell = [thirdOf(c), ints[2] != null ? ints[2] : 7, ints[3] != null ? ints[3] : 10, approachSemi];
+    // a plain triad has no 7th to walk — use the root an octave up rather than inventing a ♭7
+    const cell = [thirdOf(c), ints[2] != null ? ints[2] : 7, ints[3] != null ? ints[3] : 12, approachSemi];
     const start = pickClimbStart(r, Math.max(...cell, 7));
     cell.forEach((semi, idx) => {
       const p = posWithNote(start.si, start.fret + semi);
@@ -183,6 +185,33 @@ function buildGuideTones(prog, opts = {}) {
     });
   });
   return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Guide tones — land on the 3rd', positions, steps };
+}
+// Chord-tone arpeggios: hold each chord's grip and pick root–3rd–5th–3rd, one note per beat,
+// so the safe landing notes are heard (and seen) moving when the chord changes. The notes come
+// from the grip itself (lowest root, then the next 3rd and 5th above it), so the hand stays put.
+function buildChordToneArps(prog, opts = {}) {
+  const dur = 60 / (opts.bpm || 70);
+  const midi = p => p.octave * 12 + NOTES.indexOf(p.note);
+  const positions = [], steps = [], seen = new Set();
+  prog.forEach(c => {
+    const r = toSharp(c.root), ints = chordIntervalsFor(c.quality), rootPc = NOTES.indexOf(r);
+    const notes = getChordNotes(r, ints);
+    const pcAt = semi => NOTES[(rootPc + semi) % 12];
+    const third = ints.find(s => s === 3 || s === 4) ?? ints[1] ?? 4, fifth = ints.find(s => s >= 6 && s <= 8) ?? 7;
+    const grip = pickGrip(r, notes, c.quality, 'open', 0);
+    const pool = (grip ? grip.positions : chordVoicing(notes)).filter(p => p.fret >= 0)
+      .map(p => posWithNote(p.si, p.fret)).sort((a, b) => midi(a) - midi(b));
+    const lo = pool.find(p => p.note === r) || lowestPos(r);
+    // next chord tone above `from` inside the grip; if the grip lacks it, the same string further up
+    const above = (from, semi) => pool.find(p => p.note === pcAt(semi) && midi(p) > midi(from))
+      || posWithNote(lo.si, lo.fret + semi);
+    const t3 = above(lo, third), t5 = above(t3, fifth);
+    [lo, t3, t5, t3].forEach((p, idx) => {
+      const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); }
+      steps.push({ focus: [{ si: p.si, fret: p.fret }], play: [{ note: p.note, octave: p.octave }], dur, label: idx === 0 ? `${r}${chordSuffix(c.quality)}: root–3rd–5th–3rd` : undefined });
+    });
+  });
+  return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Chord tones — root, 3rd, 5th, 3rd', positions, steps };
 }
 // Slash-chord FLAVORS: hold one bass note (C on the lowest string) and cycle upper-structure
 // triads on the D-G-B strings. Each triad "harvests" different extensions of the bass —
@@ -983,8 +1012,12 @@ export function drillToPlan(drill, bpmOverride) {
   if (/melodic minor/.test(sig) && /up bright|down dark|natural[- ]minor descent|down with natural/.test(sig))
     return buildMelodicMinorRun(root, { bpm });
 
+  // 2.85) Chord-tone arpeggios — root–3rd–5th–3rd through each chord (C-E-G-E over C…).
+  if ((/land on chord tones/.test(title) || /root[–-]3rd[–-]5th[–-]3rd/.test(sig)) && prog.length)
+    return buildChordToneArps(prog, { bpm, label: progLabel(prog) + ' — chord tones' });
+
   // 2.9) Guide-tone targeting — land on each chord's 3rd on the downbeat (B over G7, E over C7…).
-  if (/hit the 3rd|targeting the 3rd|land on chord tones|3rd on beat 1/.test(sig) && prog.length)
+  if (/hit the 3rd|targeting the 3rd|3rd on beat 1/.test(sig) && prog.length)
     return buildGuideTones(prog, { bpm, label: progLabel(prog) + ' — guide tones' });
 
   // 3) SCALE runs — play a real CAGED BOX (positional, across the strings) the way guitar is
