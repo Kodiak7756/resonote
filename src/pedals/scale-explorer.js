@@ -147,7 +147,12 @@ export function renderScaleBoxDiagram(box, root, isActive, formula) {
   const cardPositions = box.positions || [];
   const startFret = Math.min(...cardPositions.map(p => p.fret));
   const hiFret = Math.max(...cardPositions.map(p => p.fret));
-  const numFrets = Math.max(1, hiFret - startFret + 1);
+  // Open strings sit ABOVE the nut, as on a chord chart (and renderMiniDiagram in voicings.js),
+  // and the first space under the nut is fret 1. Drawing open notes in that space pushed every
+  // fretted note in the box one fret too high.
+  const hasOpen = startFret === 0;
+  const firstFret = hasOpen ? 1 : startFret;
+  const numFrets = Math.max(1, hiFret - firstFret + 1);
   const strW = extended
     ? isBass ? 24 : ns <= 4 ? 18 : 12
     : ns <= 4 ? 12 : ns <= 6 ? 10 : 8;
@@ -155,10 +160,13 @@ export function renderScaleBoxDiagram(box, root, isActive, formula) {
   const topPad = extended ? (isBass ? 26 : 22) : 18;
   const bottomPad = extended ? (isBass ? 18 : 16) : 10;
   const fretH = extended ? (isBass ? 14 : 16) : 14;
+  const dotR = extended ? (isBass ? 5.4 : 5) : 4.5;
+  // the extended header text sits where the open-string dots go, so they get a row of their own
+  const openRow = hasOpen && extended ? Math.ceil(dotR * 2 + 4) : 0;
   const w = leftPad * 2 + (ns - 1) * strW;
-  const h = topPad + numFrets * fretH + bottomPad;
+  const h = topPad + openRow + numFrets * fretH + bottomPad;
   const sx = leftPad;
-  const sy = topPad;
+  const sy = topPad + openRow;
   const sw = (ns - 1) * strW;
   const fh = fretH;
   // Frame = chrome (the pedal's accent when the card is selected); dots = the
@@ -190,10 +198,10 @@ export function renderScaleBoxDiagram(box, root, isActive, formula) {
   }
   cardPositions.forEach(p => {
     const x = sx + (ns - 1 - p.si) * strW;
-    const fy = sy + (p.fret - startFret) * fh + fh / 2;
+    const fy = p.fret === 0 ? sy - dotR - 2 : sy + (p.fret - firstFret) * fh + fh / 2;
     const isR = p.isRoot;
     const dl = isR ? 'R' : displayLabel(p.note, root, formula);
-    s += `<circle cx="${x}" cy="${fy}" r="${extended ? (isBass ? 5.4 : 5) : 4.5}" fill="${isR ? SCALE_COLORS.root : SCALE_COLORS.tone}"/>`;
+    s += `<circle cx="${x}" cy="${fy}" r="${dotR}" fill="${isR ? SCALE_COLORS.root : SCALE_COLORS.tone}"/>`;
     s += `<text x="${x}" y="${fy + 2.5}" text-anchor="middle" font-size="${extended ? (isBass ? 5.8 : 5.5) : 5}" font-family="'JetBrains Mono',monospace" font-weight="700" fill="var(--rk-ink)">${dl}</text>`;
   });
   s += '</svg>';

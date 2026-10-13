@@ -308,7 +308,10 @@ export function renderArpBoxDiagram(box, root, isActive, formula) {
 
   const ns       = customTuning.length;
   const startFret = box.lo;
-  const numFrets  = box.hi - box.lo + 1;
+  // Open strings sit ABOVE the nut (as renderMiniDiagram in voicings.js draws them) and the first
+  // space is fret 1 — drawn in that space, every fretted note of the box read one fret high.
+  const firstFret = startFret === 0 ? 1 : startFret;
+  const numFrets  = Math.max(1, box.hi - firstFret + 1);
   const extended  = isExtendedCanonicalStringContext();
   const strW      = extended ? (ns <= 4 ? 18 : 12) : (ns <= 4 ? 12 : ns <= 6 ? 10 : 8);
   const w         = extended ? (24 + ns * strW) : (14 + ns * strW);
@@ -346,7 +349,7 @@ export function renderArpBoxDiagram(box, root, isActive, formula) {
   // Note dots
   box.positions.forEach(p => {
     const x    = sx + (ns - 1 - p.si) * strW;
-    const fy   = sy + (p.fret - startFret) * fh + fh / 2;
+    const fy   = p.fret === 0 ? sy - 6.5 : sy + (p.fret - firstFret) * fh + fh / 2;
     const isR  = p.isRoot;
     const dl   = isR ? 'R' : displayLabel(p.note, root, formula);
     s += `<circle cx="${x}" cy="${fy}" r="4.5" fill="${isR ? ARP_COLORS.root : ARP_COLORS.tone}"/>`;
