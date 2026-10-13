@@ -45,7 +45,12 @@ function buildScaleClimb(root, intervals, opts = {}) {
   const start = pickClimbStart(root, 12);
   const asc = [...intervals, 12].map(iv => posWithNote(start.si, start.fret + iv));
   const seq = opts.downToo === false ? asc : asc.concat(asc.slice(0, -1).reverse());
-  return { root: toSharp(root), notes: uniqNotes(asc), label: opts.label || `${root} scale`, positions: asc, steps: seqSteps(seq, 60 / (opts.bpm || 100)) };
+  const dur = 60 / (opts.bpm || 100), label = opts.label || `${root} scale`;
+  if (opts.barBeats) {   // a drill: hold home to the bar line so the loop comes round on beat 1
+    const steps = padToBar(seqSteps(seq, dur), dur, opts.barBeats);
+    return { root: toSharp(root), notes: uniqNotes(asc), label, positions: asc, steps, scaleParts: [{ from: 0, to: steps.length, root: toSharp(root), label }] };
+  }
+  return { root: toSharp(root), notes: uniqNotes(asc), label, positions: asc, steps: seqSteps(seq, dur) };
 }
 // Play a scale AS A CAGED BOX — a real hand position spread across the strings, the way
 // guitar is actually taught and played. Ascends low string→high then back down, in ONE
@@ -60,25 +65,115 @@ function _boxAsc(box) {
   }
   return ps.sort((a, b) => b.si - a.si || a.fret - b.fret);
 }
+const _pmidi = p => p.octave * 12 + NOTES.indexOf(p.note);
+// A box in strict pitch order, one position per pitch (a shape that doubles a pitch on two
+// strings would otherwise sound it twice in a row).
+function _pitchAsc(ps) {
+  const out = [];
+  ps.slice().sort((a, b) => _pmidi(a) - _pmidi(b) || b.si - a.si).forEach(p => { if (!out.length || _pmidi(out[out.length - 1]) !== _pmidi(p)) out.push(p); });
+  return out;
+}
+const _rootIdx = (asc, rootPc) => asc.reduce((o, p, i) => (NOTES.indexOf(p.note) === rootPc ? o.concat(i) : o), []);
+// Root to root, the way a scale is practised: from the box's LOWEST root up to its highest root
+// (or just one octave with opts.octaves = 1) and back down to where it started, so the run begins
+// and ends on home. A box that holds only one root plays root → top → bottom → root instead.
+function rootRun(asc, rootPc, opts = {}) {
+  const idx = _rootIdx(asc, rootPc);
+  if (!idx.length) return null;
+  const lo = idx[0], hi = opts.octaves === 1 && idx.length >= 2 ? idx[1] : idx[idx.length - 1];
+  if (hi > lo) {
+    const up = asc.slice(lo, hi + 1);
+    return opts.downToo === false ? up : up.concat(up.slice(0, -1).reverse());
+  }
+  const top = asc.slice(lo), below = asc.slice(0, lo);
+  if (!below.length) return opts.downToo === false ? top : top.concat(top.slice(0, -1).reverse());
+  return top.concat(top.slice(0, -1).reverse().slice(0, -1), below.slice().reverse(), below.slice(1), [asc[lo]]);
+}
+// Hold the last note to the next bar line (at least one extra beat), so a looping run always
+// comes round on beat 1 and the home note rings instead of being clipped by the restart.
+function padToBar(steps, spb, beatsPerBar = 4) {
+  if (!steps.length) return steps;
+  const bar = Math.max(1, Math.round(beatsPerBar) || 4);
+  const total = steps.reduce((t, st) => t + (st.gap || st.dur || spb), 0) / spb;
+  let extra = Math.ceil(total / bar - 1e-6) * bar - total;
+  if (extra < 1 - 1e-6) extra += bar;
+  const last = steps[steps.length - 1];
+  const slot = (last.gap || last.dur || spb) + extra * spb;
+  steps[steps.length - 1] = { ...last, dur: slot, gap: slot };
+  return steps;
+}
+// The box to run: the one asked for, else the first that holds a full octave root to root.
+function pickRunBox(boxes, rootPc, boxIndex) {
+  if (boxIndex != null) return boxes[Math.min(boxIndex, boxes.length - 1)];
+  return boxes.find(b => _rootIdx(_pitchAsc(_boxAsc(b)), rootPc).length >= 2) || boxes[0];
+}
+const _posLabel = ps => { const minF = Math.min(...ps.map(p => p.fret)); return minF <= 0 ? 'open position' : `pos. ${minF}fr`; };
+// opts.rootToRoot: play from the lowest root to the highest (opts.octaves = 1 → one octave) and
+// back, holding home to the bar line (opts.barBeats). Without it the whole box is played edge to
+// edge — the Workouts pedal's position drills rely on that.
 export function buildScaleBox(root, intervals, opts = {}) {
-  const r = toSharp(root);
+  const r = toSharp(root), rootPc = NOTES.indexOf(r);
   const boxes = findScaleBoxes(r, intervals, { scaleCat: opts.scaleCat, scaleName: opts.scaleName });
   if (!boxes || !boxes.length) return buildScaleClimb(r, intervals, opts);
   const dur = 60 / (opts.bpm || 100);
-  let positions, seq, posLabel;
+  const label0 = opts.label || `${r} ${opts.name || 'scale'}`;
   if (opts.connect && boxes.length >= 2) {
-    positions = [..._boxAsc(boxes[0]), ..._boxAsc(boxes[1])];
-    seq = positions.concat(positions.slice(0, -1).reverse());
-    posLabel = `${boxes[0].label} → ${boxes[1].label}`;
-  } else {
-    const box = boxes[Math.min(opts.boxIndex || 0, boxes.length - 1)];
-    positions = _boxAsc(box);
-    if (positions.length < 2) return buildScaleClimb(r, intervals, opts);
-    seq = opts.downToo === false ? positions : positions.concat(positions.slice(0, -1).reverse());
-    const minF = Math.min(...positions.map(p => p.fret));   // label from the ACTUAL played frets (post octave-drop)
-    posLabel = minF <= 0 ? 'open position' : `pos. ${minF}fr`;
+    if (opts.rootToRoot) {
+      const linked = buildBoxConnect(r, _pitchAsc(_boxAsc(boxes[0])), _pitchAsc(_boxAsc(boxes[1])), { ...opts, dur, label: label0 });
+      if (linked) return linked;
+    } else {
+      const positions = [..._boxAsc(boxes[0]), ..._boxAsc(boxes[1])];
+      const seq = positions.concat(positions.slice(0, -1).reverse());
+      return { root: r, notes: uniqNotes(positions), label: `${label0} · ${boxes[0].label} → ${boxes[1].label}`, positions, steps: seqSteps(seq, dur) };
+    }
   }
-  return { root: r, notes: uniqNotes(positions), label: `${opts.label || `${r} ${opts.name || 'scale'}`} · ${posLabel}`, positions, steps: seqSteps(seq, dur) };
+  if (opts.rootToRoot) {
+    const asc = _pitchAsc(_boxAsc(pickRunBox(boxes, rootPc, opts.boxIndex)));
+    const seq = asc.length >= 2 && rootRun(asc, rootPc, opts);
+    if (seq) {
+      const positions = asc.filter(p => seq.includes(p));   // light what is played, nothing outside it
+      const label = `${label0} · ${_posLabel(positions)}`;
+      const steps = padToBar(seqSteps(seq, dur), dur, opts.barBeats);
+      return { root: r, notes: uniqNotes(positions), label, positions, steps, scaleParts: [{ from: 0, to: steps.length, root: r, label }] };
+    }
+  }
+  const box = boxes[Math.min(opts.boxIndex || 0, boxes.length - 1)];
+  const positions = _boxAsc(box);
+  if (positions.length < 2) return buildScaleClimb(r, intervals, opts);
+  const seq = opts.downToo === false ? positions : positions.concat(positions.slice(0, -1).reverse());
+  return { root: r, notes: uniqNotes(positions), label: `${label0} · ${_posLabel(positions)}`, positions, steps: seqSteps(seq, dur) };
+}
+// Box 1 → Box 2 the way the link is taught: climb Box 1 from its low root, SLIDE one finger up a
+// string (the G string first — it is where the two boxes overlap most comfortably) into Box 2,
+// climb on to Box 2's top root and hold it, then come back down the same way, sliding back into
+// Box 1 and finishing on the low root.
+function buildBoxConnect(r, ascA, ascB, opts) {
+  const rootPc = NOTES.indexOf(r), dur = opts.dur;
+  const lowA = _rootIdx(ascA, rootPc)[0];
+  if (lowA == null) return null;
+  const STRING_NAMES = ['high E', 'B', 'G', 'D', 'A', 'low E'];
+  for (const si of [2, 3, 1, 4]) {
+    if (si >= customTuning.length) continue;
+    const onA = ascA.filter(p => p.si === si), onB = ascB.filter(p => p.si === si);
+    if (!onA.length || !onB.length) continue;
+    const from = onA[onA.length - 1];
+    const to = onB.find(p => p.fret > from.fret && p.fret - from.fret <= 3 && _pmidi(p) > _pmidi(from));
+    if (!to) continue;
+    const iFrom = ascA.indexOf(from), iTo = ascB.indexOf(to);
+    const topB = _rootIdx(ascB, rootPc).filter(i => i >= iTo).pop();
+    if (iFrom < lowA || topB == null) continue;
+    const upA = ascA.slice(lowA, iFrom + 1), upB = ascB.slice(iTo, topB + 1);
+    const sName = STRING_NAMES[si] || `string ${6 - si}`;
+    const boxA = 'Box 1', boxB = 'Box 2';
+    const up = upA.map(p => ({ p, label: boxA })).concat(upB.map((p, k) => ({ p, label: k === 0 ? `slide ↗ on the ${sName} string (${from.fret}→${to.fret}) into ${boxB}` : boxB })));
+    const down = up.slice(0, -1).reverse().map(e => ({ ...e, label: e.p === from ? `slide ↘ on the ${sName} string (${to.fret}→${from.fret}) back into ${boxA}` : (upA.includes(e.p) ? boxA : boxB) }));
+    const seq = up.concat(down);
+    const steps = padToBar(seq.map(e => ({ focus: [{ si: e.p.si, fret: e.p.fret }], play: [{ note: e.p.note, octave: e.p.octave }], dur, label: e.label })), dur, opts.barBeats);
+    const positions = upA.concat(upB);
+    const label = `${opts.label} · ${boxA} → ${boxB}`;
+    return { root: r, notes: uniqNotes(positions), label, positions, steps, scaleParts: [{ from: 0, to: steps.length, root: r, label }] };
+  }
+  return null;
 }
 function buildChromatic(root, count, opts = {}) {
   const start = opts.si != null
@@ -664,24 +759,91 @@ export function buildScaleSequence(root, intervals, n, opts = {}) {
 }
 
 // Two-part CONTRAST: play scale A, then scale B (relative major↔minor, sharp vs flat key,
-// major vs parallel mode, major-pent vs minor-pent). Each step carries its part's label so
-// the readout names which scale is sounding; a longer gap separates the two halves.
+// major vs parallel mode, major-pent vs minor-pent) in ONE hand position, so the only thing
+// that moves is the note that changes (C major → G major: every F slides up a fret to F♯).
+// Each part runs one octave root to root and holds its home to the bar line. Each step carries
+// its part's label and shape (step.shape), so the readout and the lit shape follow the part.
+const _scalePcs = sp => { const ints = SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11], r = NOTES.indexOf(toSharp(sp.root)); return ints.map(i => (r + i) % 12); };
+// Re-finger a box for a scale that differs by a few notes: each outgoing note moves a half step
+// (one fret) to its incoming neighbour on the same string. A note that would fall off the nut
+// moves to the next lower string instead (counted, so the search can avoid it). null = the two
+// scales don't differ by half-step swaps (e.g. pentatonic vs a seven-note scale).
+function morphBox(asc, fromPcs, toPcs) {
+  const removed = [...new Set(fromPcs)].filter(pc => !toPcs.includes(pc));
+  const added = [...new Set(toPcs)].filter(pc => !fromPcs.includes(pc));
+  if (removed.length !== added.length || removed.length > 5) return null;
+  let move = null;
+  if (removed.length) {
+    for (const perm of permsOf(added)) {
+      const d = removed.map((pc, i) => { const s = ((perm[i] - pc) % 12 + 12) % 12; return s === 1 ? 1 : s === 11 ? -1 : 0; });
+      if (d.every(x => x)) { move = new Map(removed.map((pc, i) => [pc, d[i]])); break; }
+    }
+    if (!move) return null;
+  }
+  let reloc = 0;
+  const out = [];
+  for (const p of asc) {
+    const pc = NOTES.indexOf(p.note);
+    if (!move || !move.has(pc)) { out.push(p); continue; }
+    let si = p.si, f = p.fret + move.get(pc);
+    if (f < 0) { si = p.si + 1; if (si >= customTuning.length) return null; f = _pmidi(p) - 1 - _pmidi(noteAt(si, 0)); reloc++; }
+    if (f < 0 || f > nfrets()) return null;
+    out.push(posWithNote(si, f));
+  }
+  return { asc: _pitchAsc(out), reloc };
+}
 function buildContrast(specs, opts = {}) {
-  const bpm = opts.bpm || 96;
-  const subs = specs.map(sp => {
-    const ints = SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11];
-    return buildScaleBox(sp.root, ints, { bpm, scaleCat: sp.cat, scaleName: sp.name, name: sp.name, downToo: opts.downToo !== false, label: sp.label || `${sp.root} ${sp.name}` });
-  });
-  const positions = [], notes = [], steps = [];
-  subs.forEach((pl, i) => {
-    positions.push(...pl.positions);
-    pl.notes.forEach(n => { if (!notes.includes(n)) notes.push(n); });
-    pl.steps.forEach((st, j) => {
-      const boundary = j === pl.steps.length - 1 && i < subs.length - 1;
-      steps.push({ ...st, label: pl.label, gap: boundary ? (st.dur || 0.5) * 2.6 : st.gap });
+  const bpm = opts.bpm || 96, dur = 60 / bpm;
+  const pcsOf = specs.map(_scalePcs), rootPcs = specs.map(sp => NOTES.indexOf(toSharp(sp.root)));
+  const intsOf = sp => SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11];
+  // Try every box of every scale in the comparison as the shared position. Keep the one that
+  // needs no string changes, stays within a hand span and gives every part a full octave root to
+  // root; among those prefer open position (where these lessons' open chords live), then the box
+  // the first scale is normally run in (so a pentatonic comparison stays in Box 1), then the
+  // lowest on the neck.
+  let best = null;
+  specs.forEach((sp, i) => {
+    const boxes = findScaleBoxes(toSharp(sp.root), intsOf(sp), { scaleCat: sp.cat, scaleName: sp.name }) || [];
+    const usual = i === 0 && boxes.length ? pickRunBox(boxes, rootPcs[0]) : null;
+    boxes.forEach(b => {
+      const base = _pitchAsc(_boxAsc(b));
+      let reloc = 0; const parts = [];
+      for (let k = 0; k < specs.length; k++) {
+        const m = k === i ? { asc: base, reloc: 0 } : morphBox(base, pcsOf[i], pcsOf[k]);
+        if (!m) return;
+        reloc += m.reloc; parts.push(m.asc);
+      }
+      const frets = parts.flat().map(p => p.fret), fretted = frets.filter(f => f > 0);
+      const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+      const thin = parts.some((asc, k) => _rootIdx(asc, rootPcs[k]).length < 2);
+      const maxF = Math.max(...frets), open = Math.min(...frets) === 0 && maxF <= 4;
+      const score = reloc * 20 + (thin ? 50 : 0) + Math.max(0, span - 4) * 6 + (open ? maxF / 10 : b === usual ? 5 : 5 + maxF);
+      if (!best || score < best.score) best = { score, parts };
     });
   });
-  return { root: subs[0].root, notes, label: opts.label || subs.map(s => s.label).join('  →  '), positions, steps };
+  const runs = best && best.parts.map((asc, k) => ({ asc, seq: rootRun(asc, rootPcs[k], { octaves: 1 }) }));
+  const steps = [], scaleParts = [], allPos = [];
+  let first = null;
+  specs.forEach((sp, k) => {
+    const r = toSharp(sp.root), name = sp.label || `${r} ${sp.name}`;
+    let shown, seq;
+    if (runs && runs.every(x => x.seq)) { seq = runs[k].seq; shown = runs[k].asc.filter(p => seq.includes(p)); }
+    else {   // no shared position (different note counts): each part in its own box, still root to root
+      const pl = buildScaleBox(r, intsOf(sp), { bpm, scaleCat: sp.cat, scaleName: sp.name, rootToRoot: true, octaves: 1 });
+      shown = pl.positions; seq = pl.steps.map(st => posWithNote(st.focus[0].si, st.focus[0].fret));
+    }
+    const label = `${name} · ${_posLabel(shown)}`;
+    const shape = { root: r, notes: uniqNotes(shown), positions: shown };
+    if (!first) first = shape;
+    const part = padToBar(seq.map(p => ({ focus: [{ si: p.si, fret: p.fret }], play: [{ note: p.note, octave: p.octave }], dur, label, shape })), dur, opts.barBeats);
+    scaleParts.push({ from: steps.length, to: steps.length + part.length, root: r, label });
+    steps.push(...part);
+    shown.forEach(p => { if (!allPos.some(q => q.si === p.si && q.fret === p.fret)) allPos.push(p); });
+  });
+  const where = [...new Set(scaleParts.map(s => s.label.split(' · ').pop()))];
+  const label = opts.label || (where.length === 1 ? `${specs.map(sp => sp.label || `${toSharp(sp.root)} ${sp.name}`).join('  →  ')} · ${where[0]}` : scaleParts.map(s => s.label).join('  →  '));
+  // plan-level root/notes/positions = the FIRST part's shape (what the board shows before it plays)
+  return { root: first.root, notes: first.notes, label, positions: first.positions, allPositions: allPos, steps, scaleParts };
 }
 
 // Triad inversions — arpeggiate root position, then 1st inversion, then 2nd inversion,
@@ -963,7 +1125,7 @@ export function demoToPlan(demo) {
       return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: 96, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
     }
     const ints = SCALE_TYPES[demo.scaleCat]?.[demo.scaleName] || [0, 2, 4, 5, 7, 9, 11];
-    return buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}` });
+    return buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}`, rootToRoot: true, octaves: 1 });
   }
   if (demo.kind === 'interval') {
     const semis = (((demo.intervalSemitones || 0) % 24) + 24) % 24;
@@ -1019,7 +1181,7 @@ export function drillToPlan(drill, bpmOverride) {
   // 2.5) TWO-PART CONTRAST — play scale A then scale B (relative maj↔min, sharp vs flat key,
   // major vs parallel mode, major-pent vs minor-pent) so the lesson's whole comparison is heard.
   const contrast = contrastFor(sig, prog);
-  if (contrast) return buildContrast(contrast, { bpm });
+  if (contrast) return buildContrast(contrast, { bpm, barBeats: timeSig[0] });
 
   // 2.6) Triad INVERSIONS — root position → 1st → 2nd of the home triad.
   if (/1st and 2nd inversion|root position, 1st/.test(voicing) && prog.length)
@@ -1048,9 +1210,9 @@ export function drillToPlan(drill, bpmOverride) {
   // single-string climb so the whole-step/half-step pattern (2 frets vs 1) reads clearly.
   if (/scale ascending|scale run|scale climb|single-note scale|single note scale|w-w-h|scale degrees|scales|pentatonic|box|five boxes|blue note|aeolian climb|melodic minor/.test(sig)) {
     const sc = scaleFor(sig, prog), ints = SCALE_TYPES[sc.cat][sc.name];
-    if (/w-w-h/.test(sig)) return buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}` });
+    if (/w-w-h/.test(sig)) return buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}`, barBeats: timeSig[0] });
     const connect = /five boxes|box.to.box|box to box|connecting/.test(sig);
-    return buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect });
+    return buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect, rootToRoot: true, barBeats: timeSig[0] });
   }
 
   // 3b) MODE lessons — play the characteristic mode SCALE, rooted on the home chord.
@@ -1063,7 +1225,7 @@ export function drillToPlan(drill, bpmOverride) {
     for (const [kw, name, wantMin] of MODE_KEYS) {
       const hit = kw === 'lydian' ? (sig.includes('lydian') && !sig.includes('mixolydian')) : sig.includes(kw);
       if (hit && wantMin === homeMin) {
-        return buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}` });
+        return buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}`, rootToRoot: true, barBeats: timeSig[0] });
       }
     }
   }
@@ -1140,10 +1302,17 @@ export function playPlan(plan, opts = {}) {
   }
 
   if (!plan.steps || !plan.steps.length) return () => {};
-  const set = (focus, label, trail) => { if (!stopped && isAlive()) { setChordHighlight(plan.root, plan.notes, label || plan.label, plan.positions, plan.colors || colors, focus, trail || null, plan.focusOnly); updateOverlays(); } };
+  // A step may carry its own `shape` ({root, notes, positions}) — a two-scale comparison lights
+  // the scale that is sounding, so the one note that changes is seen to move.
+  const set = (focus, label, trail, st) => {
+    if (stopped || !isAlive()) return;
+    const sh = (st && st.shape) || plan;
+    setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, label || plan.label, sh.positions || plan.positions, plan.colors || colors, focus, trail || null, plan.focusOnly);
+    updateOverlays();
+  };
   // Anticipation: build ghost dots (carrying note names) from a step's focus positions.
   const focusToGhost = st => (st.focus || []).map((f, i) => {
-    const pos = (plan.positions || []).find(p => p.si === f.si && p.fret === f.fret);   // use the functional spelling (E♭, not D♯)
+    const pos = ((st.shape && st.shape.positions) || plan.positions || []).find(p => p.si === f.si && p.fret === f.fret);   // use the functional spelling (E♭, not D♯)
     return { si: f.si, fret: f.fret, note: (pos && pos.disp) || ((st.play && (st.play[i] || st.play[0])) || {}).note || '' };
   });
   function cycle() {
@@ -1162,7 +1331,7 @@ export function playPlan(plan, opts = {}) {
         if (gh) setGhostHighlight(gh, { stroke: 'rgba(255,205,90,0.55)', fill: 'rgba(255,205,90,0.07)' });
         else clearGhostHighlight();
         const trail = prv && prv !== st && prv.focus ? prv.focus.map(f => ({ si: f.si, fret: f.fret })) : null;
-        set(st.focus, st.label, trail);
+        set(st.focus, st.label, trail, st);
         if (opts.onStep) opts.onStep(i);   // let a pedal sync its own UI (NOW/NEXT readout) to playback
         (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain }));
         // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
@@ -1176,7 +1345,7 @@ export function playPlan(plan, opts = {}) {
       timers.push(setTimeout(() => { clearGhostHighlight(); set(null); }, t * 1000 + 250));  // settle on the whole shape
     }
   }
-  set(plan.steps[0].focus, plan.steps[0].label);
+  set(plan.steps[0].focus, plan.steps[0].label, null, plan.steps[0]);
   cycle();
   return function stop() { stopped = true; clearTimers(); clearGhostHighlight(); };
 }

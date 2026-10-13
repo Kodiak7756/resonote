@@ -587,7 +587,8 @@ export function buildTheoryContent(p) {
       playChordNotes(c.notes, { dur: 1.0, strum: 0.03, gain: 0.16 });
     } else {
       const st = (plan.steps || [])[i]; if (!st) return;
-      setChordHighlight(plan.root, plan.notes, st.label || plan.label, plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
+      const sh = st.shape || plan;   // a comparison step lights the scale it belongs to
+      setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, st.label || plan.label, sh.positions || plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
       updateOverlays();
       (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain: 0.2 }));
     }

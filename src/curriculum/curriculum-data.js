@@ -7362,7 +7362,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "single-note scale run",
-            "pattern": "Ascend Box 1 for two beats, then SLIDE on the top string up into Box 2 and keep ascending; pause on the root of Box 2. Then reverse back down into Box 1. One slide per pass — make the connection point obvious.",
+            "pattern": "Start on the low A (6th string, 5th fret) and climb Box 1. On the G string, play the 7th fret, then SLIDE that finger up to the 9th fret — you are now in Box 2. Keep climbing to the A on the B string (10th fret) and hold it. Come back down the same way, sliding from the 9th fret back to the 7th on the G string, and finish on the low A. One slide each way — make the connection point obvious.",
             "focus": "Hearing and feeling that two boxes are the same scale, linked by a slide, not separate shapes."
           }
         },
@@ -7513,7 +7513,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "single-note scale run",
-            "pattern": "Over the A major chord, solo with A MAJOR pentatonic (bright). When it switches to A minor, solo with A MINOR pentatonic (bluesy) — same box shape, just shifted. Notice how the mood flips even though your hand barely moves.",
+            "pattern": "Over the A major chord, solo with A MAJOR pentatonic (bright). When it switches to A minor, solo with A MINOR pentatonic (bluesy) — played in the same spot on the neck: three notes each move up one fret (B to C, C# to D, F# to G). Notice how the mood flips even though your hand barely moves.",
             "focus": "Choosing major vs minor pentatonic to fit the chord's quality, rooted on the same note."
           }
         },
