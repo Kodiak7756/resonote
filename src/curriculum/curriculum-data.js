@@ -110,7 +110,7 @@ export const CURRICULUM = {
               "intervalSemitones": 1,
               "caption": "A half step: C up one fret. Small, leaning, unresolved."
             },
-            "earTip": "A half step is the 'Jaws' theme — that creeping two-note menace is two notes one fret apart. A whole step is the bigger, brighter opening leap of 'Happy Birthday' (Hap-py)."
+            "earTip": "A half step is the 'Jaws' theme — that creeping two-note menace is two notes one fret apart. A whole step is the bigger, brighter step up near the start of 'Happy Birthday': 'Hap-py' is one note sung twice, then '-py' climbs a whole step to 'Birth'."
           },
           "exercises": [
             {
@@ -181,7 +181,7 @@ export const CURRICULUM = {
             "points": [
               "Between C and D sits one note. Call it C# (C raised) or Db (D lowered) — same fret, same pitch, two names.",
               "Two names for one sound = 'enharmonic'. C#=Db, D#=Eb, F#=Gb, G#=Ab, A#=Bb.",
-              "There's no E#/Fb or B#/Cb in normal use — that's because E→F and B→C are already half steps with nothing between them."
+              "E→F and B→C are already half steps with nothing between them, so E# lands on F's fret, B# on C's, Cb on B's and Fb on E's. Those names are rare but real: a key spells each letter once, so F# major has an E#, C# major has a B# and Gb major has a Cb."
             ],
             "demo": {
               "kind": "note",
@@ -866,14 +866,14 @@ export const CURRICULUM = {
                 "numeral": "I"
               },
               {
-                "root": "F#",
+                "root": "B",
                 "quality": "Dim",
                 "beats": 4,
                 "numeral": "vii°"
               }
             ],
             "voicing": "tritone and resolution",
-            "pattern": "Play C and F# together (6 semitones apart—the tritone). It's tense and 'wrong.' Then resolve F# up to G. Feel the tritone's restless pull and how resolution quiets it.",
+            "pattern": "Play C and F# together (6 semitones apart—the tritone). It's tense and 'wrong.' Then resolve F# up to G. Feel the tritone's restless pull and how resolution quiets it. The key of C keeps its own tritone inside B diminished (vii°): B and F, which squeeze in to C and E.",
             "focus": "Hearing the tritone as the most unstable interval and its desire to resolve"
           }
         },
@@ -1225,7 +1225,7 @@ export const CURRICULUM = {
             "points": [
               "1 Tonic (home), 2 Supertonic, 3 Mediant, 4 Subdominant, 5 Dominant, 6 Submediant, 7 Leading Tone.",
               "The Dominant (5) is the strongest signpost back home; the Leading Tone (7) leans hard into the Tonic.",
-              "'Mediant' = midway between tonic and dominant; 'Sub-' names sit a step below their partner.",
+              "'Mediant' = midway between tonic and dominant. The 'sub-' names mirror them below home: the Subdominant (4) sits a 5th below the tonic, as the Dominant sits a 5th above; the Submediant (6) sits a 3rd below, as the Mediant sits a 3rd above.",
               "You don't need every name memorized — but knowing 1, 4, 5, and 7 unlocks most of how songs move."
             ],
             "demo": {
@@ -1516,7 +1516,7 @@ export const CURRICULUM = {
               "intervalSemitones": 7,
               "caption": "C up a perfect 5th = G — one step clockwise on the circle"
             },
-            "earTip": "Each clockwise hop sets up a V→I pull — the same satisfying 'pull home' you hear when a 5 chord lands on the 1. The whole circle is that pull, chained."
+            "earTip": "Each counter-clockwise hop is a V→I pull (G→C, C→F…) — the same satisfying 'pull home' you hear when a 5 chord lands on the 1. Clockwise runs the other way: C→G is I→V, stepping away from home. Read the circle counter-clockwise and it's that pull, chained."
           },
           "exercises": [
             {
@@ -1543,7 +1543,7 @@ export const CURRICULUM = {
                 }
               ],
               "answer": 0,
-              "explain": "A is the perfect 5th (C up to G) — clockwise, toward the sharps. B is the perfect 4th (C up to F) — counter-clockwise, toward the flats. They're the same two pulls you'll lean on all through this app: the 5th is the V→I 'pull home,' the 4th is the IV→I landing."
+              "explain": "A is the perfect 5th (C up to G) — clockwise, toward the sharps. That's I→V: it steps away from home. B is the perfect 4th (C up to F) — counter-clockwise, toward the flats. Counter-clockwise is the direction of the V→I 'pull home' you'll lean on all through this app: G→C is one counter-clockwise hop, and so is C→F."
             },
             {
               "kind": "mcq",
