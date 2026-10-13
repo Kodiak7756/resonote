@@ -8896,7 +8896,7 @@ export const CURRICULUM = {
             "summary": "A strum pattern is a map of your strumming hand: D = downstroke, U = upstroke, and a gap means your hand keeps moving but misses the strings. Your hand pumps steadily up-down the whole time — the pattern just tells you which swings actually hit.",
             "points": [
               "D = downstroke (hand moving down), U = upstroke (hand moving up).",
-              "Golden rule: downstrokes land on the beats (1, 2, 3, 4) and on the 'ands' going down — upstrokes always come back UP on the 'and'.",
+              "Golden rule: downstrokes land on the beats (1, 2, 3, 4); upstrokes land on the 'ands' in between, as your hand comes back UP.",
               "Keep your hand moving in constant eighth notes even on the gaps. A missing strum is a silent swing, not a stopped hand.",
               "Read 'D-DU-UDU' as: Down on 1, Down-Up on beat 2 and its 'and', skip beat 3, then Up on the 'and' of 3, Down on 4, Up on its 'and'. It's the most common pattern in pop."
             ],
@@ -9931,14 +9931,14 @@ export const CURRICULUM = {
             },
             {
               "kind": "build",
-              "prompt": "The drill's pinch fuses each chord's root bass with its 3rd on top — in D that's D under F♯. Move the I chord to G: tap the two notes you'd pinch together.",
+              "prompt": "On the D chord, the drill's pinch puts the root in the bass and the 3rd on top: D under F♯. Find the same root-and-3rd pair for a G chord: tap the two notes.",
               "mode": "notes",
               "root": "G",
               "targetIntervals": [
                 0,
                 4
               ],
-              "explain": "G under B — root + major 3rd, the exact pair the drill pinches in D. Same structure, new key: the I–V–vi–IV becomes G–D–Em–C, and every pinch is still root below with the 3rd on top (a ♭3 on Em). Now open Dynamic Practice, set the key to G, and run 'Pinch on the One' there."
+              "explain": "G under B — root + major 3rd, the same pair the drill pinches on D. But the 3rd isn't always the top note: the A finger plucks string 1, so the top of each pinch is whichever chord tone that string holds. In the drill that's F♯ on D (the 3rd), E on A (the 5th), F♯ on Bm (the 5th) and G on G (the root). In the key of G the I–V–vi–IV becomes G–D–Em–C, with G, F♯, E and E on top. Now open Dynamic Practice, set the key to G, and run 'Pinch on the One' there."
             }
           ],
           "drill": {
