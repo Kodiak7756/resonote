@@ -1,7 +1,7 @@
 import { NOTES, toSharp, CHORD_TYPES, KEY_PATTERNS, SCALE_TYPES, intervalLabel, getChordNotes, getKeyChords, getScaleNotes } from '../core/music-theory.js';
 import { INSTRUMENTS, currentInstrument, customTuning, getInst, getNoteAtFret } from '../core/tuning.js';
 import { showIntervals, setChordHighlight, clearChordHighlight, pedalBus, metroClock } from '../core/state.js';
-import { playClickedNote } from '../core/audio.js';
+import { playChordNotes, playPitches } from '../core/synth.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { findVoicings, renderMiniDiagram, getKeyPositionZones, assignFingers, pickGrip } from '../core/voicings.js';
 import { catOfType, qualSuffix, getKeySeventhChords, getBorrowedChords, getSecondaryDominants } from '../harmony/functional-harmony.js';
@@ -299,7 +299,7 @@ export function buildProgressionContent(p) {
       beat = slaveBeats;
       if (customGrid[beat]) {
         const ch = getGridChordAt(beat);
-        if (ch) { highlightChord(ch); if (drillMode) drillScore.changes++; }
+        if (ch) { strumChord(highlightChord(ch), beat); if (drillMode) drillScore.changes++; }
       }
       updateLiveDisplay();
     }
@@ -402,6 +402,28 @@ export function buildProgressionContent(p) {
       : (pickGrip(chInfo.root, notes, chInfo.quality, 'open')?.positions || null);
     setChordHighlight(chInfo.root, notes, label, grip, PROG_COLORS);
     updateOverlays();
+    return { root: chInfo.root, notes, label, grip };
+  }
+
+  // ── Sound: strum the grip that is lit, low string first ──────────────
+  // On the app's shared synth, ringing until the next painted beat (capped), and
+  // announced as 'resonote:played' like every pedal that sounds notes, so the
+  // Circle's trace and the Mirror can follow the changes.
+  function strumChord(shown, fromBeat) {
+    if (!shown) return;
+    let span = 1;
+    while (fromBeat + span < customGrid.length && !customGrid[fromBeat + span]) span++;
+    const dur = Math.min(3.2, span * 60 / (metroClock.bpm || 100)) * 0.95;
+    const midi = n => NOTES.indexOf(n.note) + 12 * n.octave;
+    const pitches = (shown.grip || [])
+      .filter(g => g.fret >= 0 && customTuning[g.si])
+      .map(g => getNoteAtFret(customTuning[g.si].note, customTuning[g.si].octave, g.fret))
+      .sort((a, b) => midi(a) - midi(b));
+    try {
+      if (pitches.length) playPitches(pitches, { dur, strum: 0.025, gain: 0.12 });
+      else playChordNotes(shown.notes, { dur, strum: 0.03 });
+    } catch (e) {}
+    window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: shown.notes.slice(), root: shown.root, label: shown.label } }));
   }
 
   // Walk back to the active (sounding) chord at beat index bi, as a chord in the current key.
@@ -531,7 +553,7 @@ export function buildProgressionContent(p) {
     lastChangeTime = Date.now();
 
     const ch0 = getGridChordAt(0);
-    if (ch0) highlightChord(ch0);
+    if (ch0) strumChord(highlightChord(ch0), 0);
 
     // Slave mode — chord advances arrive from metroClock.on
     if (metroClock.masterSource === 'metronome') { p._progIntv = null; render(); return; }
@@ -547,7 +569,7 @@ export function buildProgressionContent(p) {
       pulseSharedClock(beatIdx);
       tick(beatIdx === 0, beatIdx);
       const ch = getGridChordAt(beat);
-      if (ch && customGrid[beat]) { highlightChord(ch); if (drillMode) drillScore.changes++; }
+      if (ch && customGrid[beat]) { strumChord(highlightChord(ch), beat); if (drillMode) drillScore.changes++; }
       updateLiveDisplay();
       beat++;
     }, 60000 / useBpm);
