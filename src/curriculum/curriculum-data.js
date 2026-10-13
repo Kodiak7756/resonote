@@ -4978,7 +4978,7 @@ export const CURRICULUM = {
             "points": [
               "Ionian = major scale. Think 'Do a deer' — pure, bright, the sound of resolution.",
               "Aeolian = natural minor scale. Dark, melancholy, the default 'sad' sound.",
-              "Use these two as reference points: the other five modes each take one of them and bend a single note to create a new color."
+              "Use these two as reference points: four of the other five modes take one of them and bend a single note to create a new color. Locrian, the odd one out, bends two."
             ],
             "demo": {
               "kind": "scale",
@@ -5057,7 +5057,7 @@ export const CURRICULUM = {
               }
             ],
             "voicing": "open chords",
-            "pattern": "A major (Ionian)—sunny, bright, nursery-rhyme major. Then A minor (Aeolian, natural minor)—dark, serious, film-theme sad. These are your reference points; the other five modes bend one note on one of these.",
+            "pattern": "A major (Ionian)—sunny, bright, nursery-rhyme major. Then A minor (Aeolian, natural minor)—dark, serious, film-theme sad. These are your reference points; four of the other five modes bend one note of one of these, and the last one bends two.",
             "focus": "Establishing Ionian and Aeolian as the anchor modes that the others modify—major and minor are the foundation."
           }
         },
@@ -5692,7 +5692,7 @@ export const CURRICULUM = {
               "It builds on the 7 (Dom) chord, not the triad — the b7 is what makes it a 'dominant' extension.",
               "C9 = C E G Bb D. C13 = the same idea reaching up to the 13th (A).",
               "Higher numbers usually imply the ones below: a 13 chord lives in 9-chord territory.",
-              "In practice you drop notes that clash or are hard to grab — the b7 and the top extension carry the color."
+              "In practice you drop notes that clash or are hard to grab: the 5th goes first, and the 11th is left out of a 13 chord because it fights the 3rd. The 3rd, the b7 and the top extension carry the color."
             ],
             "demo": {
               "kind": "chord",
@@ -6213,7 +6213,7 @@ export const CURRICULUM = {
             "points": [
               "Nothing theoretical changes: G/C harvests 5·7·9 whether the C bass sits on the low E (8th fret) or the A string (3rd fret). The RELATIONSHIP is the lesson; the position is the variable.",
               "The A-string zone pays rent: these grips sit where the open-position chords live, so pedal colors and walking bass lines share one hand position.",
-              "The trio stays on D-G-B, now around frets 1-7 — most flavors are one small move apart. Watch how little your fingers travel from Em/C to G/C: one finger, one fret.",
+              "The trio stays on D-G-B, now around frets 1-7 — most flavors are one small move apart. Watch how little your fingers travel from Em/C to G/C: one finger slides two frets (B string, E down to D).",
               "In the Chord-Family Lab, the voicing cards labelled 'A-bass · 3fr' are exactly these grips — the Lab has been offering them all along."
             ],
             "demo": {
@@ -6423,7 +6423,7 @@ export const CURRICULUM = {
                   "type": "Minor"
                 }
               ],
-              "caption": "C → Am share C and E — only G needs to move (down to A)"
+              "caption": "C → Am share C and E — only G needs to move (up a whole step to A)"
             },
             "earTip": "Play C, then Am, and focus on the C and E ringing through BOTH chords. The chords feel glued together because two of the three notes never left."
           },
@@ -6438,7 +6438,7 @@ export const CURRICULUM = {
                 "There are no shared notes"
               ],
               "answer": 0,
-              "explain": "Both chords contain C and E. That means going C → Am, only one voice has to move (G drops to A) — the smoothest kind of change."
+              "explain": "Both chords contain C and E. That means going C → Am, only one voice has to move (G rises a whole step to A) — the smoothest kind of change."
             },
             {
               "kind": "ear",
