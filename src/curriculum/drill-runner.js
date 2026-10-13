@@ -2027,6 +2027,12 @@ export function playPlan(plan, opts = {}) {
         const trail = prv && prv !== st && prv.focus ? prv.focus.map(f => ({ si: f.si, fret: f.fret })) : null;
         set(st.focus, st.label, trail, st);
         if (opts.onStep) opts.onStep(i);   // let a pedal sync its own UI (NOW/NEXT readout) to playback
+        // a chord inside a run (a shell on beat 1 under a walking bass, a strummed grip) restates
+        // its theory under the neck, as a chords plan does
+        if (st.chord && st.chord.root) {
+          const cr = toSharp(st.chord.root), cn = getChordNotes(cr, chordIntervalsFor(st.chord.quality));
+          setConceptInfo({ title: st.label || cr, rows: [{ label: 'NOTES', value: cn.join(' · ') }, { label: 'DEGREES', value: cn.map(n => intervalLabel(cr, n, semitonesAbove(cr, cn))).join(' · ') + ' of ' + cr }] });
+        }
         playStep(st, { gain });
         // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
         if (st.play && st.play.length) window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: st.play.map(pl => pl.note), label: st.label || plan.label } }));
