@@ -52,6 +52,34 @@ export function playChordNotes(notes, opts = {}) {
   return dur;
 }
 
+// Play EXACT pitches ([{note, octave}], in the order given — low → high for a strum), e.g. a
+// chord exactly as it is fretted. opts.hold keeps a steady level for the whole duration and
+// fades out at the end (a drone under a scale run) instead of the plucked decay.
+export function playPitches(pitches, opts = {}) {
+  if (!pitches || !pitches.length) return 0;
+  const { dur = 1.4, strum = 0.03, wave = 'triangle', gain = 0.15, hold = false } = opts;
+  const c = ctx();
+  const t0 = c.currentTime + 0.02;
+  pitches.forEach((v, i) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = wave;
+    o.frequency.value = freqOf(v.note, v.octave);
+    const st = t0 + i * strum, end = st + Math.max(0.1, dur);
+    g.gain.setValueAtTime(0, st);
+    if (hold) {
+      g.gain.linearRampToValueAtTime(gain, st + 0.08);
+      g.gain.linearRampToValueAtTime(gain * 0.7, Math.max(st + 0.09, end - 0.15));
+      g.gain.linearRampToValueAtTime(0.0001, end);
+    } else {
+      g.gain.linearRampToValueAtTime(gain, st + 0.014);
+      g.gain.exponentialRampToValueAtTime(0.0008, end);
+    }
+    o.connect(g); g.connect(bus(c, 'notes'));
+    o.start(st); o.stop(end + 0.05);
+  });
+  return dur;
+}
+
 // Play a single sustained note (used for "play the color tone" reference).
 export function playNote(note, octave = 3, opts = {}) {
   return playChordNotes([note], { baseOct: octave, bass: false, strum: 0, dur: opts.dur || 0.9, gain: opts.gain || 0.22 });

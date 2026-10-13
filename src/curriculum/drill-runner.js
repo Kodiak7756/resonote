@@ -5,11 +5,11 @@
 // Practice Manager's Theory library (looping practice exercises) so both speak
 // the exact same engine. A "plan" is { root, notes, label, positions, steps }
 // where each step is { focus:[{si,fret}], play:[{note,octave}], dur, gap? }.
-import { NOTES, SCALE_TYPES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, toSharp, toFlat, intervalLabel } from '../core/music-theory.js';
+import { NOTES, SCALE_TYPES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, toSharp, toFlat, intervalLabel, semitonesAbove } from '../core/music-theory.js';
 import { customTuning, getNoteAtFret, getInst } from '../core/tuning.js';
 import { setChordHighlight, setGhostHighlight, clearGhostHighlight, setConceptInfo, fretboardView } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
-import { playNote, playChordNotes } from '../core/synth.js';
+import { playNote, playChordNotes, playPitches } from '../core/synth.js';
 import { pickGrip, assignFingers, findScaleBoxes, findTriadsOnSet, TRIAD_QUALITIES } from '../core/voicings.js';
 
 export const SEQ_COLORS = { root: '#5ad1c0', tone: '#3a8f7f', rootStroke: '#7ddccb', toneStroke: '#46897e' };
@@ -45,7 +45,12 @@ function buildScaleClimb(root, intervals, opts = {}) {
   const start = pickClimbStart(root, 12);
   const asc = [...intervals, 12].map(iv => posWithNote(start.si, start.fret + iv));
   const seq = opts.downToo === false ? asc : asc.concat(asc.slice(0, -1).reverse());
-  return { root: toSharp(root), notes: uniqNotes(asc), label: opts.label || `${root} scale`, positions: asc, steps: seqSteps(seq, 60 / (opts.bpm || 100)) };
+  const dur = 60 / (opts.bpm || 100), label = opts.label || `${root} scale`;
+  if (opts.barBeats) {   // a drill: hold home to the bar line so the loop comes round on beat 1
+    const steps = padToBar(seqSteps(seq, dur), dur, opts.barBeats);
+    return { root: toSharp(root), notes: uniqNotes(asc), label, positions: asc, steps, scaleParts: [{ from: 0, to: steps.length, root: toSharp(root), label }] };
+  }
+  return { root: toSharp(root), notes: uniqNotes(asc), label, positions: asc, steps: seqSteps(seq, dur) };
 }
 // Play a scale AS A CAGED BOX — a real hand position spread across the strings, the way
 // guitar is actually taught and played. Ascends low string→high then back down, in ONE
@@ -60,26 +65,191 @@ function _boxAsc(box) {
   }
   return ps.sort((a, b) => b.si - a.si || a.fret - b.fret);
 }
+const _pmidi = p => p.octave * 12 + NOTES.indexOf(p.note);
+// A box in strict pitch order, one position per pitch (a shape that doubles a pitch on two
+// strings would otherwise sound it twice in a row).
+function _pitchAsc(ps) {
+  const out = [];
+  ps.slice().sort((a, b) => _pmidi(a) - _pmidi(b) || b.si - a.si).forEach(p => { if (!out.length || _pmidi(out[out.length - 1]) !== _pmidi(p)) out.push(p); });
+  return out;
+}
+const _rootIdx = (asc, rootPc) => asc.reduce((o, p, i) => (NOTES.indexOf(p.note) === rootPc ? o.concat(i) : o), []);
+// Root to root, the way a scale is practised: from the box's LOWEST root up to its highest root
+// (or just one octave with opts.octaves = 1) and back down to where it started, so the run begins
+// and ends on home. A box that holds only one root plays root → top → bottom → root instead.
+function rootRun(asc, rootPc, opts = {}) {
+  const idx = _rootIdx(asc, rootPc);
+  if (!idx.length) return null;
+  const lo = idx[0], hi = opts.octaves === 1 && idx.length >= 2 ? idx[1] : idx[idx.length - 1];
+  if (hi > lo) {
+    const up = asc.slice(lo, hi + 1);
+    return opts.downToo === false ? up : up.concat(up.slice(0, -1).reverse());
+  }
+  const top = asc.slice(lo), below = asc.slice(0, lo);
+  if (!below.length) return opts.downToo === false ? top : top.concat(top.slice(0, -1).reverse());
+  return top.concat(top.slice(0, -1).reverse().slice(0, -1), below.slice().reverse(), below.slice(1), [asc[lo]]);
+}
+// Hold the last note to the next bar line (at least `minExtra` extra beats, one by default), so a
+// looping run always comes round on beat 1 and the home note rings instead of being clipped by
+// the restart. minExtra 0 leaves a plan that already fills its bars alone.
+function padToBar(steps, spb, beatsPerBar = 4, minExtra = 1) {
+  if (!steps.length) return steps;
+  const bar = Math.max(1, Math.round(beatsPerBar) || 4);
+  const total = steps.reduce((t, st) => t + (st.gap || st.dur || spb), 0) / spb;
+  let extra = Math.ceil(total / bar - 1e-6) * bar - total;
+  if (extra < minExtra - 1e-6) extra += bar;
+  if (extra < 1e-6) return steps;
+  const last = steps[steps.length - 1];
+  const slot = (last.gap || last.dur || spb) + extra * spb;
+  steps[steps.length - 1] = { ...last, dur: slot, gap: slot };
+  return steps;
+}
+// The box to run: the one asked for, else the first that holds a full octave root to root.
+function pickRunBox(boxes, rootPc, boxIndex) {
+  if (boxIndex != null) return boxes[Math.min(boxIndex, boxes.length - 1)];
+  return boxes.find(b => _rootIdx(_pitchAsc(_boxAsc(b)), rootPc).length >= 2) || boxes[0];
+}
+const _posLabel = ps => { const minF = Math.min(...ps.map(p => p.fret)); return minF <= 0 ? 'open position' : `pos. ${minF}fr`; };
+// opts.rootToRoot: play from the lowest root to the highest (opts.octaves = 1 → one octave) and
+// back, holding home to the bar line (opts.barBeats). Without it the whole box is played edge to
+// edge — the Workouts pedal's position drills rely on that.
 export function buildScaleBox(root, intervals, opts = {}) {
-  const r = toSharp(root);
+  const r = toSharp(root), rootPc = NOTES.indexOf(r);
   const boxes = findScaleBoxes(r, intervals, { scaleCat: opts.scaleCat, scaleName: opts.scaleName });
   if (!boxes || !boxes.length) return buildScaleClimb(r, intervals, opts);
   const dur = 60 / (opts.bpm || 100);
-  let positions, seq, posLabel;
+  const label0 = opts.label || `${r} ${opts.name || 'scale'}`;
   if (opts.connect && boxes.length >= 2) {
-    positions = [..._boxAsc(boxes[0]), ..._boxAsc(boxes[1])];
-    seq = positions.concat(positions.slice(0, -1).reverse());
-    posLabel = `${boxes[0].label} → ${boxes[1].label}`;
-  } else {
-    const box = boxes[Math.min(opts.boxIndex || 0, boxes.length - 1)];
-    positions = _boxAsc(box);
-    if (positions.length < 2) return buildScaleClimb(r, intervals, opts);
-    seq = opts.downToo === false ? positions : positions.concat(positions.slice(0, -1).reverse());
-    const minF = Math.min(...positions.map(p => p.fret));   // label from the ACTUAL played frets (post octave-drop)
-    posLabel = minF <= 0 ? 'open position' : `pos. ${minF}fr`;
+    if (opts.rootToRoot) {
+      const linked = buildBoxConnect(r, _pitchAsc(_boxAsc(boxes[0])), _pitchAsc(_boxAsc(boxes[1])), { ...opts, dur, label: label0 });
+      if (linked) return linked;
+    } else {
+      const positions = [..._boxAsc(boxes[0]), ..._boxAsc(boxes[1])];
+      const seq = positions.concat(positions.slice(0, -1).reverse());
+      return { root: r, notes: uniqNotes(positions), label: `${label0} · ${boxes[0].label} → ${boxes[1].label}`, positions, steps: seqSteps(seq, dur) };
+    }
   }
-  return { root: r, notes: uniqNotes(positions), label: `${opts.label || `${r} ${opts.name || 'scale'}`} · ${posLabel}`, positions, steps: seqSteps(seq, dur) };
+  if (opts.rootToRoot) {
+    const asc = _pitchAsc(_boxAsc(pickRunBox(boxes, rootPc, opts.boxIndex)));
+    const seq = asc.length >= 2 && rootRun(asc, rootPc, opts);
+    if (seq) {
+      const positions = asc.filter(p => seq.includes(p));   // light what is played, nothing outside it
+      const label = `${label0} · ${_posLabel(positions)}`;
+      const steps = padToBar(seqSteps(seq, dur), dur, opts.barBeats);
+      return { root: r, notes: uniqNotes(positions), label, positions, steps, scaleParts: [{ from: 0, to: steps.length, root: r, label }] };
+    }
+  }
+  const box = boxes[Math.min(opts.boxIndex || 0, boxes.length - 1)];
+  const positions = _boxAsc(box);
+  if (positions.length < 2) return buildScaleClimb(r, intervals, opts);
+  const seq = opts.downToo === false ? positions : positions.concat(positions.slice(0, -1).reverse());
+  return { root: r, notes: uniqNotes(positions), label: `${label0} · ${_posLabel(positions)}`, positions, steps: seqSteps(seq, dur) };
 }
+// Box 1 → Box 2 the way the link is taught: climb Box 1 from its low root, SLIDE one finger up a
+// string (the G string first — it is where the two boxes overlap most comfortably) into Box 2,
+// climb on to Box 2's top root and hold it, then come back down the same way, sliding back into
+// Box 1 and finishing on the low root.
+function buildBoxConnect(r, ascA, ascB, opts) {
+  const rootPc = NOTES.indexOf(r), dur = opts.dur;
+  const lowA = _rootIdx(ascA, rootPc)[0];
+  if (lowA == null) return null;
+  const STRING_NAMES = ['high E', 'B', 'G', 'D', 'A', 'low E'];
+  for (const si of [2, 3, 1, 4]) {
+    if (si >= customTuning.length) continue;
+    const onA = ascA.filter(p => p.si === si), onB = ascB.filter(p => p.si === si);
+    if (!onA.length || !onB.length) continue;
+    const from = onA[onA.length - 1];
+    const to = onB.find(p => p.fret > from.fret && p.fret - from.fret <= 3 && _pmidi(p) > _pmidi(from));
+    if (!to) continue;
+    const iFrom = ascA.indexOf(from), iTo = ascB.indexOf(to);
+    const topB = _rootIdx(ascB, rootPc).filter(i => i >= iTo).pop();
+    if (iFrom < lowA || topB == null) continue;
+    const upA = ascA.slice(lowA, iFrom + 1), upB = ascB.slice(iTo, topB + 1);
+    const sName = STRING_NAMES[si] || `string ${6 - si}`;
+    const boxA = 'Box 1', boxB = 'Box 2';
+    const up = upA.map(p => ({ p, label: boxA })).concat(upB.map((p, k) => ({ p, label: k === 0 ? `slide ↗ on the ${sName} string (${from.fret}→${to.fret}) into ${boxB}` : boxB })));
+    const down = up.slice(0, -1).reverse().map(e => ({ ...e, label: e.p === from ? `slide ↘ on the ${sName} string (${to.fret}→${from.fret}) back into ${boxA}` : (upA.includes(e.p) ? boxA : boxB) }));
+    const seq = up.concat(down);
+    const steps = padToBar(seq.map(e => ({ focus: [{ si: e.p.si, fret: e.p.fret }], play: [{ note: e.p.note, octave: e.p.octave }], dur, label: e.label })), dur, opts.barBeats);
+    const positions = upA.concat(upB);
+    const label = `${opts.label} · ${boxA} → ${boxB}`;
+    return { root: r, notes: uniqNotes(positions), label, positions, steps, scaleParts: [{ from: 0, to: steps.length, root: r, label }] };
+  }
+  return null;
+}
+// ── Backing: a home under the run ────────────────────────────────────
+// A scale, and a mode above all, means little until the ear knows where home is. A steps plan
+// may carry plan.backing = [{ t, dur, pitches, gain, hold, label }] (seconds from the start of
+// a pass): audio-only hits the player sounds under the run — the drill's own chords struck on
+// each bar, or a held root-and-5th drone (it names home without giving away major or minor,
+// so an ear question stays fair).
+const _fromMidi = m => ({ note: NOTES[((m % 12) + 12) % 12], octave: Math.floor(m / 12) });
+const _lowMidi = pc => 24 + pc + (pc < 4 ? 12 : 0);   // the pitch class in E2…D♯3, the guitar's bottom octave
+function backingPitches(root, quality) {
+  const r = toSharp(root), q = quality || 'Major', notes = getChordNotes(r, chordIntervalsFor(q));
+  const g = pickGrip(r, notes, q, 'open', 0);
+  const ps = g ? g.positions.filter(p => p.fret >= 0).map(p => noteAt(p.si, p.fret)) : [];
+  if (ps.length >= 3) return ps.sort((a, b) => _pmidi(a) - _pmidi(b));
+  const out = []; let m = _lowMidi(NOTES.indexOf(r)) - 1;   // no grip: stack the tones up from a low root
+  notes.forEach(n => { const pc = NOTES.indexOf(toSharp(n)); m += ((pc - m) % 12 + 12) % 12 || 12; out.push(_fromMidi(m)); });
+  return out;
+}
+const dronePitches = root => { const m = _lowMidi(NOTES.indexOf(toSharp(root))); return [_fromMidi(m), _fromMidi(m + 7)]; };
+// segments: [{ from, to (beats), root, quality, kind: 'chord' | 'drone' }] → one hit per bar
+function backingEvents(segments, spb, bar = 4) {
+  const ev = [];
+  segments.forEach(sg => {
+    const drone = sg.kind === 'drone';
+    const pitches = drone ? dronePitches(sg.root) : backingPitches(sg.root, sg.quality);
+    const label = drone ? `${toSharp(sg.root)} drone` : `${toSharp(sg.root)}${chordSuffix(sg.quality)}`;
+    for (let b = sg.from; b < sg.to - 1e-6; b += bar) {
+      const len = Math.min(bar, sg.to - b);
+      ev.push({ t: b * spb, dur: len * spb, pitches, hold: drone, gain: drone ? 0.05 : 0.055, label });
+    }
+  });
+  return ev;
+}
+const planBeats = (steps, spb) => steps.reduce((t, st) => t + (st.gap || st.dur || spb), 0) / spb;
+// The drill's own chords, in order and for the beats written, looped under the whole run. When
+// they change chord, the run's last note is held so the pass ends with the progression.
+function withProgBacking(plan, prog, spb, bar) {
+  if (!plan || !plan.steps || !plan.steps.length || !prog || !prog.length) return plan;
+  let total = planBeats(plan.steps, spb);
+  const cycle = prog.reduce((t, c) => t + beatsOf(c), 0);
+  if (new Set(prog.map(c => toSharp(c.root) + (c.quality || ''))).size > 1) {
+    const want = Math.ceil(total / cycle - 1e-6) * cycle;
+    if (want - total > 1e-6) {
+      const last = plan.steps[plan.steps.length - 1], slot = (last.gap || last.dur) + (want - total) * spb;
+      plan.steps[plan.steps.length - 1] = { ...last, dur: slot, gap: slot };
+      if (plan.scaleParts) plan.scaleParts[plan.scaleParts.length - 1].to = plan.steps.length;
+      total = want;
+    }
+  }
+  const segs = [];
+  for (let b = 0; b < total - 1e-6;) for (const c of prog) {
+    if (b >= total - 1e-6) break;
+    segs.push({ from: b, to: Math.min(total, b + beatsOf(c)), root: c.root, quality: c.quality });
+    b += beatsOf(c);
+  }
+  plan.backing = backingEvents(segs, spb, bar);
+  return plan;
+}
+function withDrone(plan, root, spb, bar) {
+  if (!plan || !plan.steps || !plan.steps.length) return plan;
+  plan.backing = backingEvents([{ from: 0, to: planBeats(plan.steps, spb), root, kind: 'drone' }], spb, bar);
+  return plan;
+}
+// "A mode needs a vamp": the run over its vamp, then the very same run with the vamp stopped,
+// so the ear hears the colour bloom and then fade back into plain notes.
+function vampThenBare(plan, vampName) {
+  if (!plan || !plan.backing || !plan.steps.length) return plan;
+  const n = plan.steps.length, r = plan.root;
+  const over = `${plan.label.split(' · ')[0]} over the ${vampName}`, bare = 'vamp stopped: the same notes, no home under them';
+  const a = plan.steps.map(st => ({ ...st, label: over })), b = plan.steps.map(st => ({ ...st, label: bare }));
+  return { ...plan, steps: a.concat(b), scaleParts: [{ from: 0, to: n, root: r, label: over }, { from: n, to: 2 * n, root: r, label: bare }] };
+}
+const progLabelNamed = prog => prog.map(c => toSharp(c.root) + chordSuffix(c.quality)).join('–');
+
 function buildChromatic(root, count, opts = {}) {
   const start = opts.si != null
     ? { si: opts.si, fret: opts.fret != null ? opts.fret : Math.max(0, fretOfOn(opts.si, root)) }
@@ -89,20 +259,45 @@ function buildChromatic(root, count, opts = {}) {
   return { root: ps[0].note, notes: uniqNotes(ps), label: opts.label || `${root} chromatic`, positions: ps, steps: seqSteps(seq, 60 / (opts.bpm || 90)) };
 }
 // Render a harmonic interval as a real, PLAYABLE two-string DOUBLE-STOP — two notes sounded
-// TOGETHER can't share a string. Pick a root string low enough that the smallest interval still
-// lands on a HIGHER string, then place each interval note at its most compact higher-string spot.
-function dyadFor(siRoot, fRoot, semi) {
-  const omid = si => { const n = noteAt(si, 0); return n.octave * 12 + NOTES.indexOf(n.note); };
-  const target = omid(siRoot) + fRoot + semi;
+// TOGETHER can't share a string. The top note goes on a HIGHER string within three frets of the
+// root (an open string costs nothing), the way interval shapes are actually fingered: a 5th is
+// the next string two frets up, an octave two strings over and two frets up (three when the B
+// string is crossed), a minor 2nd the G string with the B string three frets back. null = no
+// such shape from this root position.
+function dyadNear(lo, semi) {
+  const target = _pmidi(lo) + semi;
   let best = null;
-  for (let s = siRoot - 1; s >= 0; s--) {            // only HIGHER strings (lower index)
-    const g = target - omid(s);
-    if (g < 0 || g > 22) continue;
-    const span = Math.abs(g - fRoot);
-    if (span > 6) continue;                          // keep the shape within a hand span
-    if (!best || span < best.span || (span === best.span && s > best.s)) best = { s, g, span };
+  for (let s = lo.si - 1; s >= 0; s--) {            // only HIGHER strings (lower index)
+    const g = target - _pmidi(noteAt(s, 0));
+    if (g < 0 || g > nfrets()) continue;
+    const span = g === 0 ? 0 : lo.fret === 0 ? Math.max(0, g - 3) : Math.abs(g - lo.fret);
+    if (span > 3) continue;
+    // nearest string first; a fretted shape within two frets beats an open string, because the
+    // fretted one is the shape that moves to every other root
+    const cost = (g === 0 && lo.fret > 0 ? 2.5 : span) + (lo.si - 1 - s) * 0.5;
+    if (!best || cost < best.cost) best = { s, g, cost };
   }
-  return best ? posWithNote(best.s, best.g) : posWithNote(siRoot, fRoot + semi);   // fallback: same string
+  return best ? posWithNote(best.s, best.g) : null;
+}
+// Where to put the root so EVERY interval asked for has such a shape: closest in pitch to C3
+// (or to C of opts.octave), on the G string or lower, then lowest on the neck, A string before
+// low E on a tie. opts.along = semitones the clip also shows up the root's own string (keep that
+// within the 12th fret when it can be).
+// A minor 2nd has no shape near C3 (C on the A string has no lower string to borrow; on the low E
+// it is a five-fret reach), so a set that includes one moves up to C4 on the G string.
+function intervalRootPos(r, semis, opts = {}) {
+  const pref = (opts.octave || 3) * 12;   // C of that octave
+  let best = null;
+  for (let si = customTuning.length - 1; si >= 1; si--) for (let f = 0; f <= 12; f++) {
+    const lo = posWithNote(si, f);
+    if (lo.note !== r) continue;
+    if (semis.some(x => !dyadNear(lo, x))) continue;
+    const open = f === 0 && semis.every(x => dyadNear(lo, x).fret === 0);
+    const cost = Math.abs(_pmidi(lo) - pref) + (opts.preferOpen && !open ? 5 : 0) + f * 0.1 + (si === customTuning.length - 1 ? 0.05 : 0)
+      + (si < 2 ? 3 : 0) + (opts.along && f + opts.along > 12 ? 3 : 0);
+    if (!best || cost < best.cost) best = { lo, cost };
+  }
+  return best && best.lo;
 }
 // Spell an interval by FUNCTION relative to the root (so a minor 3rd over C reads E♭, not D♯ —
 // it keeps the 3rd's letter, E, just flattened). Lowered intervals → flats; the tritone stays ♯4.
@@ -118,21 +313,20 @@ function spellInterval(rootName, semi) {
 }
 function buildIntervalShape(root, intervals, opts = {}) {
   const r = toSharp(root), dur = 60 / (opts.bpm || 80);
-  const omid = si => { const n = noteAt(si, 0); return n.octave * 12 + NOTES.indexOf(n.note); };
-  const minSemi = Math.min(...intervals, opts.resolve != null ? opts.resolve : 99);
-  const siRoot = minSemi < 3 ? customTuning.length - 1 : customTuning.length - 2;  // low E for 2nds, else A
-  let fRoot = ((NOTES.indexOf(r) - (omid(siRoot) % 12)) % 12 + 12) % 12; if (fRoot < 2) fRoot += 12;
-  const lo = posWithNote(siRoot, fRoot); lo.disp = r;   // disp = the note as it should READ (functional spelling)
+  const all = opts.resolve != null ? [...intervals, opts.resolve] : intervals;
+  const lo0 = intervalRootPos(r, all, opts);
+  if (!lo0) return buildInterval(r, intervals[0], opts);   // (a tuning with no two-string shape)
+  const lo = { ...lo0, disp: r };   // disp = the note as it should READ (functional spelling)
   const positions = [lo], steps = [];
   intervals.forEach(semi => {
-    const hi = dyadFor(siRoot, fRoot, semi); hi.disp = spellInterval(r, semi);
+    const hi = dyadNear(lo, semi); hi.disp = spellInterval(r, semi);
     positions.push(hi);
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }], play: [{ note: lo.note, octave: lo.octave }], dur });
     steps.push({ focus: [{ si: hi.si, fret: hi.fret }], play: [{ note: hi.note, octave: hi.octave }], dur });
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }, { si: hi.si, fret: hi.fret }], play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.5, gap: dur * 1.9 });
   });
   if (opts.resolve != null) {   // sound the tension dyad, then resolve it (still on two strings)
-    const res = dyadFor(siRoot, fRoot, opts.resolve); res.disp = spellInterval(r, opts.resolve);
+    const res = dyadNear(lo, opts.resolve); res.disp = spellInterval(r, opts.resolve);
     positions.push(res);
     steps.push({ focus: [{ si: lo.si, fret: lo.fret }, { si: res.si, fret: res.fret }], play: [{ note: lo.note, octave: lo.octave }, { note: res.note, octave: res.octave }], dur: dur * 1.8, gap: dur * 2.2, label: 'resolves → ' + lo.note + '+' + res.note });
   }
@@ -140,33 +334,59 @@ function buildIntervalShape(root, intervals, opts = {}) {
   // of every position, which reads as a mess on the small interval shapes.
   return { root: r, notes: uniqNotes(positions), label: opts.label || `${r} intervals (double-stops)`, positions, steps, focusOnly: true };
 }
-function buildArpeggio(root, ints, opts = {}) {
-  const start = pickClimbStart(root, ints[ints.length - 1] || 7);
-  const ps = ints.map(iv => posWithNote(start.si, start.fret + iv));
-  const seq = ps.concat(ps.slice(0, -1).reverse());
-  return { root: toSharp(root), notes: uniqNotes(ps), label: opts.label || `${root} arpeggio`, positions: ps, steps: seqSteps(seq, 60 / (opts.bpm || 90)) };
-}
 // Melodic minor done right: ascend with the raised 6th & 7th (bright), DESCEND with natural
-// minor (the 6th & 7th fall back) — the classical "up bright, down dark" rule. A single-string
-// run so the learner clearly sees F♯/G♯ on the way up swap to F/G on the way down.
+// minor (the 6th & 7th fall back) — the classical "up bright, down dark" rule. Over the V chord
+// (E in A minor) the way down keeps the raised 7th — harmonic minor — because the chord itself
+// holds G♯ and a G would clash. One position (5th position for A, low root on the 6th string),
+// so only the two changing notes move; eighth notes, up and back in two bars per chord, with
+// the chord sounding under it. opts.prog = the drill's chords (default: the home minor chord).
 function buildMelodicMinorRun(root, opts = {}) {
-  const r = toSharp(root);
-  const start = pickClimbStart(r, 12);
-  const upInts = [0, 2, 3, 5, 7, 9, 11, 12];   // A B C D E F♯ G♯ A — melodic minor ascending
-  const downInts = [10, 8, 7, 5, 3, 2, 0];      // G F E D C B A — natural minor descending
-  const mk = s => posWithNote(start.si, start.fret + s);
-  const seq = upInts.map(mk).concat(downInts.map(mk));
-  const seen = new Set(), positions = [];
-  seq.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
-  return { root: r, notes: uniqNotes(seq), label: opts.label || `${r} melodic minor ↑ · natural minor ↓`, positions, steps: seqSteps(seq, 60 / (opts.bpm || 72)) };
+  const r = toSharp(root), rootPc = NOTES.indexOf(r);
+  const spb = 60 / (opts.bpm || 72), dur = spb / 2;
+  const scale = name => SCALE_TYPES.Diatonic[name], pcs = name => scale(name).map(i => (rootPc + i) % 12);
+  const cands = (findScaleBoxes(r, scale('Nat. Minor'), { scaleCat: 'Diatonic', scaleName: 'Nat. Minor' }) || [])
+    .map(b => _pitchAsc(_boxAsc(b))).filter(a => _rootIdx(a, rootPc).length >= 2);
+  // the octave from the low root, and the position where that root sits under the first finger
+  const octave = asc => { const i = _rootIdx(asc, rootPc); return asc.slice(i[0], i[1] + 1); };
+  const lowRoot = a => a[_rootIdx(a, rootPc)[0]];
+  const base = cands.find(a => lowRoot(a).si === customTuning.length - 1 && lowRoot(a).fret > 0 && Math.min(...octave(a).map(p => p.fret)) >= lowRoot(a).fret)
+    || cands.find(a => lowRoot(a).si === customTuning.length - 1 && lowRoot(a).fret > 0) || cands[0];
+  const mel = base && morphBox(base, pcs('Nat. Minor'), pcs('Mel. Minor'));
+  const harm = base && morphBox(base, pcs('Nat. Minor'), pcs('Harm. Minor'));
+  if (!mel || !harm) return buildScaleClimb(r, scale('Mel. Minor'), { bpm: opts.bpm, label: `${r} melodic minor` });
+  const up = octave(mel.asc), downNat = octave(base).reverse().slice(1), downHarm = octave(harm.asc).reverse().slice(1);
+  const n6 = NOTES[(rootPc + 9) % 12], n7 = NOTES[(rootPc + 11) % 12], b6 = NOTES[(rootPc + 8) % 12], b7 = NOTES[(rootPc + 10) % 12];
+  const prog = opts.prog && opts.prog.length ? opts.prog : [{ root: r, quality: 'Minor', beats: 8 }];
+  const steps = [], scaleParts = [], segs = [], seen = new Set(), positions = [];
+  let beat = 0;
+  prog.forEach(c => {
+    const cr = toSharp(c.root), isV = NOTES.indexOf(cr) === (rootPc + 7) % 12 && !/min|m7|dim|ø/i.test(c.quality || '');
+    const name = `${cr}${chordSuffix(c.quality)}`;
+    const down = isV ? downHarm : downNat;
+    const upLab = `${name}: up with ${n6} and ${n7} (melodic minor)`;
+    const downLab = isV ? `${name}: down keeping ${n7} — ${name} holds it (harmonic minor)` : `${name}: down with ${b7} and ${b6} (natural minor)`;
+    const part = up.map(p => ({ p, label: upLab })).concat(down.map(p => ({ p, label: downLab })))
+      .map(e => ({ focus: [{ si: e.p.si, fret: e.p.fret }], play: [{ note: e.p.note, octave: e.p.octave }], dur, label: e.label }));
+    padToBar(part, dur, Math.max(2, beatsOf(c) * 2));
+    scaleParts.push({ from: steps.length, to: steps.length + part.length, root: r, label: name });
+    steps.push(...part);
+    const len = planBeats(part, spb);
+    segs.push({ from: beat, to: beat + len, root: cr, quality: c.quality });
+    beat += len;
+    up.concat(down).forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  });
+  const plan = { root: r, notes: uniqNotes(positions), label: opts.label || `${r} melodic minor ↑ · natural minor ↓ · ${_posLabel(positions)}`, positions, steps, scaleParts };
+  plan.backing = backingEvents(segs, spb, opts.barBeats || 4);
+  return plan;
 }
-// Guide-tone targeting: for each chord, land on its 3rd on the downbeat, walk the 5th and ♭7,
-// then step up by a half-step into the NEXT chord's 3rd. Makes the line actually sound the
+// Guide-tone targeting: for each chord, land on its 3rd on the downbeat, walk the 5th and 7th
+// (the octave root on a plain triad), then step up by a half-step into the NEXT chord's 3rd. Makes the line actually sound the
 // guide tones the lesson names (e.g. B over G7, E over C7) instead of a generic scale run.
 function buildGuideTones(prog, opts = {}) {
   const dur = 60 / (opts.bpm || 60);
-  const isMin = c => /min|^m|m7|dim|°|ø|♭5|b5/.test((c.quality || '').toLowerCase());
-  const thirdOf = c => isMin(c) ? 3 : 4;
+  // The 3rd comes from the chord's real intervals — a quality-name regex can't tell "Major"
+  // or "Maj7" from minor (both start with "m"), which turned every major chord minor.
+  const thirdOf = c => { const ints = chordIntervalsFor(c.quality); return ints.find(s => s === 3 || s === 4) ?? ints[1] ?? 4; };
   const positions = [], steps = [];
   prog.forEach((c, i) => {
     const r = toSharp(c.root), rootPc = NOTES.indexOf(r);
@@ -174,7 +394,8 @@ function buildGuideTones(prog, opts = {}) {
     const next = prog[(i + 1) % prog.length];
     const nextThirdPc = (NOTES.indexOf(toSharp(next.root)) + thirdOf(next)) % 12;
     const approachSemi = (((nextThirdPc - 1 + 12) % 12) - rootPc + 24) % 12;   // half step below the next 3rd
-    const cell = [thirdOf(c), ints[2] != null ? ints[2] : 7, ints[3] != null ? ints[3] : 10, approachSemi];
+    // a plain triad has no 7th to walk — use the root an octave up rather than inventing a ♭7
+    const cell = [thirdOf(c), ints[2] != null ? ints[2] : 7, ints[3] != null ? ints[3] : 12, approachSemi];
     const start = pickClimbStart(r, Math.max(...cell, 7));
     cell.forEach((semi, idx) => {
       const p = posWithNote(start.si, start.fret + semi);
@@ -183,6 +404,42 @@ function buildGuideTones(prog, opts = {}) {
     });
   });
   return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Guide tones — land on the 3rd', positions, steps };
+}
+// Chord-tone arpeggios: root–3rd–5th–3rd for each chord, one note per beat, in close position
+// (the 3rd and 5th straight above the grip's lowest root), so the safe landing notes are heard
+// (and seen) moving when the chord changes. A tone the grip already holds is played where the
+// grip has it; otherwise it goes on the fret nearest the root (open strings count as in position
+// down low), so the hand stays in one spot.
+function buildChordToneArps(prog, opts = {}) {
+  const dur = 60 / (opts.bpm || 70);
+  const midi = p => p.octave * 12 + NOTES.indexOf(p.note);
+  const positions = [], steps = [], seen = new Set();
+  prog.forEach(c => {
+    const r = toSharp(c.root), ints = chordIntervalsFor(c.quality);
+    const notes = getChordNotes(r, ints);
+    const third = ints.find(s => s === 3 || s === 4) ?? ints[1] ?? 4, fifth = ints.find(s => s >= 6 && s <= 8) ?? 7;
+    const grip = pickGrip(r, notes, c.quality, 'open', 0);
+    const pool = (grip ? grip.positions : chordVoicing(notes)).filter(p => p.fret >= 0)
+      .map(p => posWithNote(p.si, p.fret)).sort((a, b) => midi(a) - midi(b));
+    const lo = pool.find(p => p.note === r) || lowestPos(r);
+    const cost = p => (p.fret === 0 && lo.fret <= 4) ? 0 : Math.abs(p.fret - lo.fret);
+    const at = semi => {   // the pitch exactly `semi` above the root: in the grip if it's there, else nearest the root's fret
+      const want = midi(lo) + semi, inGrip = pool.find(p => midi(p) === want);
+      if (inGrip) return inGrip;
+      let best = null;
+      for (let si = customTuning.length - 1; si >= 0; si--) for (let f = 0; f <= Math.min(nfrets(), 15); f++) {
+        const p = posWithNote(si, f);
+        if (midi(p) === want && (!best || cost(p) < cost(best))) best = p;
+      }
+      return best || posWithNote(lo.si, lo.fret + semi);
+    };
+    const t3 = at(third), t5 = at(fifth);
+    [lo, t3, t5, t3].forEach((p, idx) => {
+      const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); }
+      steps.push({ focus: [{ si: p.si, fret: p.fret }], play: [{ note: p.note, octave: p.octave }], dur, label: idx === 0 ? `${r}${chordSuffix(c.quality)}: root–3rd–5th–3rd` : undefined });
+    });
+  });
+  return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Chord tones — root, 3rd, 5th, 3rd', positions, steps };
 }
 // Slash-chord FLAVORS: hold one bass note (C on the lowest string) and cycle upper-structure
 // triads on the D-G-B strings. Each triad "harvests" different extensions of the bass —
@@ -260,7 +517,8 @@ function buildSlashFlavors(opts = {}) {
 // (Am/G = Am7) tuck the ♭7 underneath. Authored in open position for C; other roots slide
 // every grip capo-style (open strings become fretted), so the bass LINE survives any key.
 function buildWalkdown(opts = {}) {
-  const bpm = opts.bpm || 66, dur = (2 * 60) / bpm;
+  const bpm = opts.bpm || 66, spb = 60 / bpm;
+  const beatsAt = i => (opts.beats && opts.beats[i] > 0 ? opts.beats[i] : 2);   // the drill's own bar plan, two beats a grip by default
   const rootName = toSharp(opts.root || 'C');
   const delta = ((NOTES.indexOf(rootName) - NOTES.indexOf('C')) % 12 + 12) % 12;
   // [numeral·name label, chord root, chord tones, grip [si,fret] low→high — si 5 = low E]
@@ -275,32 +533,83 @@ function buildWalkdown(opts = {}) {
     ['V · G7 — bass G, turns home',  'G', ['G','B','D','F'], [[5,3],[4,2],[3,0],[2,0],[1,0],[0,1]]],
   ];
   const shift = n => NOTES[(NOTES.indexOf(n) + delta) % 12];
-  const chords = WALK.map(([label, cRoot, tones, grip]) => ({
+  const chords = WALK.map(([label, cRoot, tones, grip], i) => ({
     root: shift(cRoot),
     notes: tones.map(shift),
     label: delta ? label.replace(/[A-G][♭#]?/g, m => shift(toSharp(m))) : label,
-    dur,
+    dur: beatsAt(i) * spb,
     positions: assignFingers(grip.map(([si, f]) => posWithNote(si, f + delta))),
   }));
-  return { type: 'chords', label: opts.label || `The walkdown — walking bass through ${rootName}`, chords };
+  return { type: 'chords', label: opts.label || `The walkdown — walking bass through ${rootName}`, chords, timeSig: opts.timeSig };
 }
 
 function twoNotePlan(lo, hi, label, dur) {
   const both = [{ si: lo.si, fret: lo.fret }, { si: hi.si, fret: hi.fret }];
-  return { root: lo.note, notes: uniqNotes([lo, hi]), label, positions: [lo, hi], steps: [
+  const steps = [
     { focus: [both[0]], play: [{ note: lo.note, octave: lo.octave }], dur },
-    { focus: [both[1]], play: [{ note: hi.note, octave: hi.octave }], dur },
-    { focus: both, play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.6, gap: dur * 1.9 },
-  ] };
+    { focus: [both[1]], play: [{ note: hi.note, octave: hi.octave }], dur, gap: lo.si === hi.si ? dur * 1.9 : undefined },
+  ];
+  // two notes on ONE string can only follow each other — sound them together only across strings
+  if (lo.si !== hi.si) steps.push({ focus: both, play: [{ note: lo.note, octave: lo.octave }, { note: hi.note, octave: hi.octave }], dur: dur * 1.6, gap: dur * 1.9 });
+  return { root: lo.note, notes: uniqNotes([lo, hi]), label, positions: [lo, hi], steps };
 }
 function buildInterval(root, semis, opts = {}) {
   const start = pickClimbStart(root, semis);
   return twoNotePlan(posWithNote(start.si, start.fret), posWithNote(start.si, start.fret + semis), opts.label || `${root} + ${semis}st`, 60 / (opts.bpm || 84));
 }
+const _fp = p => ({ si: p.si, fret: p.fret }), _pp = p => ({ note: p.note, octave: p.octave });
+const _strName = si => (si === 0 ? 'high ' : si === customTuning.length - 1 ? 'low ' : '') + (customTuning[si].label || customTuning[si].note);
+const _nth = n => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
+// An interval CLIP (ear questions, "Hear it" demos): the root, then the top note, then both
+// together as a two-string shape. When the caption talks in frets ("C up 1 fret", "A up 12 half
+// steps") the top note is first shown up the root's own string, the way the caption says it.
+// opts.octave picks the register (an ear pair passes the same one, so neither clip gives itself
+// away by sounding higher); opts.preferOpen keeps a pair of open strings open; opts.melodic plays
+// the two notes one after the other, overlapping, and never struck together.
+function buildIntervalClip(root, semis, opts = {}) {
+  const r = toSharp(root), dur = 60 / (opts.bpm || 84);
+  const lo0 = intervalRootPos(r, [semis], { ...opts, along: opts.alongString ? semis : 0 });
+  if (!lo0) return buildInterval(r, semis, opts);
+  const lo = { ...lo0, disp: r }, hi = dyadNear(lo, semis);
+  hi.disp = spellInterval(r, semis);
+  const along = opts.alongString && lo.fret + semis <= 15 ? { ...posWithNote(lo.si, lo.fret + semis), disp: hi.disp } : null;
+  const base = opts.label || `${r} up to ${hi.disp}`;
+  const steps = [{ focus: [_fp(lo)], play: [_pp(lo)], dur }];
+  if (opts.melodic) {   // two separate plinks, close together, both left ringing
+    steps[0] = { ...steps[0], dur: dur * 2, gap: dur * 0.5 };
+    steps.push({ focus: [_fp(hi)], play: [_pp(hi)], dur: dur * 2 });
+  } else {
+    const top = along || hi;
+    steps.push({ focus: [_fp(top)], play: [_pp(top)], dur, label: along ? `${base} · ${semis} fret${semis === 1 ? '' : 's'} up the same string` : undefined });
+    steps.push({ focus: [_fp(lo), _fp(hi)], play: [_pp(lo), _pp(hi)], dur: dur * 1.6, gap: dur * 1.9, label: `${base} · together: ${_strName(lo.si)} string ${lo.fret ? _nth(lo.fret) + ' fret' : 'open'}, ${_strName(hi.si)} string ${hi.fret ? _nth(hi.fret) + ' fret' : 'open'}` });
+  }
+  const positions = along ? [lo, along, hi] : [lo, hi];
+  return { root: r, notes: uniqNotes(positions), label: base, positions, steps };
+}
+// "Octave leaps": each open bass string up to its 12th fret and back (same name, higher), then
+// the same octave as the two-string shape guitarists actually grab — two strings over and two
+// frets up, three when the B string is crossed (open A + G string 2nd fret, open low E + D string
+// 2nd fret, open D + B string 3rd fret). Starts on the drill's root string.
 function buildOctave(root, opts = {}) {
-  let si = -1; for (let s = customTuning.length - 1; s >= 0; s--) if (customTuning[s].note === toSharp(root)) { si = s; break; }
-  if (si < 0) return buildInterval(root, 12, { ...opts, label: `${root} octave` });
-  return twoNotePlan(posWithNote(si, 0), posWithNote(si, 12), `${root} octave`, 60 / (opts.bpm || 80));
+  const r = toSharp(root), dur = 60 / (opts.bpm || 80), low = customTuning.length - 1;
+  const own = [low, low - 1, low - 2].find(s => s >= 0 && customTuning[s].note === r);
+  const starts = own != null
+    ? [own, ...[low, low - 1, low - 2].filter(s => s !== own)].map(s => posWithNote(s, 0))
+    : [low, low - 1].map(s => posWithNote(s, Math.max(0, fretOfOn(s, r)))).filter(p => p.fret + 12 <= nfrets());
+  const steps = [], positions = [];
+  starts.forEach(lo => {
+    const up = posWithNote(lo.si, lo.fret + 12), shape = dyadNear(lo, 12);
+    const where = `${lo.note}: 12 frets up the ${_strName(lo.si)} string and back`;
+    positions.push(lo, up);
+    steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur, label: where });
+    steps.push({ focus: [_fp(up)], play: [_pp(up)], dur, label: where });
+    steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur, label: where });
+    if (shape) {
+      positions.push(shape);
+      steps.push({ focus: [_fp(lo), _fp(shape)], play: [_pp(lo), _pp(shape)], dur, label: `${lo.note}: the same octave on two strings — ${_strName(shape.si)} string, ${_nth(shape.fret)} fret` });
+    } else steps[steps.length - 1].dur = steps[steps.length - 1].gap = dur * 2;
+  });
+  return { root: r, notes: uniqNotes(positions), label: opts.label || `${r} octaves`, positions, steps };
 }
 function buildNoteDemo(noteName, opts = {}) {
   const pos = opts.pos || lowestPos(noteName);
@@ -311,34 +620,80 @@ function buildNoteDemo(noteName, opts = {}) {
 // Light EVERY occurrence of a note across the whole neck and play them in pitch order, so the
 // learner sees the SAME note living in many places (open A = 5th-fret low E = 7th-fret D…). The
 // point of "Finding Any Note on the Neck" — the relationship of one note across the fretboard.
+// Finding any note the way it's taught, within the first 12 frets: its landmark on the low E
+// string and on the A string (count up from the open string), then the octave shape from each —
+// two strings up and two frets up, or three frets up once the jump lands on the B or high E
+// string — then the 12th fret (the open string again, an octave up) and anything left over.
+// Every A: low E 5 → D 7 → B 10, then open A → G 2 → high E 5, then A 12.
 function buildNoteEverywhere(noteName, opts = {}) {
-  const n = toSharp(noteName), nf = nfrets();
-  const all = [];
-  for (let si = customTuning.length - 1; si >= 0; si--)
-    for (let f = 0; f <= nf; f++) {
-      const na = noteAt(si, f);
-      if (na.note === n) all.push({ si, fret: f, note: na.note, octave: na.octave, midi: na.octave * 12 + NOTES.indexOf(na.note) });
+  const n = toSharp(noteName), N = customTuning.length, maxF = Math.min(12, nfrets());
+  const open = si => _pmidi(noteAt(si, 0));
+  const where = (si, f) => (f === 0 ? `the open ${_strName(si)} string` : `the ${_strName(si)} string, ${_nth(f)} fret`);
+  const seq = [], seen = new Set();
+  const add = (si, f, label) => {
+    const k = si + ':' + f;
+    if (si < 0 || si >= N || f < 0 || f > maxF || seen.has(k)) return;
+    seen.add(k); seq.push({ ...posWithNote(si, f), label });
+  };
+  const words = ['', 'one', 'two', 'three', 'four'];
+  [N - 1, N - 2].forEach(si0 => {
+    const f0 = fretOfOn(si0, n);
+    if (si0 < 0 || f0 < 0) return;
+    add(si0, f0, f0 === 0 ? `${n}: ${where(si0, 0)}` : `${n} on ${where(si0, f0)}: count up from the open ${customTuning[si0].label || customTuning[si0].note}`);
+    let si = si0, f = f0;
+    while (si - 2 >= 0) {
+      const f2 = f + 12 - (open(si - 2) - open(si));
+      if (f2 < 0 || f2 > maxF) break;
+      const up = f2 - f;
+      add(si - 2, f2, `octave shape: two strings up, ${words[up] || up} frets up → ${where(si - 2, f2)}`);
+      si -= 2; f = f2;
     }
-  if (!all.length) return buildNoteDemo(n, opts);
-  // pitch order — unisons (open A = 5th-fret low E) land back-to-back; positions match the
-  // play sequence so the connecting path follows what's actually played.
-  const seq = all.slice().sort((a, b) => a.midi - b.midi || b.si - a.si).map(p => ({ si: p.si, fret: p.fret, note: p.note, octave: p.octave }));
-  return { root: n, notes: [n], label: opts.label || `Every ${n} on the neck`, positions: seq, steps: seqSteps(seq, 60 / (opts.bpm || 88)) };
+  });
+  [N - 1, N - 2].forEach(si0 => {
+    const f0 = fretOfOn(si0, n);
+    if (si0 >= 0 && f0 >= 0 && f0 + 12 <= maxF) add(si0, f0 + 12, `12th fret: the open string's ${n} an octave up → ${where(si0, f0 + 12)}`);
+  });
+  const rest = [];
+  for (let si = N - 1; si >= 0; si--) for (let f = 0; f <= maxF; f++) if (noteAt(si, f).note === n && !seen.has(si + ':' + f)) rest.push(posWithNote(si, f));
+  rest.sort((a, b) => _pmidi(a) - _pmidi(b) || b.si - a.si).forEach(q => add(q.si, q.fret, `${n} also lives on ${where(q.si, q.fret)}`));
+  if (!seq.length) return buildNoteDemo(n, opts);
+  const dur = 60 / (opts.bpm || 88);
+  let steps = seq.map(q => ({ focus: [_fp(q)], play: [_pp(q)], dur, label: q.label }));
+  if (opts.barBeats) steps = padToBar(steps, dur, opts.barBeats, 0);
+  const positions = seq.map(q => ({ si: q.si, fret: q.fret, note: q.note, octave: q.octave }));
+  return { root: n, notes: [n], label: opts.label || `Every ${n} up to the 12th fret`, positions, steps };
+}
+// The musical alphabet up ONE string from a root: the seven letter names in order, one per beat
+// (the white keys, so from A it's A B C D E F G A on frets 0-2-3-5-7-8-10-12 of the A string), up
+// to the same letter an octave higher and back down.
+const _WHITE = [0, 2, 4, 5, 7, 9, 11];   // C D E F G A B
+function alphabetIntervals(root) {
+  const i = Math.max(0, 'CDEFGAB'.indexOf(String(root || 'A').trim().charAt(0).toUpperCase()));
+  return _WHITE.map((_, k) => (_WHITE[(i + k) % 7] - _WHITE[i] + 12) % 12);
+}
+function buildAlphabetClimb(root, opts = {}) {
+  const r = toSharp(root), ints = alphabetIntervals(root), start = pickClimbStart(r, 12);
+  const up = [...ints, 12].map(iv => posWithNote(start.si, start.fret + iv));
+  const label = opts.label || `The musical alphabet up ${start.fret === 0 ? 'the open' : 'the'} ${_strName(start.si)} string: ${up.map(q => q.note).join('-')} (frets ${up.map(q => q.fret).join('-')})`;
+  return buildScaleClimb(r, ints, { bpm: opts.bpm, downToo: true, label, barBeats: opts.barBeats });
 }
 function buildOpenStrings(opts = {}) {
   const order = []; for (let si = customTuning.length - 1; si >= 0; si--) order.push(posWithNote(si, 0));
   return { root: order[0].note, notes: uniqNotes(order), label: 'Open strings', positions: order, steps: seqSteps(order, 60 / (opts.bpm || 90)) };
 }
+// Half vs whole steps, one note after the other up the low E string (two notes can't sound
+// together on one string, and a step is a MOVE anyway): half steps one fret apart (E-F, F-F♯,
+// F♯-G), then whole steps two frets apart (G-A, A-B). Each pair takes two beats.
 function buildStepSizes(opts = {}) {
   const si = customTuning.length - 1, dur = 60 / (opts.bpm || 80);   // low E (thickest)
   const positions = [], steps = [];
-  [[0, 1], [3, 5]].forEach(([a, b]) => {  // E→F (½ step), G→A (whole step)
-    const pa = posWithNote(si, a), pb = posWithNote(si, b); positions.push(pa, pb);
-    steps.push({ focus: [{ si, fret: a }], play: [{ note: pa.note, octave: pa.octave }], dur });
-    steps.push({ focus: [{ si, fret: b }], play: [{ note: pb.note, octave: pb.octave }], dur });
-    steps.push({ focus: [{ si, fret: a }, { si, fret: b }], play: [{ note: pa.note, octave: pa.octave }, { note: pb.note, octave: pb.octave }], dur: dur * 1.4, gap: dur * 1.9 });
+  [[0, 1], [1, 2], [2, 3], [3, 5], [5, 7]].forEach(([a, b]) => {
+    const pa = posWithNote(si, a), pb = posWithNote(si, b);
+    [pa, pb].forEach(p => { if (!positions.some(q => q.fret === p.fret)) positions.push(p); });
+    const label = b - a === 1 ? `half step — 1 fret: ${pa.note} to ${pb.note}` : `whole step — 2 frets: ${pa.note} to ${pb.note}`;
+    steps.push({ focus: [_fp(pa)], play: [_pp(pa)], dur, label }, { focus: [_fp(pb)], play: [_pp(pb)], dur, label });
   });
-  return { root: positions[0].note, notes: uniqNotes(positions), label: 'Half vs whole steps', positions, steps };
+  return { root: positions[0].note, notes: uniqNotes(positions), label: 'Half vs whole steps', positions, steps: padToBar(steps, dur, opts.barBeats || 4) };
 }
 function buildEnharmonic(opts = {}) {
   const dur = 60 / (opts.bpm || 70), positions = [], steps = [];
@@ -380,7 +735,7 @@ function chordSuffix(quality) {
   const q = (quality || 'Major');
   if (q === 'Major') return '';
   if (q === 'Minor') return 'm';
-  return ({ Dim: '°', Aug: '+', Maj7: 'maj7', Min7: 'm7', 'm7♭5': 'ø7', Dim7: '°7', Sus4: 'sus4', Sus2: 'sus2', '7♯9': '7♯9', '7♭9': '7♭9', '9': '9', '13': '13', Add9: 'add9' })[q] || q;
+  return ({ Dim: '°', Aug: '+', Maj7: 'maj7', Min7: 'm7', 'm7♭5': 'ø7', Dim7: '°7', '7 (Dom)': '7', Sus4: 'sus4', Sus2: 'sus2', '7♯9': '7♯9', '7♭9': '7♭9', '9': '9', '13': '13', Add9: 'add9' })[q] || q;
 }
 const progLabel = prog => prog.map(c => c.numeral || (toSharp(c.root) + chordSuffix(c.quality))).join('–');
 
@@ -432,9 +787,15 @@ function contrastFor(sig, prog) {
   // Dorian's ♮6: natural minor THEN Dorian, so the one-note (♭6→♮6) change is heard.
   if (/dorian.s hope|natural minor.*then d dorian/.test(sig) && r0)
     return [{ root: r0, cat: 'Diatonic', name: 'Nat. Minor', label: `${r0} Natural Minor` }, { root: r0, cat: 'Modes', name: 'Dorian', label: `${r0} Dorian` }];
-  // Phrygian (♭2) vs Lydian (♯4): two extreme modes back to back (different roots).
-  if (/dark phrygian.*dreamy lydian|two extremes, each defined/.test(sig) && r0 && r1)
-    return [{ root: r0, cat: 'Modes', name: 'Phrygian', label: `${r0} Phrygian` }, { root: r1, cat: 'Modes', name: 'Lydian', label: `${r1} Lydian` }];
+  // Phrygian (♭2) vs Lydian (♯4), taught in parallel from ONE root, each beside the anchor it
+  // bends: natural minor → Phrygian (the 2nd drops a fret), major → Lydian (the 4th rises one).
+  if (/dark phrygian.*dreamy lydian|two extremes, each defined/.test(sig) && r0)
+    return [
+      { root: r0, cat: 'Diatonic', name: 'Nat. Minor', label: `${r0} natural minor`, home: { root: r0, quality: 'Minor' } },
+      { root: r0, cat: 'Modes', name: 'Phrygian', label: `${r0} Phrygian (♭2)`, home: { root: r0, quality: 'Minor' } },
+      { root: r0, cat: 'Diatonic', name: 'Major', label: `${r0} major`, home: { root: r0, quality: 'Major' } },
+      { root: r0, cat: 'Modes', name: 'Lydian', label: `${r0} Lydian (♯4)`, home: { root: r0, quality: 'Major' } },
+    ];
   // Mixolydian's ♭7: major THEN Mixolydian, so the F♯→F♮ drop is heard.
   if (/major gone bluesy|hear f natural drop in/.test(sig) && r0)
     return [{ root: r0, cat: 'Diatonic', name: 'Major', label: `${r0} Major` }, { root: r0, cat: 'Modes', name: 'Mixolydian', label: `${r0} Mixolydian` }];
@@ -496,13 +857,137 @@ function positionStrategyFor(sig) {
 // ── Chord-progression drill: walk the chords in time (loops via playPlan) ──
 // Each chord shows ONE specific, fingered voicing (not every note on the neck), placed by the
 // position strategy — so a learner sees exactly WHERE on the neck and WHAT to fret.
+// Each chord lasts the beats the drill gives it (4 — one bar of 4/4 — when it gives none), so
+// "4 beats each", a two-bar home chord and a 3/4 waltz all play at the length they are written.
+const beatsOf = c => (c && c.beats > 0 ? c.beats : 4);
+// The drill's time signature as [beats per bar, unit]. Data writes it as an array ([3,4]);
+// accept "3/4" too so a hand-edited lesson can't silently fall back to 4.
+export function timeSigOf(ts) {
+  if (Array.isArray(ts) && ts[0] > 0) return [+ts[0], +ts[1] || 4];
+  const m = /(\d+)\s*\/\s*(\d+)/.exec(String(ts || ''));
+  return m ? [+m[1], +m[2]] : [4, 4];
+}
+// A grip written in the data as tab — "x32010", low E → high e, or an array when a fret is 10 or
+// more — fitted to the chord it belongs to. When Dynamic Practice has moved the chord to another
+// key, the whole shape slides capo-style (open strings become fretted) until it spells the chord
+// again. null when the tab doesn't fit this instrument or never spells the chord.
+function parseTab(f) {
+  const arr = Array.isArray(f) ? f : String(f || '').replace(/\s/g, '').split('');
+  return arr.map(x => (x === 'x' || x === 'X' || x == null || x === '' || +x < 0 ? -1 : +x));
+}
+function gripFromTab(tab, root, quality) {
+  const arr = parseTab(tab), n = customTuning.length;
+  if (arr.length !== n || arr.every(f => f < 0)) return null;
+  const rootPc = NOTES.indexOf(toSharp(root));
+  const want = new Set(getChordNotes(toSharp(root), chordIntervalsFor(quality)).map(x => NOTES.indexOf(toSharp(x))));
+  const at = (k, f) => posWithNote(n - 1 - k, f);
+  for (let d = 0; d < 12; d++) {
+    const pcs = arr.map((f, k) => (f < 0 ? null : NOTES.indexOf(at(k, f + d).note))).filter(x => x != null);
+    if (!pcs.includes(rootPc) || pcs.some(pc => !want.has(pc))) continue;
+    let dd = d;
+    if (arr.some(f => f >= 0 && f + d > 15) && arr.every(f => f < 0 || f + d - 12 >= 0)) dd -= 12;
+    const positions = assignFingers(arr.map((f, k) => (f < 0 ? null : at(k, f + dd))).filter(Boolean));
+    return { positions, moved: dd !== 0, open: arr.some(f => f === 0) };
+  }
+  return null;
+}
+// The grip a chord step shows: the data's own tab when it gives one (c.frets), else the engine's.
+// opts.openInOtherKeys: an OPEN-chord tab moved to another key gives way to that key's own open
+// grip (C x32010 in G is the open G 320003, not a C shape at the 7th fret); every other tab keeps
+// its shape, because there the shape is the lesson (two-voice lines, shells, sus moves).
+function gripFor(c, strategy = 'open', floor = 0, opts = {}) {
+  const r = toSharp(c.root), notes = getChordNotes(r, chordIntervalsFor(c.quality));
+  const own = c.frets != null ? gripFromTab(c.frets, r, c.quality) : null;
+  if (own && own.moved && own.open && opts.openInOtherKeys) {
+    const g = pickGrip(r, notes, c.quality, 'open', 0);
+    if (g && g.positions.some(p => p.fret === 0)) return g;
+  }
+  if (own) { const fr = own.positions.filter(p => p.fret > 0).map(p => p.fret); return { positions: own.positions, minFret: fr.length ? Math.min(...fr) : 0 }; }
+  return pickGrip(r, notes, c.quality, strategy, floor);
+}
+// Pick an open chord one string at a time, low to high and back, then strum it and let it ring:
+// the way a teacher shows that the chord you already play IS a stacked triad (open C x32010 =
+// C E G C E). Each chord of the drill gets its own pass (C, then C augmented x32110).
+function buildGripArpeggio(prog, opts = {}) {
+  const spb = 60 / (opts.bpm || 75), bar = opts.barBeats || 4;
+  const ROLE = { 0: 'root', 3: '3rd', 4: '3rd', 6: 'lowered 5th', 7: '5th', 8: 'raised 5th', 9: '6th', 10: '7th', 11: '7th' };
+  const steps = [], positions = [], seen = new Set();
+  prog.forEach(c => {
+    const r = toSharp(c.root), name = r + chordSuffix(c.quality);
+    const g = gripFor(c, 'open', 0, { openInOtherKeys: true });
+    const ps = (g ? g.positions : chordVoicing(getChordNotes(r, chordIntervalsFor(c.quality)))).filter(p => p.fret >= 0).map(p => ({ ...p, ...noteAt(p.si, p.fret) })).sort((a, b) => _pmidi(a) - _pmidi(b));
+    ps.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+    const role = p => ROLE[((NOTES.indexOf(p.note) - NOTES.indexOf(r)) % 12 + 12) % 12] || '';
+    const part = ps.concat(ps.slice(0, -1).reverse()).map(p => ({ focus: [_fp(p)], play: [_pp(p)], dur: spb, label: `${name}: ${p.note}, the ${role(p)}` }));
+    part.push({ focus: ps.map(_fp), play: ps.map(_pp), dur: spb, strum: 0.035, chord: { root: r, quality: c.quality }, label: `${name}: strum it and let it ring` });
+    steps.push(...padToBar(part, spb, bar));
+  });
+  const r0 = toSharp(prog[0].root);
+  return { root: r0, notes: uniqNotes(positions), label: opts.label || `${progLabelNamed(prog)} · picked one string at a time`, positions, steps };
+}
+// Inversions as a guitarist plays them: one chord's three grips on ONE string set (G-B-e by
+// default), up the neck — C = 0-1-0 (G on the bottom), 5-5-3 (C on the bottom), 9-8-8 (E on the
+// bottom) — each picked note by note and then strummed. Then the move the lesson is for: from the
+// middle grip to the next chord's nearest grip (C 5-5-3 → F 5-6-5, the C held, two fingers up).
+function buildInversionsOnSet(prog, opts = {}) {
+  const spb = 60 / (opts.bpm || 85), bar = opts.barBeats || 4;
+  const set = marchStringSets()[opts.setIdx || 0];
+  const NAMES = ['root position (root on the bottom)', '1st inversion (3rd on the bottom)', '2nd inversion (5th on the bottom)'];
+  const c0 = prog[0], r = toSharp(c0.root), q0 = TRIAD_QUALITIES[c0.quality] ? c0.quality : 'Major';
+  const all = (findTriadsOnSet(NOTES.indexOf(r), q0, set.idxs) || []).slice().sort((a, b) => a.min - b.min || a.avg - b.avg);
+  if (all.length < 3) return buildInversions(r, chordIntervalsFor(c0.quality), { bpm: opts.bpm, quality: c0.quality });
+  const toPos = g => g.frets.map((f, k) => posWithNote(set.idxs[k], f));
+  const tabOf = g => g.frets.join('-');
+  const name0 = r + chordSuffix(c0.quality);
+  const steps = [], positions = [], seen = new Set();
+  const keep = ps => ps.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  const three = all.slice(0, 3);
+  three.forEach(g => {
+    const ps = toPos(g), label = `${name0} · ${NAMES[g.rot]} · ${set.label} ${tabOf(g)}`;
+    keep(ps);
+    ps.forEach(p => steps.push({ focus: [_fp(p)], play: [_pp(p)], dur: spb, label }));
+    steps.push({ focus: ps.map(_fp), play: ps.map(_pp), dur: spb, strum: 0.03, chord: { root: r, quality: c0.quality }, label });
+  });
+  if (prog.length > 1) {   // the smooth move: the root-position grip, then each next chord's nearest grip
+    let prev = three.find(g => g.rot === 0) || three[1];
+    prog.forEach((c, i) => {
+      const cr = toSharp(c.root), q = TRIAD_QUALITIES[c.quality] ? c.quality : 'Major';
+      const gs = i === 0 ? [prev] : (findTriadsOnSet(NOTES.indexOf(cr), q, set.idxs) || []);
+      if (!gs.length) return;
+      const g = gs.reduce((a, b) => (_gripCost(b, prev) < _gripCost(a, prev) ? b : a), gs[0]);
+      const ps = toPos(g); keep(ps);
+      const held = i === 0 ? '' : ` · ${ps.filter(p => toPos(prev).some(o => o.si === p.si && o.fret === p.fret)).map(p => p.note).join(', ') || 'nothing'} held`;
+      steps.push({ focus: ps.map(_fp), play: ps.map(_pp), dur: beatsOf(c) * spb, strum: 0.03, chord: { root: cr, quality: c.quality }, label: `${cr}${chordSuffix(c.quality)} · ${set.label} ${tabOf(g)}${held}` });
+      prev = g;
+    });
+  }
+  return { root: r, notes: uniqNotes(positions), label: opts.label || `${name0} inversions on ${set.label}${prog.length > 1 ? ` · then ${progLabelNamed(prog)}` : ''}`, positions, steps: padToBar(steps, spb, bar, 0) };
+}
+// Movable triads: the SAME root-position shape on one string set (G-B-e by default) slid up the
+// scale, chord by chord — C 5-5-3 → Dm 7-6-5 → Em 9-8-7 → F 10-10-8. A chords plan, one bar each
+// (or the beats written).
+function buildSetClimb(prog, opts = {}) {
+  const spb = 60 / (opts.bpm || 70), set = marchStringSets()[opts.setIdx || 0];
+  let floor = 0;
+  const chords = prog.map(c => {
+    const r = toSharp(c.root), q = TRIAD_QUALITIES[c.quality] ? c.quality : 'Major';
+    const gs = (findTriadsOnSet(NOTES.indexOf(r), q, set.idxs) || []).filter(g => g.rot === 0).sort((a, b) => a.min - b.min);
+    const g = gs.find(x => x.min >= floor) || gs[0];
+    if (!g) return null;
+    floor = g.min;
+    const positions = assignFingers(g.frets.map((f, k) => posWithNote(set.idxs[k], f)));
+    return { root: r, notes: getChordNotes(r, chordIntervalsFor(c.quality)), quality: c.quality, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)} · ${set.label} ${g.frets.join('-')}`, dur: beatsOf(c) * spb, positions };
+  });
+  if (chords.some(x => !x)) return null;
+  return { type: 'chords', label: opts.label || `${progLabel(prog)} · root-position triads on ${set.label}`, chords, timeSig: opts.timeSig };
+}
 function buildProgression(prog, opts = {}) {
-  const bpm = opts.bpm || 90, dur = (2 * 60) / bpm;   // ~two beats per chord
+  const bpm = opts.bpm || 90, spb = 60 / bpm;
   const strategy = opts.position || 'open';
   let floor = 0;
   const chords = prog.map(c => {
     const r = toSharp(c.root), notes = getChordNotes(r, chordIntervalsFor(c.quality));
-    const grip = pickGrip(r, notes, c.quality, strategy, floor);
+    const grip = gripFor(c, strategy, floor, { openInOtherKeys: opts.openChords });
     const positions = grip ? grip.positions : assignFingers(chordVoicing(notes));
     const fretted = positions.filter(p => p.fret > 0);
     const mf = grip && grip.minFret != null ? grip.minFret : (fretted.length ? Math.min(...fretted.map(p => p.fret)) : 0);
@@ -512,9 +997,206 @@ function buildProgression(prog, opts = {}) {
     const where = mf <= 0 ? ' · open'
       : (strategy === 'open' && hasOpen) ? ' · open'
       : ` · ${mf}fr`;
-    return { root: r, notes, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)}${where}`, dur, positions };
+    const out = { root: r, notes, quality: c.quality, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)}${where}`, dur: beatsOf(c) * spb, positions };
+    // an "arpeggiated" drill rolls each chord low → high over about half a beat
+    if (opts.roll && positions.length > 1) out.strum = Math.min(0.2, (0.5 * spb) / (positions.length - 1));
+    return out;
   });
-  return { type: 'chords', label: opts.label || progLabel(prog), chords };
+  return { type: 'chords', label: opts.label || progLabel(prog), chords, timeSig: opts.timeSig };
+}
+
+// ── The voicing a drill names: shells, stabs, power chords ───────────
+// The movable shapes guitarists learn, as fret offsets from the root's fret, low E → high e
+// (null = string not played). Shells keep the root, 3rd and 7th and leave the 5th out
+// (Dm7 x5x56x, G7 3x34xx, Cmaj7 x3x45x); a triad in a shell drill keeps root and 3rd on the
+// same strings (C x325xx, so G7's B and F step straight into C and E). Stabs add one note on
+// top and sit up the neck (Em7 x7978x, A7 5x565x). Power chords are root + 5th (A5 x02xxx).
+const SHAPES = {
+  shell: {
+    6: { Maj7: [0, null, 1, 1, null, null], '7 (Dom)': [0, null, 0, 1, null, null], Min7: [0, null, 0, 0, null, null], 'm7♭5': [0, null, 0, 0, -1, null], Dim7: [0, null, -1, 0, -1, null], Major: [0, null, 2, 1, null, null], Minor: [0, null, 2, 0, null, null] },
+    5: { Maj7: [null, 0, null, 1, 2, null], '7 (Dom)': [null, 0, null, 0, 2, null], Min7: [null, 0, null, 0, 1, null], 'm7♭5': [null, 0, 1, 0, 1, null], Dim7: [null, 0, 1, -1, 1, null], Major: [null, 0, -1, 2, null, null], Minor: [null, 0, null, 2, 1, null] },
+  },
+  stab: {
+    6: { '7 (Dom)': [0, null, 0, 1, 0, null], Min7: [0, null, 0, 0, 0, null], Maj7: [0, null, 1, 1, 0, null] },
+    5: { '7 (Dom)': [null, 0, 2, 0, 2, null], Min7: [null, 0, 2, 0, 1, null], Maj7: [null, 0, 2, 1, 2, null] },
+  },
+  power: { 6: [0, 2, 2, null, null, null], 5: [null, 0, 2, 2, null, null], 4: [null, null, 0, 2, 3, null] },
+};
+// Where each family sits first: shells low (around the 3rd fret), stabs up the neck, power
+// chords as open as they go. After the first chord the path keeps the hand close.
+const SHAPE_ANCHOR = { shell: 3, stab: 7, power: 0 };
+const _pcDist = (a, b) => { const d = Math.abs(a - b) % 12; return Math.min(d, 12 - d); };
+const tabStr = frets => (frets.some(f => f >= 10) ? frets.map(f => (f < 0 ? 'x' : f)).join('-') : frets.map(f => (f < 0 ? 'x' : f)).join(''));
+// A grip turned into what the path search compares: its frets as tab, its pitches, and the pitch
+// classes of everything above the bass (where the voice leading is heard).
+function _gripInfo(positions) {
+  const n = 6, frets = Array(n).fill(-1);
+  positions.forEach(p => { const k = 5 - p.si; if (k >= 0 && k < n) frets[k] = p.fret; });
+  const ps = positions.map(p => ({ ...p, ...noteAt(p.si, p.fret) })).sort((a, b) => _pmidi(a) - _pmidi(b));
+  const played = positions.map(p => p.fret);
+  return { positions, frets, ps, avg: played.reduce((t, f) => t + f, 0) / (played.length || 1), upper: ps.slice(1).map(p => NOTES.indexOf(p.note)) };
+}
+// Every place on the neck a family's shape spells this chord (root on the 6th, 5th or 4th string).
+function shapeCandidates(c, kind) {
+  if (customTuning.length < 6) return [];
+  const r = toSharp(c.root), rootPc = NOTES.indexOf(r);
+  const ints = kind === 'power' ? [0, 7] : chordIntervalsFor(c.quality);
+  const want = new Set(ints.map(i => (rootPc + i) % 12));
+  const third = ints.find(i => i === 3 || i === 4), seventh = ints.length >= 4 ? ints.find(i => i >= 9 && i <= 11) : undefined;
+  const out = [];
+  [6, 5, 4].forEach(str => {
+    const fam = SHAPES[kind][str];
+    const tpl = kind === 'power' ? fam : fam && fam[c.quality];
+    if (!tpl) return;
+    const rsi = str - 1;
+    for (let f = 0; f <= 12; f++) {
+      if (noteAt(rsi, f).note !== r) continue;
+      [f, f + 12].forEach(rf => {
+        if (rf > 15) return;
+        const frets = tpl.map(o => (o == null ? -1 : rf + o));
+        if (frets.some(x => x > 15) || tpl.some((o, k) => o != null && frets[k] < 0)) return;
+        const positions = frets.map((fr, k) => (fr < 0 ? null : posWithNote(5 - k, fr))).filter(Boolean);
+        const pcs = new Set(positions.map(p => NOTES.indexOf(p.note)));
+        if (!pcs.has(rootPc) || [...pcs].some(pc => !want.has(pc))) return;   // a tuning the shape doesn't fit
+        if (third != null && !pcs.has((rootPc + third) % 12)) return;
+        if (seventh != null && !pcs.has((rootPc + seventh) % 12)) return;
+        out.push(_gripInfo(assignFingers(positions)));
+      });
+    }
+  });
+  return out;
+}
+// The cheapest walk through one candidate per chord: the first chord near the family's anchor
+// (and every chord drawn gently towards it, so the hand doesn't drift off up the neck), then each
+// change scored by how far the hand slides (twice the change in average fret) plus how far the
+// upper voices move (each to the nearest note of the chord before). The loop's way back to the
+// top counts half.
+function pickGripPath(cands, anchor) {
+  const near = cd => 0.5 * Math.abs(cd.avg - anchor);
+  const step = (a, b) => 2 * Math.abs(a.avg - b.avg) + near(b) + b.upper.reduce((t, pc) => t + Math.min(...a.upper.map(q => _pcDist(pc, q)), 6), 0);
+  let best = null, bestCost = Infinity;
+  cands[0].forEach(first => {
+    let layer = [{ cost: 1.5 * Math.abs(first.avg - anchor), path: [first] }];
+    for (let i = 1; i < cands.length; i++) {
+      layer = cands[i].map(cd => layer.reduce((m, L) => {
+        const cost = L.cost + step(L.path[L.path.length - 1], cd);
+        return !m || cost < m.cost - 1e-9 ? { cost, path: L.path.concat([cd]) } : m;
+      }, null));
+    }
+    layer.forEach(L => {
+      const cost = L.cost + (cands.length > 1 ? 0.5 * step(L.path[L.path.length - 1], first) : 0);
+      if (cost < bestCost - 1e-9) { bestCost = cost; best = L.path; }
+    });
+  });
+  return best;
+}
+// The grips a family gives this progression (null when a chord has no shape in the family and no
+// grip of its own to fall back on). A chord the family has no shape for keeps its usual grip.
+function shapePath(prog, kind) {
+  const cands = prog.map(c => {
+    const cs = shapeCandidates(c, kind);
+    if (cs.length) return cs;
+    const g = gripFor(c, 'open');
+    return g ? [_gripInfo(g.positions)] : [];
+  });
+  if (cands.some(cs => !cs.length)) return null;
+  return pickGripPath(cands, SHAPE_ANCHOR[kind]);
+}
+function buildShapeProgression(prog, kind, opts = {}) {
+  const spb = 60 / (opts.bpm || 90);
+  const path = shapePath(prog, kind);
+  if (!path) return null;
+  const chords = prog.map((c, i) => {
+    const r = toSharp(c.root), g = path[i];
+    const power = kind === 'power';
+    const name = power ? `${r}5` : `${r}${chordSuffix(c.quality)}`;
+    const notes = power ? [r, NOTES[(NOTES.indexOf(r) + 7) % 12]] : getChordNotes(r, chordIntervalsFor(c.quality));
+    return { root: r, notes, quality: power ? '5' : c.quality, label: `${c.numeral ? c.numeral + ' · ' : ''}${name} · ${tabStr(g.frets)}`, dur: beatsOf(c) * spb, positions: g.positions };
+  });
+  const what = kind === 'shell' ? 'shell voicings (root, 3rd, 7th)' : kind === 'stab' ? 'short stabs up the neck' : 'power chords (root and 5th)';
+  return { type: 'chords', label: opts.label || `${progLabel(prog)} · ${what}`, chords, timeSig: opts.timeSig };
+}
+// Triads on one string set (D-G-B by default) chosen the way the voice-leading lessons teach:
+// the first near `anchor`, then each next chord's nearest grip, so shared notes stay under the
+// same finger and the rest move a fret or two (C 5-5-5 → Am 7-5-5 → F 7-5-6). The path comes
+// from buildTriadMarch; each chord keeps the beats the drill gives it.
+function buildTriadPath(prog, opts = {}) {
+  const pat = KEY_PATTERNS.Major;
+  const deg0 = resolveMarchProg([prog[0].numeral || 'I'], pat)[0] || 0;
+  const keyPc = (NOTES.indexOf(toSharp(prog[0].root)) - pat.intervals[deg0] + 12) % 12;
+  const march = buildTriadMarch(NOTES[keyPc], 'Major', { type: 'path', setIdx: opts.setIdx ?? 1, progression: prog.map(c => c.numeral || 'I'), anchor: opts.anchor ?? 5, bpm: opts.bpm });
+  const items = (march && march.items) || [];
+  if (items.length !== prog.length || items.some((it, i) => NOTES.indexOf(it.root) !== NOTES.indexOf(toSharp(prog[i].root)) || (it.quality !== prog[i].quality && TRIAD_QUALITIES[prog[i].quality]))) return null;
+  const spb = 60 / (opts.bpm || 72), setLabel = march.march.setLabel;
+  const chords = items.map((it, i) => {
+    const c = prog[i], r = toSharp(c.root);
+    const prev = i > 0 ? items[i - 1] : null;
+    const held = prev ? it.positions.filter(p => prev.positions.some(o => o.si === p.si && o.fret === p.fret)).map(p => p.note) : [];
+    const keep = !prev ? '' : held.length === it.positions.length ? ' · same grip' : held.length ? ` · ${held.join(', ')} held` : ' · every note moves';
+    return { root: r, notes: it.notes, quality: c.quality, label: `${c.numeral ? c.numeral + ' · ' : ''}${r}${chordSuffix(c.quality)} · ${setLabel} ${it.frets.join('-')}${keep}`, dur: beatsOf(c) * spb, positions: it.positions };
+  });
+  return { type: 'chords', label: opts.label || `${progLabel(prog)} · triads on the ${setLabel} strings, nearest grip each time`, chords, timeSig: opts.timeSig };
+}
+// Walking bass under shells: each bar strikes the chord's shell on beat 1, then the thumb walks
+// the low strings — two chord tones, then a note a half step from the next chord's root — so
+// the line arrives on every new root by step: C B G G♯ | A C E D♯ | D C A G♯ | G B D C♯.
+function buildWalkingBass(prog, opts = {}) {
+  const path = shapePath(prog, 'shell');
+  if (!path) return null;
+  const spb = 60 / (opts.bpm || 80), bar = opts.timeSig ? opts.timeSig[0] : 4, n = customTuning.length;
+  const lowest = _pmidi(noteAt(n - 1, 0)), top = lowest + 17;   // E2 … A3 on a guitar
+  const ROLE = { 0: 'root', 3: '3rd', 4: '3rd', 6: 'lowered 5th', 7: '5th', 9: '6th', 10: '7th', 11: '7th' };
+  // where the thumb plays a pitch: the low three strings, nearest the shell's root fret
+  const bassPos = (m, hand) => {
+    let best = null, bc = Infinity;
+    [n - 1, n - 2, n - 3].forEach(si => {
+      const f = m - _pmidi(noteAt(si, 0));
+      if (f < 0 || f > 15) return;
+      const cost = f === 0 ? 1.5 : Math.abs(f - hand) + (f < hand - 1 ? 0.5 : 0);
+      if (cost < bc) { bc = cost; best = posWithNote(si, f); }
+    });
+    return best;
+  };
+  const steps = [], positions = [], seen = new Set();
+  const keep = ps => ps.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  prog.forEach((c, i) => {
+    const g = path[i], nx = path[(i + 1) % prog.length];
+    const r = toSharp(c.root), rootPc = NOTES.indexOf(r), name = r + chordSuffix(c.quality);
+    const ints = chordIntervalsFor(c.quality), tones = new Set(ints.map(x => (rootPc + x) % 12));
+    const b1 = _pmidi(g.ps[0]), target = _pmidi(nx.ps[0]);
+    const hand = g.positions.find(p => p.si === g.ps[0].si)?.fret ?? 3;
+    const beats = beatsOf(c);
+    const shellStep = { focus: g.positions.map(_fp), play: g.ps.map(_pp), dur: spb, strum: 0.03, chord: { root: r, quality: c.quality }, label: `${c.numeral ? c.numeral + ' · ' : ''}${name} · ${tabStr(g.frets)} · shell on beat 1` };
+    const line = [];
+    if (beats >= 4) {
+      // beats 2-3: chord tones; beat 4: a half step from the next root, on the side the line is coming from
+      const pool = []; for (let m = lowest; m <= top; m++) if (tones.has(((m % 12) + 12) % 12)) pool.push(m);
+      const fifth = (rootPc + 7) % 12;
+      let best = null, bc = Infinity;
+      pool.forEach(b2 => pool.forEach(b3 => [target - 1, target + 1].forEach(ap => {
+        if (ap < lowest) return;
+        const cost = Math.abs(b1 - b2) + Math.abs(b2 - b3) + Math.abs(b3 - ap)
+          + (b2 === b1 ? 6 : 0) + (b3 === b2 ? 6 : 0) + (b3 === b1 ? 2 : 0) + (ap === b3 ? 6 : 0)
+          + (b2 % 12 === rootPc ? 1 : 0) + (b3 % 12 !== fifth ? 1 : 0);
+        if (cost < bc) { bc = cost; best = [b2, b3, ap]; }
+      })));
+      if (best) line.push(...best.slice(0, 2).map(m => ({ m, why: `the ${ROLE[(((m - rootPc) % 12) + 12) % 12] || 'chord tone'}` })));
+      const fill = Math.max(0, beats - 4);           // a longer chord repeats its 5th before the approach
+      for (let k = 0; k < fill; k++) line.push({ ...line[line.length - 1] });
+      if (best) line.push({ m: best[2], why: `a half step from ${NOTES[((target % 12) + 12) % 12]}, leading into it` });
+    } else {
+      for (let k = 1; k < beats; k++) line.push({ m: b1, why: 'the root' });
+    }
+    const bassPs = line.map(e => bassPos(e.m, hand));
+    if (bassPs.some(x => !x)) return;
+    const shape = { root: r, notes: uniqNotes(g.positions.concat(bassPs)), positions: g.positions.concat(bassPs.filter(p => !g.positions.some(o => o.si === p.si && o.fret === p.fret))) };
+    keep(shape.positions);
+    shellStep.shape = shape;
+    steps.push(shellStep);
+    line.forEach((e, k) => steps.push({ focus: [_fp(bassPs[k])], play: [_pp(bassPs[k])], dur: spb, shape, label: `${name} · walk: ${bassPs[k].note}, ${e.why}` }));
+  });
+  if (!steps.length) return null;
+  return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || `${progLabel(prog)} · shells on beat 1, the bass walking into each new root`, positions, steps: padToBar(steps, spb, bar, 0) };
 }
 
 // ── Requested scale-pattern variations (broken 3rds/4ths, N-per-string, string skip) ──
@@ -615,24 +1297,109 @@ export function buildScaleSequence(root, intervals, n, opts = {}) {
 }
 
 // Two-part CONTRAST: play scale A, then scale B (relative major↔minor, sharp vs flat key,
-// major vs parallel mode, major-pent vs minor-pent). Each step carries its part's label so
-// the readout names which scale is sounding; a longer gap separates the two halves.
+// major vs parallel mode, major-pent vs minor-pent) in ONE hand position, so the only thing
+// that moves is the note that changes (C major → G major: every F slides up a fret to F♯).
+// Each part runs one octave root to root and holds its home to the bar line. Each step carries
+// its part's label and shape (step.shape), so the readout and the lit shape follow the part.
+const _scalePcs = sp => { const ints = SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11], r = NOTES.indexOf(toSharp(sp.root)); return ints.map(i => (r + i) % 12); };
+// Re-finger a box for a scale that differs by a few notes: each outgoing note moves a half step
+// (one fret) to its incoming neighbour on the same string. A note that would fall off the nut
+// moves to the next lower string instead (counted, so the search can avoid it). null = the two
+// scales don't differ by half-step swaps (e.g. pentatonic vs a seven-note scale).
+function morphBox(asc, fromPcs, toPcs) {
+  const removed = [...new Set(fromPcs)].filter(pc => !toPcs.includes(pc));
+  const added = [...new Set(toPcs)].filter(pc => !fromPcs.includes(pc));
+  if (removed.length !== added.length || removed.length > 5) return null;
+  let move = null;
+  if (removed.length) {
+    for (const perm of permsOf(added)) {
+      const d = removed.map((pc, i) => { const s = ((perm[i] - pc) % 12 + 12) % 12; return s === 1 ? 1 : s === 11 ? -1 : 0; });
+      if (d.every(x => x)) { move = new Map(removed.map((pc, i) => [pc, d[i]])); break; }
+    }
+    if (!move) return null;
+  }
+  let reloc = 0;
+  const out = [];
+  for (const p of asc) {
+    const pc = NOTES.indexOf(p.note);
+    if (!move || !move.has(pc)) { out.push(p); continue; }
+    let si = p.si, f = p.fret + move.get(pc);
+    if (f < 0) { si = p.si + 1; if (si >= customTuning.length) return null; f = _pmidi(p) - 1 - _pmidi(noteAt(si, 0)); reloc++; }
+    if (f < 0 || f > nfrets()) return null;
+    out.push(posWithNote(si, f));
+  }
+  return { asc: _pitchAsc(out), reloc };
+}
 function buildContrast(specs, opts = {}) {
-  const bpm = opts.bpm || 96;
-  const subs = specs.map(sp => {
-    const ints = SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11];
-    return buildScaleBox(sp.root, ints, { bpm, scaleCat: sp.cat, scaleName: sp.name, name: sp.name, downToo: opts.downToo !== false, label: sp.label || `${sp.root} ${sp.name}` });
-  });
-  const positions = [], notes = [], steps = [];
-  subs.forEach((pl, i) => {
-    positions.push(...pl.positions);
-    pl.notes.forEach(n => { if (!notes.includes(n)) notes.push(n); });
-    pl.steps.forEach((st, j) => {
-      const boundary = j === pl.steps.length - 1 && i < subs.length - 1;
-      steps.push({ ...st, label: pl.label, gap: boundary ? (st.dur || 0.5) * 2.6 : st.gap });
+  const bpm = opts.bpm || 96, dur = 60 / bpm;
+  const pcsOf = specs.map(_scalePcs), rootPcs = specs.map(sp => NOTES.indexOf(toSharp(sp.root)));
+  const intsOf = sp => SCALE_TYPES[sp.cat]?.[sp.name] || [0, 2, 4, 5, 7, 9, 11];
+  // Try every box of every scale in the comparison as the shared position. Keep the one that
+  // needs no string changes, stays within a hand span and gives every part a full octave root to
+  // root; among those prefer open position (where these lessons' open chords live), then the box
+  // the first scale is normally run in (so a pentatonic comparison stays in Box 1), then the
+  // lowest on the neck.
+  let best = null;
+  specs.forEach((sp, i) => {
+    const boxes = findScaleBoxes(toSharp(sp.root), intsOf(sp), { scaleCat: sp.cat, scaleName: sp.name }) || [];
+    const usual = i === 0 && boxes.length ? pickRunBox(boxes, rootPcs[0]) : null;
+    boxes.forEach(b => {
+      const base = _pitchAsc(_boxAsc(b));
+      let reloc = 0; const parts = [];
+      for (let k = 0; k < specs.length; k++) {
+        const m = k === i ? { asc: base, reloc: 0 } : morphBox(base, pcsOf[i], pcsOf[k]);
+        if (!m) return;
+        reloc += m.reloc; parts.push(m.asc);
+      }
+      const frets = parts.flat().map(p => p.fret), fretted = frets.filter(f => f > 0);
+      const span = fretted.length ? Math.max(...fretted) - Math.min(...fretted) : 0;
+      const thin = parts.some((asc, k) => _rootIdx(asc, rootPcs[k]).length < 2);
+      const maxF = Math.max(...frets), open = Math.min(...frets) === 0 && maxF <= 4;
+      const score = reloc * 20 + (thin ? 50 : 0) + Math.max(0, span - 4) * 6 + (open ? maxF / 10 : b === usual ? 5 : 5 + maxF);
+      if (!best || score < best.score) best = { score, parts };
     });
   });
-  return { root: subs[0].root, notes, label: opts.label || subs.map(s => s.label).join('  →  '), positions, steps };
+  const runs = best && best.parts.map((asc, k) => ({ asc, seq: rootRun(asc, rootPcs[k], { octaves: 1 }) }));
+  const steps = [], scaleParts = [], allPos = [];
+  let first = null;
+  specs.forEach((sp, k) => {
+    const r = toSharp(sp.root), name = sp.label || `${r} ${sp.name}`;
+    let shown, seq;
+    if (runs && runs.every(x => x.seq)) { seq = runs[k].seq; shown = runs[k].asc.filter(p => seq.includes(p)); }
+    else {   // no shared position (different note counts): each part in its own box, still root to root
+      const pl = buildScaleBox(r, intsOf(sp), { bpm, scaleCat: sp.cat, scaleName: sp.name, rootToRoot: true, octaves: 1 });
+      shown = pl.positions; seq = pl.steps.map(st => posWithNote(st.focus[0].si, st.focus[0].fret));
+    }
+    const label = `${name} · ${_posLabel(shown)}`;
+    const shape = { root: r, notes: uniqNotes(shown), positions: shown };
+    if (!first) first = shape;
+    const part = padToBar(seq.map(p => ({ focus: [{ si: p.si, fret: p.fret }], play: [{ note: p.note, octave: p.octave }], dur, label, shape })), dur, opts.barBeats);
+    scaleParts.push({ from: steps.length, to: steps.length + part.length, root: r, label });
+    steps.push(...part);
+    shown.forEach(p => { if (!allPos.some(q => q.si === p.si && q.fret === p.fret)) allPos.push(p); });
+  });
+  const where = [...new Set(scaleParts.map(s => s.label.split(' · ').pop()))];
+  const label = opts.label || (where.length === 1 ? `${specs.map(sp => sp.label || `${toSharp(sp.root)} ${sp.name}`).join('  →  ')} · ${where[0]}` : scaleParts.map(s => s.label).join('  →  '));
+  // plan-level root/notes/positions = the FIRST part's shape (what the board shows before it plays)
+  const plan = { root: first.root, notes: first.notes, label, positions: first.positions, allPositions: allPos, steps, scaleParts };
+  // each part over its own home chord (opts.homes[k] = {root, quality}), or over a drone
+  if (opts.homes || opts.drone) {
+    let b = 0;
+    const segs = scaleParts.map((sp, k) => {
+      const len = planBeats(steps.slice(sp.from, sp.to), dur), h = opts.homes && opts.homes[k];
+      const seg = h ? { from: b, to: b + len, root: h.root, quality: h.quality } : { from: b, to: b + len, root: specs[k].root, kind: 'drone' };
+      b += len;
+      return seg;
+    });
+    plan.backing = backingEvents(segs, dur, opts.barBeats || 4);
+  }
+  return plan;
+}
+// The chord a scale calls home, when the lesson doesn't name one.
+function homeChordOf(sp) {
+  const n = sp.name || '';
+  const quality = /Locrian/.test(n) ? 'm7♭5' : /Mixolydian/.test(n) ? '7 (Dom)' : /Minor|Aeolian|Dorian|Phrygian/.test(n) ? 'Minor' : 'Major';
+  return { root: sp.root, quality };
 }
 
 // Triad inversions — arpeggiate root position, then 1st inversion, then 2nd inversion,
@@ -908,23 +1675,128 @@ export function demoToPlan(demo) {
   if (!demo) return null;
   const root = toSharp(demo.root || demo.note || 'C');
   if (demo.kind === 'scale') {
-    // The musical-alphabet lesson demonstrates A natural minor from the open A string —
-    // the seven letters starting on A — so the demo matches its practice-drill preview.
-    if (/alphabet/.test(demo.caption || '')) {
-      return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: 96, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
-    }
+    // The musical-alphabet clips climb the seven letters up ONE string from the clip's root
+    // (open A: frets 0-2-3-5-7-8-10-12; open low E: E F G A B C D E), like the drill.
+    if (/alphabet|seven letters/.test(demo.caption || '')) return buildAlphabetClimb(root, { bpm: 96, label: demo.caption });
     const ints = SCALE_TYPES[demo.scaleCat]?.[demo.scaleName] || [0, 2, 4, 5, 7, 9, 11];
-    return buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}` });
+    const run = buildScaleBox(root, ints, { bpm: 96, scaleCat: demo.scaleCat, scaleName: demo.scaleName, name: demo.scaleName, label: demo.caption || `${root} ${demo.scaleName || 'scale'}`, rootToRoot: true, octaves: 1 });
+    // a home under the clip: demo.over = {root, quality} strikes that chord each bar (an ear
+    // question can play two scales over the SAME chord); demo.drone holds the root and 5th
+    if (demo.over && demo.over.root) return withProgBacking(run, [{ root: demo.over.root, quality: demo.over.quality, beats: 4 }], 60 / 96, 4);
+    if (demo.drone) return withDrone(run, root, 60 / 96, 4);
+    return run;
   }
   if (demo.kind === 'interval') {
     const semis = (((demo.intervalSemitones || 0) % 24) + 24) % 24;
-    return semis === 12 ? buildOctave(root, { bpm: 80, label: demo.caption }) : buildInterval(root, semis, { bpm: 84, label: demo.caption });
+    const cap = demo.caption || '';
+    return buildIntervalClip(root, semis || 12, {
+      bpm: semis === 12 ? 80 : 84, label: demo.caption, octave: demo.octave, melodic: !!demo.melodic,
+      preferOpen: /open string/i.test(cap), alongString: /\bfrets?\b|half steps?\b/i.test(cap),
+    });
   }
   if (demo.kind === 'note') {
     const nn = toSharp(demo.note || demo.root);
     return demo.all ? buildNoteEverywhere(nn, { bpm: 88, label: demo.caption }) : buildNoteDemo(nn, { bpm: 100, label: demo.caption, times: 3 });
   }
   return null;
+}
+
+// ── Progression ear clips, voice-led ─────────────────────────────────
+// A clip of chords (teach.demo / exercise audio of kind 'progression') played the way the
+// voice-leading lessons describe: the first chord as a close voicing on three or four
+// neighbouring strings, then every next chord re-voiced from it so shared notes stay put and the
+// rest move to the nearest chord tone (C x320xx → Am x322xx: C and E held, G up to A). A chord
+// that comes back keeps the voicing it had (so a blues doesn't drift up the neck), and a chord
+// entry that gives its own `frets` plays exactly that grip.
+function closeVoicing(notes) {
+  const pcs = notes.map(n => NOTES.indexOf(toSharp(n)));
+  const k = pcs.length;
+  if (k < 2 || k > 4 || customTuning.length < 5) return chordVoicing(notes);
+  const sets = k === 4 ? [[4, 3, 2, 1], [3, 2, 1, 0]] : k === 3 ? [[4, 3, 2], [3, 2, 1]] : [[4, 3], [3, 2]];
+  let best = null, bc = Infinity;
+  sets.forEach(set => permsOf(pcs).forEach(perm => {
+    const frets = set.map((si, i) => { for (let f = 0; f <= 11; f++) if (NOTES.indexOf(noteAt(si, f).note) === perm[i]) return f; return -1; });
+    if (frets.includes(-1)) return;
+    const ps = set.map((si, i) => posWithNote(si, frets[i]));
+    const low = ps.reduce((a, b) => (_pmidi(b) < _pmidi(a) ? b : a));
+    const cost = (Math.max(...frets) - Math.min(...frets)) + (NOTES.indexOf(low.note) !== pcs[0] ? 4.5 : 0) + 0.3 * frets.reduce((t, f) => t + f, 0) / frets.length;
+    if (cost < bc) { bc = cost; best = ps; }
+  }));
+  return best || chordVoicing(notes);
+}
+// voiceLead for chords of different sizes: a triad going to a 7th chord takes one more string
+// next to the shape; a 7th chord going to a triad lets the voice that would move most drop out
+// (G7 xx5431 → C: B steps up to C, F steps down to E, G holds, D drops out).
+function leadVoices(prev, notes) {
+  let pv = (prev || []).filter(p => p && p.fret >= 0);
+  const k = notes.length;
+  if (!pv.length || k > 4) return closeVoicing(notes);
+  while (pv.length < k) {
+    const sis = pv.map(p => p.si), up = Math.min(...sis) - 1, down = Math.max(...sis) + 1;
+    const si = up >= 0 ? up : down < customTuning.length ? down : -1;
+    if (si < 0) return closeVoicing(notes);
+    pv = pv.concat([{ si, fret: Math.round(pv.reduce((t, p) => t + p.fret, 0) / pv.length) }]).sort((a, b) => b.si - a.si);
+  }
+  if (pv.length === k) return voiceLead(pv, notes);
+  const lowSi = Math.max(...pv.map(p => p.si));
+  let best = null, bc = Infinity;
+  const pick = (start, acc) => {
+    if (acc.length === k) {
+      const v = voiceLead(acc, notes);
+      const cost = v.reduce((t, p, i) => t + Math.abs(p.fret - acc[i].fret), 0) + (acc.some(p => p.si === lowSi) ? 0 : 0.5);
+      if (cost < bc) { bc = cost; best = v; }
+      return;
+    }
+    for (let i = start; i < pv.length; i++) pick(i + 1, acc.concat([pv[i]]));
+  };
+  pick(0, []);
+  return best || closeVoicing(notes);
+}
+// teach.demo / exercise audio → a plan when the runner can play it. Progressions become a
+// voice-led chords plan (about 1.15 s a chord, the last one held longer); everything else goes
+// through demoToPlan.
+export function audioToPlan(demo) {
+  if (!demo) return null;
+  if (demo.kind !== 'progression') return demoToPlan(demo);
+  const list = demo.progression || [];
+  if (!list.length) return null;
+  const spb = 1.15, had = new Map();
+  let prev = null;
+  const chords = list.map((c, i) => {
+    const r = toSharp(c.root), q = c.type || c.quality || 'Major';
+    const ints = (CHORD_TYPES[c.cat] && CHORD_TYPES[c.cat][q]) || chordIntervalsFor(q);
+    const notes = getChordNotes(r, ints);
+    const own = c.frets != null ? gripFromTab(c.frets, r, q) : null;
+    const key = `${r}|${q}`;
+    const positions = own ? own.positions : had.get(key) || (prev ? leadVoices(prev, notes) : closeVoicing(notes));
+    if (!own && !had.has(key)) had.set(key, positions);
+    prev = positions;
+    return { root: r, notes, quality: q, label: `${r}${chordSuffix(q)}`, dur: spb * (i === list.length - 1 ? 1.5 : 1), positions: assignFingers(positions.map(p => ({ ...p }))) };
+  });
+  return { type: 'chords', label: demo.caption || chords.map(c => c.label).join(' → '), chords, spb };
+}
+
+// ── Sounding a chord or a step exactly as it is fretted ──────────────
+// A chord with positions plays those pitches, low → high, strummed (or rolled, c.strum), so what
+// you hear is the grip on the neck — shells sound thin, a power chord sounds like one. A chord
+// without positions falls back to a close voicing of its notes.
+export function chordPitches(c) {
+  const ps = ((c && c.positions) || []).filter(p => p && p.fret >= 0);
+  if (!ps.length) return null;
+  return ps.map(p => noteAt(p.si, p.fret)).sort((a, b) => _pmidi(a) - _pmidi(b));
+}
+export function playChord(c, opts = {}) {
+  const dur = opts.dur ?? 1, gain = opts.gain ?? 0.16;
+  const pitches = chordPitches(c);
+  if (!pitches) return playChordNotes(c.notes, { dur, strum: opts.strum ?? 0.03, gain });
+  return playPitches(pitches, { dur, strum: c.strum ?? opts.strum ?? 0.03, gain: gain * Math.min(1, Math.sqrt(4 / pitches.length)) });
+}
+export function playStep(st, opts = {}) {
+  const dur = opts.dur ?? (st.dur || 0.4) * 0.96, gain = opts.gain ?? 0.2;
+  const play = st.play || [];
+  // a strummed step (st.strum = seconds between strings) rolls low → high like a pick
+  if (st.strum && play.length > 1) playPitches(play.map(pl => ({ note: pl.note, octave: pl.octave ?? 3 })), { dur, strum: st.strum, gain: gain * 0.8 });
+  else play.forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur, gain }));
 }
 
 // drill → synced plan. `bpmOverride` lets the Practice Manager re-time the same
@@ -941,20 +1813,23 @@ export function drillToPlan(drill, bpmOverride) {
   const prog = Array.isArray(drill.progression) ? drill.progression : [];
   const root = toSharp(prog[0]?.root || 'C');
   const bpm = bpmOverride || drill.bpm || 90;
+  const timeSig = timeSigOf(drill.timeSig);
 
   // 1) Single-note FOUNDATION drills (named, unambiguous)
-  if (/alphabet/.test(title)) return buildScaleClimb('A', SCALE_TYPES.Diatonic['Nat. Minor'], { bpm: bpmOverride || 120, downToo: true, label: 'A natural minor — the musical alphabet, up one octave from open A' });
+  if (/alphabet/.test(title)) return buildAlphabetClimb(root, { bpm, barBeats: timeSig[0] });
   // "Finding any note" → show the SAME note EVERYWHERE on the neck (every A, etc.), so the
   // relationship across the fretboard reads — not just one position.
-  if (/finding notes|finding any note/.test(sig)) return buildNoteEverywhere(root, { bpm, label: `Every ${root} on the neck` });
+  if (/finding notes|finding any note/.test(sig)) return buildNoteEverywhere(root, { bpm, barBeats: timeSig[0], label: `Every ${root} up to the 12th fret · landmarks on the low E and A strings, then octave shapes` });
   if (/count|chromatic|finding/.test(title) || /one fret at a time/.test(sig)) return buildChromatic('E', 9, { bpm, si: customTuning.length - 1, fret: 0, label: 'Counting up the low E string by half steps' });
   if (/enharmonic/.test(title)) return buildEnharmonic({ bpm });
   if (voicing.includes('open string')) return buildOpenStrings({ bpm });
-  if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm });
+  if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm, barBeats: timeSig[0] });
   if (/two-note octaves|octave leaps/.test(sig)) return buildOctave(root, { bpm });
 
-  // 1.4) WALKING-BASS walkdown — authored open-position descent (bass = the scale, down).
-  if (/walkdown|walking bass/.test(sig)) return buildWalkdown({ bpm, root });
+  // 1.4) The WALKDOWN étude — authored open-position descent (bass = the scale, down). Keyed on
+  // "walkdown" only: the Walking Bass Lines lesson (I–vi–ii–V) also says "walking bass" and
+  // must fall through to its own progression, not borrow this étude.
+  if (/walkdown/.test(sig)) return buildWalkdown({ bpm, root, beats: prog.map(c => c.beats), timeSig });
 
   // 1.5) SLASH-CHORD flavors — one held bass, cycling upper-structure triads above it.
   // "A string / 5th string" in the drill text moves the bass to the second authored position.
@@ -967,11 +1842,17 @@ export function drillToPlan(drill, bpmOverride) {
   // 2.5) TWO-PART CONTRAST — play scale A then scale B (relative maj↔min, sharp vs flat key,
   // major vs parallel mode, major-pent vs minor-pent) so the lesson's whole comparison is heard.
   const contrast = contrastFor(sig, prog);
-  if (contrast) return buildContrast(contrast, { bpm });
+  if (contrast) {
+    // each part over its home chord: the drill's own chord when it names one per part, else the scale's
+    const same = (a, b) => NOTES.indexOf(toSharp(a)) === NOTES.indexOf(toSharp(b));
+    const homes = contrast.map((sp, k) => sp.home || (prog.length === contrast.length && same(prog[k].root, sp.root) ? prog[k] : homeChordOf(sp)));
+    return buildContrast(contrast, { bpm, barBeats: timeSig[0], homes });
+  }
 
   // 2.6) Triad INVERSIONS — root position → 1st → 2nd of the home triad.
+  // On the G-B-e strings, up the neck, then the close move to the next chord.
   if (/1st and 2nd inversion|root position, 1st/.test(voicing) && prog.length)
-    return buildInversions(prog[0].root, chordIntervalsFor(prog[0].quality), { bpm, quality: prog[0].quality });
+    return buildInversionsOnSet(prog, { bpm, barBeats: timeSig[0], setIdx: 0 });
 
   // 2.7) Circle-of-fifths root MOTION — single notes hopping by 5ths, not chords.
   if (/root notes of each key|circle hop|jump up a perfect 5th|step clockwise/.test(sig) && prog.length >= 2) {
@@ -981,10 +1862,14 @@ export function drillToPlan(drill, bpmOverride) {
 
   // 2.8) Melodic minor "up bright, down dark" — ascend with raised 6/7, descend natural minor.
   if (/melodic minor/.test(sig) && /up bright|down dark|natural[- ]minor descent|down with natural/.test(sig))
-    return buildMelodicMinorRun(root, { bpm });
+    return buildMelodicMinorRun(root, { bpm, prog, barBeats: timeSig[0] });
+
+  // 2.85) Chord-tone arpeggios — root–3rd–5th–3rd through each chord (C-E-G-E over C…).
+  if ((/land on chord tones/.test(title) || /root[–-]3rd[–-]5th[–-]3rd/.test(sig)) && prog.length)
+    return buildChordToneArps(prog, { bpm, label: progLabel(prog) + ' — chord tones' });
 
   // 2.9) Guide-tone targeting — land on each chord's 3rd on the downbeat (B over G7, E over C7…).
-  if (/hit the 3rd|targeting the 3rd|land on chord tones|3rd on beat 1/.test(sig) && prog.length)
+  if (/hit the 3rd|targeting the 3rd|3rd on beat 1/.test(sig) && prog.length)
     return buildGuideTones(prog, { bpm, label: progLabel(prog) + ' — guide tones' });
 
   // 3) SCALE runs — play a real CAGED BOX (positional, across the strings) the way guitar is
@@ -992,9 +1877,10 @@ export function drillToPlan(drill, bpmOverride) {
   // single-string climb so the whole-step/half-step pattern (2 frets vs 1) reads clearly.
   if (/scale ascending|scale run|scale climb|single-note scale|single note scale|w-w-h|scale degrees|scales|pentatonic|box|five boxes|blue note|aeolian climb|melodic minor/.test(sig)) {
     const sc = scaleFor(sig, prog), ints = SCALE_TYPES[sc.cat][sc.name];
-    if (/w-w-h/.test(sig)) return buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}` });
+    // the drill's chords sound under the run, so every scale is heard against its home
+    if (/w-w-h/.test(sig)) return withProgBacking(buildScaleClimb(sc.root, ints, { bpm, downToo: true, label: `${sc.root} ${sc.name}`, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
     const connect = /five boxes|box.to.box|box to box|connecting/.test(sig);
-    return buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect });
+    return withProgBacking(buildScaleBox(sc.root, ints, { bpm, scaleCat: sc.cat, scaleName: sc.name, name: sc.name, label: `${sc.root} ${sc.name}`, connect, rootToRoot: true, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
   }
 
   // 3b) MODE lessons — play the characteristic mode SCALE, rooted on the home chord.
@@ -1007,19 +1893,40 @@ export function drillToPlan(drill, bpmOverride) {
     for (const [kw, name, wantMin] of MODE_KEYS) {
       const hit = kw === 'lydian' ? (sig.includes('lydian') && !sig.includes('mixolydian')) : sig.includes(kw);
       if (hit && wantMin === homeMin) {
-        return buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}` });
+        const run = withProgBacking(buildScaleBox(root, SCALE_TYPES.Modes[name], { bpm, scaleCat: 'Modes', scaleName: name, name, label: `${root} ${name}`, rootToRoot: true, barBeats: timeSig[0] }), prog, 60 / bpm, timeSig[0]);
+        return /stop the vamp/.test(sig) ? vampThenBare(run, `${progLabelNamed(prog)} vamp`) : run;
       }
     }
   }
 
   // 4) Single-chord ARPEGGIO / triad-build drills
-  if (prog.length === 1 && /arpeggi|triad build|augmented triad|root position arpeggi/.test(sig)) {
-    const c = prog[0];
-    return buildArpeggio(toSharp(c.root), chordIntervalsFor(c.quality), { bpm, label: `${toSharp(c.root)}${chordSuffix(c.quality)} arpeggio` });
+  // The open grip picked one string at a time, then strummed (C x32010; then C+ x32110).
+  if (prog.length <= 2 && /arpeggi|triad build|augmented triad|root position arpeggi/.test(sig))
+    return buildGripArpeggio(prog, { bpm, barBeats: timeSig[0] });
+
+  // 4.5) Movable triads — one root-position shape slid up the scale on the G-B-e strings.
+  if (/three-string triads/.test(voicing) && prog.length) {
+    const climb = buildSetClimb(prog, { bpm, timeSig, setIdx: 0 });
+    if (climb) return climb;
+  }
+
+  // 4.6) The voicing the drill names. Shells (root, 3rd, 7th) — with a walking bass under them
+  // when the drill walks one, short stabs up the neck when it's a funk drill — power chords, and
+  // triads on the D-G-B strings led by the nearest grip.
+  if (prog.length && /shell/.test(voicing)) {
+    if (/walk/.test(title)) { const w = buildWalkingBass(prog, { bpm, timeSig }); if (w) return w; }
+    const sh = buildShapeProgression(prog, /funk|stab/.test(sig) ? 'stab' : 'shell', { bpm, timeSig });
+    if (sh) return sh;
+  }
+  if (prog.length && /power chord/.test(voicing)) { const pw = buildShapeProgression(prog, 'power', { bpm, timeSig }); if (pw) return pw; }
+  if (prog.length && /triads-dgb/.test(voicing)) {
+    const zone = /frets? (\d+)\s*[-–]\s*(\d+)/.exec(sig);
+    const tp = buildTriadPath(prog, { bpm, timeSig, setIdx: 1, anchor: zone ? +zone[1] : 5 });
+    if (tp) return tp;
   }
 
   // 5) CHORD-PROGRESSION drills (the majority) — walk the changes, one voicing per chord
-  if (prog.length) return buildProgression(prog, { bpm, label: progLabel(prog), position: positionStrategyFor(sig) });
+  if (prog.length) return buildProgression(prog, { bpm, label: progLabel(prog), position: positionStrategyFor(sig), timeSig, openChords: voicing === 'open chords', roll: voicing === 'arpeggiated' });
 
   // 6) fallback
   return buildScaleClimb(root, SCALE_TYPES.Diatonic.Major, { bpm, downToo: true, label: `${root} Major` });
@@ -1051,7 +1958,7 @@ export function playPlan(plan, opts = {}) {
       // theory of the moment is restated under the neck all through a looping practice.
       if (c.notes && c.notes.length) {
         const rows = [{ label: 'NOTES', value: c.notes.join(' · ') }];
-        if (c.root) rows.push({ label: 'DEGREES', value: c.notes.map(n => intervalLabel(c.root, n)).join(' · ') + ' of ' + c.root });
+        if (c.root) rows.push({ label: 'DEGREES', value: c.notes.map(n => intervalLabel(c.root, n, semitonesAbove(c.root, c.notes))).join(' · ') + ' of ' + c.root });
         setConceptInfo({ title: c.label || c.root || '', rows });
       }
       if (fretboardView === 'voice') {   // Voice-Leading view: the voice-led grip + the next chord ghosted
@@ -1069,13 +1976,14 @@ export function playPlan(plan, opts = {}) {
         timers.push(setTimeout(() => {
           if (stopped || !isAlive()) return;
           showChord(c, idx);
-          playChordNotes(c.notes, { dur: (c.dur || 1) * 0.92, strum: 0.03, gain: 0.16 });
+          playChord(c, { dur: (c.dur || 1) * 0.92, gain: 0.16 });
           // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
           window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: c.notes.slice(), root: c.root, label: c.label } }));
         }, t * 1000));
         t += c.dur || 1;
       });
-      if (loop) timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycleChords(); } }, t * 1000 + 350));
+      // the next pass starts exactly one chord-length after the last chord — no dead air at the seam
+      if (loop) timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycleChords(); } }, t * 1000));
     }
     showChord(plan.chords[0], 0);
     cycleChords();
@@ -1083,14 +1991,26 @@ export function playPlan(plan, opts = {}) {
   }
 
   if (!plan.steps || !plan.steps.length) return () => {};
-  const set = (focus, label, trail) => { if (!stopped && isAlive()) { setChordHighlight(plan.root, plan.notes, label || plan.label, plan.positions, plan.colors || colors, focus, trail || null, plan.focusOnly); updateOverlays(); } };
+  // A step may carry its own `shape` ({root, notes, positions}) — a two-scale comparison lights
+  // the scale that is sounding, so the one note that changes is seen to move.
+  const set = (focus, label, trail, st) => {
+    if (stopped || !isAlive()) return;
+    const sh = (st && st.shape) || plan;
+    setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, label || plan.label, sh.positions || plan.positions, plan.colors || colors, focus, trail || null, plan.focusOnly);
+    updateOverlays();
+  };
   // Anticipation: build ghost dots (carrying note names) from a step's focus positions.
   const focusToGhost = st => (st.focus || []).map((f, i) => {
-    const pos = (plan.positions || []).find(p => p.si === f.si && p.fret === f.fret);   // use the functional spelling (E♭, not D♯)
+    const pos = ((st.shape && st.shape.positions) || plan.positions || []).find(p => p.si === f.si && p.fret === f.fret);   // use the functional spelling (E♭, not D♯)
     return { si: f.si, fret: f.fret, note: (pos && pos.disp) || ((st.play && (st.play[i] || st.play[0])) || {}).note || '' };
   });
   function cycle() {
     let t = 0;
+    // the home under the run (chords struck each bar, or a held drone) — audio only, every pass
+    (plan.backing || []).forEach(ev => timers.push(setTimeout(() => {
+      if (stopped || !isAlive()) return;
+      playPitches(ev.pitches, { dur: ev.dur * 0.98, strum: ev.hold ? 0 : 0.025, gain: ev.gain || 0.055, hold: !!ev.hold });
+    }, ev.t * 1000)));
     plan.steps.forEach((st, i) => {
       timers.push(setTimeout(() => {
         if (stopped || !isAlive()) return;
@@ -1105,21 +2025,27 @@ export function playPlan(plan, opts = {}) {
         if (gh) setGhostHighlight(gh, { stroke: 'rgba(255,205,90,0.55)', fill: 'rgba(255,205,90,0.07)' });
         else clearGhostHighlight();
         const trail = prv && prv !== st && prv.focus ? prv.focus.map(f => ({ si: f.si, fret: f.fret })) : null;
-        set(st.focus, st.label, trail);
+        set(st.focus, st.label, trail, st);
         if (opts.onStep) opts.onStep(i);   // let a pedal sync its own UI (NOW/NEXT readout) to playback
-        (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain }));
+        // a chord inside a run (a shell on beat 1 under a walking bass, a strummed grip) restates
+        // its theory under the neck, as a chords plan does
+        if (st.chord && st.chord.root) {
+          const cr = toSharp(st.chord.root), cn = getChordNotes(cr, chordIntervalsFor(st.chord.quality));
+          setConceptInfo({ title: st.label || cr, rows: [{ label: 'NOTES', value: cn.join(' · ') }, { label: 'DEGREES', value: cn.map(n => intervalLabel(cr, n, semitonesAbove(cr, cn))).join(' · ') + ' of ' + cr }] });
+        }
+        playStep(st, { gain });
         // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
         if (st.play && st.play.length) window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: st.play.map(pl => pl.note), label: st.label || plan.label } }));
       }, t * 1000));
       t += st.gap || st.dur || 0.4;
     });
-    if (loop) {
-      timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycle(); } }, t * 1000 + 400));
+    if (loop) {   // seamless: the next pass lands on the beat after the last step's slot
+      timers.push(setTimeout(() => { if (!stopped && isAlive()) { clearTimers(); if (onCycle) onCycle(); cycle(); } }, t * 1000));
     } else {
       timers.push(setTimeout(() => { clearGhostHighlight(); set(null); }, t * 1000 + 250));  // settle on the whole shape
     }
   }
-  set(plan.steps[0].focus, plan.steps[0].label);
+  set(plan.steps[0].focus, plan.steps[0].label, null, plan.steps[0]);
   cycle();
   return function stop() { stopped = true; clearTimers(); clearGhostHighlight(); };
 }
