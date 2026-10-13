@@ -103,17 +103,25 @@ export function buildCircle5Content(p) {
   };
   window.addEventListener('resonote:played', _traceHandlers[p.id]);
 
-  function findCircleIndex(root) {
+  // A minor key is looked up on the MINOR ring. Looking every root up on the
+  // major ring put D minor on D major's slot, whose relative minor is B minor —
+  // so a master key of D minor showed (and re-broadcast) as B minor.
+  function findCircleIndex(root, minor = false) {
     const sharp = toSharp(root || '');          // equate enharmonics: Eb ≡ D#, Bb ≡ A#, …
-    return CIRCLE_KEYS.findIndex(k => toSharp(k) === sharp);
+    return minor
+      ? CIRCLE_MINOR.findIndex(k => toSharp(k.replace('m', '')) === sharp)
+      : CIRCLE_KEYS.findIndex(k => toSharp(k) === sharp);
   }
 
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !document.getElementById(`body-${p.id}`)) return;
-    const idx = findCircleIndex(ev.root);
+    // The circle only has a major and a minor ring. Every key whose home chord
+    // is minor (or diminished) sits on the minor ring under its own root.
+    const minor = ['Minor', 'Aeolian', 'Harm. Minor', 'Mel. Minor', 'Dorian', 'Phrygian', 'Locrian'].includes(ev.keyType);
+    const idx = findCircleIndex(ev.root, minor);
     if (idx < 0) return;
     selKey = idx;
-    selMinor = ev.keyType === 'Minor' || ev.keyType === 'Harm. Minor';
+    selMinor = minor;
     selChordIdx = null;
     applyC5Highlight(false);
     render();

@@ -524,7 +524,13 @@ function createGrooveTab(p, refresh) {
     metroClock.playing = false; metroClock.setBeat(0, metroClock.pattern?.[0] || 'accent');
     clearChordHighlight(); updateOverlays(); refresh();
   }
-  function onKey(ev) { if (!ev.root || !pedalBus.follows(p.type)) return; uniformChord = ev.root; refresh(); }
+  // The home chord of a minor key is minor: D minor strums Dm, not D.
+  function onKey(ev) {
+    if (!ev.root || !pedalBus.follows(p.type)) return;
+    const minor = ['Minor', 'Harm. Minor', 'Dorian'].includes(ev.keyType);
+    uniformChord = ev.root + (minor ? 'm' : '');
+    refresh();
+  }
   function onClock(clock) {
     if (!metroClock.follows(p.type)) return;
     const nc = clock.getConfigSignature(); if (nc === lastClockConfig) return; lastClockConfig = nc;
