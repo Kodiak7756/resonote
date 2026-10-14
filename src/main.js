@@ -12,7 +12,8 @@ import { renderVocalsDisplay } from './pedals/vocals.js';
 import { startCoach } from './ui/coach.js';
 import { initRemote } from './core/remote.js';
 import { initSync, post as syncPost, onSyncMessage } from './core/sync.js';
-import { POPOUT, NECK, canPopOut, popOut, closePopOut, isPopped, initPopoutMain, initPopoutWindow } from './ui/popout.js';
+import { POPOUT, NECK, canPopOut, popOut, closePopOut, isPopped, initPopoutMain, initPopoutWindow,
+         VR_HUB, REMOTE, initRemoteWindow, hasViewers, pedalRemoved } from './ui/popout.js';
 
 // ── Drill routing: send a Theory-Path drill to the pedal that fits its TYPE ──
 // (NOTES is imported lower in this file; imports are hoisted so it's available here.)
@@ -240,8 +241,9 @@ function restoreState() {
 function save() {
   // A pop-out window holds one pedal (or none); writing that over the board
   // would wipe it. The main window owns the saved board — pop-outs hand their
-  // pedal's settings back to it instead (ui/popout.js).
-  if (POPOUT) return;
+  // pedal's settings back to it instead (ui/popout.js). The headset hub holds
+  // no board at all.
+  if (POPOUT || VR_HUB) return;
   saveState(pedals, {
     boardV: BOARD_V,
     layerV: LAYER_V,
@@ -900,10 +902,11 @@ function refreshCatalog() {
   });
 }
 
-// Rebuild a pedal wherever it is running: here, or in its own window.
+// Rebuild a pedal wherever it is running: here, in its own window, and in any
+// copy of it open in the headset.
 function rebuild(p) {
-  if (isPopped(p.id)) syncPost('popout-rebuild', { id: p.id, settings: p.settings || {} });
-  else buildContent(p);
+  if (isPopped(p.id) || hasViewers(p.id)) syncPost('popout-rebuild', { id: p.id, settings: p.settings || {} });
+  if (!isPopped(p.id)) buildContent(p);
 }
 
 // ── Mount a pedal to the DOM ──────────────────────────────────────────
@@ -928,6 +931,7 @@ function mountPedal(p) {
     // A pedal that keeps a clock or a mic hook running defines _teardown; the
     // ✕ is the one moment it can be told, so it is told here.
     (id) => { if (isPopped(id)) closePopOut(id);
+              if (hasViewers(id)) pedalRemoved(id);
               const pd = pedals.find(x => x.id === id); if (pd && typeof pd._teardown === 'function') { try { pd._teardown(); } catch (e) {} }
               pedals = pedals.filter(x => x.id !== id); save(); renderSessionBar(); refreshCatalog(); },
     // Minimize now means DOCK. applyLayoutToDom hides the card and rebuilds the
@@ -951,7 +955,9 @@ function mountPedal(p) {
     (id, locked) => { const pd = pedals.find(x => x.id === id); if (pd) pd.locked = locked; save(); },
     // ⧉ — on the board it opens the pedal in its own window; inside that window
     // it sends the pedal back. The Input pedal holds the mic, so it stays put.
-    POPOUT ? { title: 'Put it back on the board', onClick: () => window.close() }
+    // A headset copy has nothing to send back (the PC kept its card), so no ⧉.
+    REMOTE ? null
+           : POPOUT ? { title: 'Put it back on the board', onClick: () => window.close() }
            : canPopOut(p.type) ? { title: 'Open in its own window', onClick: popOut } : null
   );
   container.appendChild(el);
@@ -1484,6 +1490,14 @@ function renderSessionBar() {
 
 // ── Boot ──────────────────────────────────────────────────────────────
 async function init() {
+  // The headset hub (/vr) is a page of its own: no board, no neck, just the
+  // PC's pedals as windows to open. Dev server only — the import sits behind
+  // import.meta.hot, so a production build doesn't even carry it.
+  if (import.meta.hot && VR_HUB) {
+    const { bootHub } = await import('./ui/vr-hub.js');
+    bootHub();
+    return;
+  }
   restoreState();
   normalizePedalsToStartKey(true);
   pedalBus.setKey(START_KEY.root, START_KEY.keyType, { source:'app-init' });
@@ -1537,6 +1551,9 @@ async function init() {
       else if (type === 'arpeggios')  { pd = pedals.find(x => x.type === 'scales');   if (pd) settings = { ...(settings || {}), saMode: 'arps' }; }
       else if (type === 'notequiz')   { pd = pedals.find(x => x.type === 'ear');      if (pd) settings = { ...(settings || {}), fetGroup: 'theory' }; }
     }
+    // A window holding one pedal asks the main window, which holds the board
+    // (a popped-out Circle of Fifths pushing a chord to the Chord Directory).
+    if (!pd && POPOUT) { syncPost('rebuild-pedal', { type, settings: settings || null }); return; }
     if (!pd) return;
     if (settings) Object.assign(pd.settings || (pd.settings = {}), settings);
     rebuild(pd);
@@ -1689,8 +1706,11 @@ async function init() {
 
   // Pop-out windows: keep them in step with this one.
   initSync('main');
-  initPopoutMain({ pedals: () => pedals, buildContent, save, onChange: renderSessionBar });
-  onSyncMessage(m => { if (m.kind === 'fbclick') remoteFretboardClick(m.info); });
+  initPopoutMain({ pedals: () => pedals, buildContent, save, onChange: renderSessionBar, catalog: CATALOG });
+  onSyncMessage(m => {
+    if (m.kind === 'fbclick') remoteFretboardClick(m.info);
+    else if (m.kind === 'rebuild-pedal' && m.type) { pedalBus.rebuildPedal(m.type, m.settings || undefined); save(); }
+  });
   document.getElementById('btn-neck-out')?.addEventListener('click', e => { e.stopPropagation(); popOut(NECK); });
 
   // First visit → the 🎒 load-out picker (pick a kit before reading anything);
@@ -1710,6 +1730,7 @@ async function init() {
 // came from the save; keep only the one pedal and let sync bring the rest of
 // the state (key, tempo, hand position, what the neck shows) from the main window.
 function bootPopout() {
+  if (REMOTE) { bootRemote(); return; }
   if (POPOUT === NECK) {
     pedals = [];
     // Its own window, so the neck takes the whole width — not the height the
@@ -1740,6 +1761,30 @@ function bootPopout() {
   }
   // The audio overlays still need drawing here (the neck window) — the notes
   // the mic hears arrive through sync and call audio.emit().
+  audio.on(() => updateOverlays());
+}
+
+// ── Headset window boot ───────────────────────────────────────────────
+// Opened from the hub as /vr/<ref>. This browser is the headset's, so its saved
+// board (if any) is not the PC's: the pedal comes from the PC's main window
+// instead, once it answers (ui/popout.js asks until it does).
+function bootRemote() {
+  pedals = [];
+  const neck = POPOUT === NECK;
+  if (neck) setBoardRenderH(0);
+  initSync(neck ? 'neck' : 'pedal', { remote: true });
+  initRemoteWindow({
+    // A copy, under its own id: a pedal ignores a key change whose source is
+    // its own id, and the PC's card and this copy each need to hear the other.
+    mount: def => {
+      const p = { ...def, id: def.id + '-vr', x: 0, y: 0, minimized: false, locked: true, settings: def.settings || {} };
+      pedals = [p];
+      try { mountPedal(p); } catch (e) { console.error('pedal failed to mount:', p.type, e); }
+      return p;
+    },
+    rebuild: p => buildContent(p),
+  });
+  onSyncMessage(m => { if (m.kind === 'fbclick') remoteFretboardClick(m.info); });
   audio.on(() => updateOverlays());
 }
 
