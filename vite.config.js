@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import deck from './tools/vite-plugin-deck.js';
+import vr from './tools/vite-plugin-vr.js';
 
 export default defineConfig({
   root: '.',
   base: './',
-  plugins: [deck()],
+  // vr(): the headset's way in — a sync relay on the HMR socket. Dev only.
+  plugins: [deck(), vr()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

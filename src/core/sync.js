@@ -1,6 +1,7 @@
 // Window sync: keeps a popped-out pedal (or the popped-out neck) in step with
 // the main window. One BroadcastChannel, same origin, same browser — every
-// Resonote window on this PC hears every other one.
+// Resonote window on this PC hears every other one. And, while the dev server
+// runs, the LAN relay too — so a window in the headset hears them as well.
 //
 // What travels:
 //   key       pedalBus.setKey / clear            (master key + chord push)
@@ -11,14 +12,25 @@
 //   display   what the neck is showing           (highlights, view, instrument)
 //   audio     the mic's detected note            (MAIN → others only)
 //   fbclick   a click on the neck                (to pedals listening for one)
+//   main-beat the PC's main window, still there  (every 4 s; headset windows watch for it)
+//   popout-*, vr-*, rebuild-pedal                (window lifecycle: ui/popout.js)
 //
 // The buses stay the single source of truth (CONTRACTS.md): this module only
 // wraps their methods so a change made in one window is replayed in the others.
 // `applying` marks a replay, so a replayed change is never sent back out.
 //
-// The transport is the only part that knows about BroadcastChannel; a later
-// LAN relay (the headset) can replace `post` / the message handler without
-// touching anything else.
+// The transport (post / receive, below) is the only part that knows how a
+// message moves. Two ways out, one way in:
+//   BroadcastChannel  every Resonote window in THIS browser (the PC's pop-outs)
+//   LAN relay         the dev server's HMR socket; tools/vite-plugin-vr.js hands
+//                     each message to every other connected window (the headset)
+// A window on the PC hears its neighbours both ways, so each message carries
+// its sender's id and a running number, and a number already seen from that
+// sender is dropped: applied exactly once, whichever copy lands first. (Both
+// ways keep a sender's order, so "highest number seen" is all it takes.)
+//
+// The main window on the PC stays the one source of truth for audio, as before:
+// the mic note goes MAIN → others, never back.
 
 import { pedalBus, metroClock, positionBus, positionIsolation,
          chordHighlight, ghostHighlight, conceptInfo, nowBanner,
@@ -33,22 +45,60 @@ import { updateOverlays, setOverlayHook, buildInstrumentView, currentTheme, setC
 
 const CHANNEL = 'resonote-sync';
 const WINDOW_ID = Math.random().toString(36).slice(2, 10);
+// The PC is the machine the dev server runs on, and its windows are the ones
+// opened on localhost (which is also the only plain-http address the mic
+// accepts). A full copy of Resonote opened at another address — a laptop, or
+// the headset's own browser at the root page — is not the PC.
+export const ON_PC = /^(localhost|127(\.\d+){3}|\[::1\])$/.test(location.hostname);
+// Heartbeats, both ways: the PC's main window and each headset window say
+// "still here" this often, and the other side calls them gone after this much
+// silence (a headset asleep, a browser killed, a PC window that stopped).
+export const BEAT_MS = 4000;
+export const GONE_MS = 12000;
 
 let chan = null;
-let role = 'main';            // 'main' | 'pedal' | 'neck'
+let lan = false;              // the LAN relay is in use (dev server, PC window or headset window)
+let role = 'main';            // 'main' | 'pedal' | 'neck' | 'hub'
+let remote = false;           // a headset window (opened from /vr)
 let applying = false;         // true while replaying another window's change
 let lastDisplaySig = '';
 let instSig = '';
+let seq = 0;                  // this window's running message number
+const seen = new Map();       // sender id → highest message number already applied
 const handlers = [];          // extra message handlers (window lifecycle lives in popout.js)
 
 const plain = v => { try { return JSON.parse(JSON.stringify(v ?? null)); } catch (e) { return null; } };
 
 export function post(kind, data = {}) {
-  if (!chan) return;
-  try { chan.postMessage({ kind, from: WINDOW_ID, ...plain(data) }); } catch (e) {}
+  if (!chan && !lan) return;
+  // `pc` marks the PC's main window (the one a headset window waits to hear);
+  // `vr` marks a headset window (which the PC never lets step a card aside).
+  const m = { ...plain(data), kind, from: WINDOW_ID, seq: ++seq, role, pc: ON_PC && role === 'main', vr: remote };
+  if (chan) { try { chan.postMessage(m); } catch (e) {} }
+  if (import.meta.hot && lan) { try { import.meta.hot.send('resonote:sync', m); } catch (e) {} }
 }
 export function onSyncMessage(fn) { handlers.push(fn); }
 export const isMainWindow = () => role === 'main';
+
+function receive(m) {
+  if (!m || m.from === WINDOW_ID) return;
+  if (m.seq) {
+    if (m.seq <= (seen.get(m.from) || 0)) return;      // the other copy already landed
+    seen.set(m.from, m.seq);
+  }
+  if (m.pc) heardPc();
+  if (m.to && m.to !== WINDOW_ID) return;               // an answer meant for another window
+  onMessage(m);
+}
+
+// ── Is the PC there? (headset windows) ───────────────────────────────
+// "Connected" means the PC's main window has been heard lately — not merely
+// that the socket is open, which it can be while the PC's window is closed.
+let pcUp = false, lastPc = 0;
+const pcFns = [];
+export function onPcLink(fn) { pcFns.push(fn); fn(pcUp); }
+function setPc(v) { if (v !== pcUp) { pcUp = v; pcFns.forEach(fn => { try { fn(v); } catch (e) { console.warn(e); } }); } }
+function heardPc() { lastPc = Date.now(); setPc(true); }
 
 function replay(fn) {
   applying = true;
@@ -98,7 +148,15 @@ function applyTempo(t) {
   if (t.subdiv !== undefined) metroClock.subdiv = t.subdiv;
   if (t.playing !== undefined) metroClock.playing = t.playing;
   if (t.masterSource !== undefined) metroClock.masterSource = t.masterSource;
+  const was = metroClock.bpm;
   metroClock.set(t.bpm, t.ts, t.unit, t.pattern);
+  // The Metronome IS the master tempo's pedal, and a tempo change from another
+  // window is as deliberate as a deck press — so it is told the same way the
+  // deck and the TAB page tell it (it retunes even when unlinked). Otherwise a
+  // copy of the Metronome in the headset, or the PC's own card, would go on
+  // showing — and clicking at — the old tempo. (Still inside the replay, so the
+  // retune is not sent back out.)
+  if (metroClock.bpm !== was) window.dispatchEvent(new CustomEvent('resonote:metro', { detail: { action: 'bpm', bpm: metroClock.bpm } }));
 }
 function applyDisplay(d) {
   if (!d) return;
@@ -136,7 +194,7 @@ export function applyFullState(s) {
     if (s.tempo) applyTempo(s.tempo);
     if (s.position) positionBus.update(s.position);
     if (s.key) applyKey(s.key);
-    if (s.display) applyDisplay(s.display);
+    if (s.display && role !== 'hub') applyDisplay(s.display);   // the hub has no neck to draw
   });
 }
 
@@ -205,7 +263,7 @@ function onMessage(m) {
                        metroClock.setBeat(m.i, m.type);
                      }); break;
     case 'position': replay(() => positionBus.update(m.position)); break;
-    case 'display':  replay(() => applyDisplay(m.display)); break;
+    case 'display':  if (role !== 'hub') replay(() => applyDisplay(m.display)); break;
     case 'audio':
       if (role === 'main') break;
       audio.detected = m.detected; audio.connected = !!m.connected;
@@ -214,6 +272,9 @@ function onMessage(m) {
       break;
     case 'need-state':
       if (role === 'main') post('state', { to: m.from, state: fullState() });
+      break;
+    case 'vr-hello':                     // a headset window just opened: answer straight away
+      if (import.meta.hot && role === 'main') post('main-beat');
       break;
     case 'state':
       if (m.to === WINDOW_ID) applyFullState(m.state);
@@ -224,13 +285,31 @@ function onMessage(m) {
 
 // Call once, AFTER the window has set its own start-up key (so that start-up
 // value is never broadcast over the main window's real one).
-export function initSync(r = 'main') {
+// `opts.remote` marks a headset window (one opened from /vr).
+export function initSync(r = 'main', opts = {}) {
   role = r;
-  if (typeof BroadcastChannel === 'undefined') return false;
-  chan = new BroadcastChannel(CHANNEL);
-  chan.onmessage = e => onMessage(e.data);
-  wireBuses();
+  remote = !!opts.remote;
+  // A headset window talks over the LAN only. On the headset a BroadcastChannel
+  // would also reach a full copy of Resonote opened there, which isn't the PC.
+  if (!remote && typeof BroadcastChannel !== 'undefined') {
+    chan = new BroadcastChannel(CHANNEL);
+    chan.onmessage = e => receive(e.data);
+  }
+  // The LAN relay exists only while the dev server runs (a production build has
+  // no import.meta.hot, so none of this is in it). The PC's own windows and the
+  // headset's join it; a copy of Resonote on any other machine keeps to itself,
+  // so the headset can never take that copy's board for the PC's.
+  if (import.meta.hot && (remote || ON_PC)) {
+    lan = true;
+    import.meta.hot.on('resonote:sync', receive);
+    import.meta.hot.on('vite:ws:disconnect', () => setPc(false));
+    if (role === 'main') setInterval(() => post('main-beat'), BEAT_MS);
+    else setInterval(() => { if (pcUp && Date.now() - lastPc > GONE_MS) setPc(false); }, 1000);
+  }
+  if (!chan && !lan) return false;
+  if (role !== 'hub') wireBuses();
   lastDisplaySig = JSON.stringify(displayOf());
+  if (import.meta.hot && remote) post('vr-hello');
   if (role !== 'main') post('need-state');
   return true;
 }
