@@ -19,8 +19,8 @@ const FLOW_LESSONS = new Set([
   'common-tones', 'nearest-note', 'inversions-stay-close', 'sus-carryover', 'contrary-motion', 'walking-bass',
   // Function & cadences
   'diatonic-triads-of-a-key', 'authentic-cadence', 'plagal-and-half', 'deceptive-cadence', 'minor-cadences', 'minor-diatonic-chords', 'dominant-7-and-the-pull',
-  // Changes & songs (real progressions)
-  'smooth-changes-anchor-fingers', 'i-iv-v', 'i-v-vi-iv-pop', 'ii-v-i-changes-songs', 'fifties-and-transposing', 'twelve-bar-blues', 'full-song-playthrough'
+  // Open chords, first changes & songs (real progressions)
+  'open-chord-families', 'smooth-changes-anchor-fingers', 'i-iv-v', 'i-v-vi-iv-pop', 'ii-v-i-changes-songs', 'fifties-and-transposing', 'twelve-bar-blues', 'full-song-playthrough'
 ]);
 // Set the fretboard view the way the header dropdown does (keeps the dropdown + listeners in sync).
 function applyFbView(fbv) {
@@ -122,7 +122,7 @@ function layerPlan(plan, layer, bpm) {
 }
 import { audio } from '../core/audio.js';
 import { playChordNotes, playNote } from '../core/synth.js';
-import { demoToPlan, audioToPlan, drillToPlan, playPlan, playChord, playStep, SEQ_COLORS, timeSigOf } from '../curriculum/drill-runner.js';
+import { audioToPlan, drillToPlan, playPlan, playChord, playStep, SEQ_COLORS, timeSigOf } from '../curriculum/drill-runner.js';
 import { CURRICULUM } from '../curriculum/curriculum-data.js';
 import { getProgress, recordAttempt, markComplete, setCurrent, setPlaced, isComplete, recommendNext } from '../curriculum/progress-store.js';
 
@@ -148,7 +148,9 @@ export function buildTheoryContent(p) {
   let curId = s.curId || null;
   let exIdx = 0, answered = false, lastCorrect = false, chosenIdx = -1;
   let buildSel = new Set();
-  let placeIdx = 0, placePassed = 0, placeMissStreak = 0, placeAnswered = false, placeDone = false;
+  let placeIdx = 0, placePassed = 0, placeLessonId = null, placeMissStreak = 0, placeAnswered = false, placeDone = false;
+  // a placement question names the lesson it starts you on; its level is that lesson's level
+  const placeLevelOf = q => (q.lessonId && lessonById(q.lessonId)?.level) || q.level || 1;
   const playWatch = { on: false, target: null };
   let dpTimers = [];   // step-strip follow timers for chord plans (see dpFollowChords); cleared by stopSeq
 
@@ -225,11 +227,13 @@ export function buildTheoryContent(p) {
     });
   }
   function playDemo(d) {
+    if (!d) return;
+    // a clip the runner can play is shown on the neck as it sounds: progressions voice-led (shared
+    // notes held, the rest moving to the nearest note), strum clips struck in their pattern
+    const plan = audioToPlan(d);
+    if (plan) { playPath(plan); return; }
     const dn = demoToNotes(d); if (!dn) return;
     if (d.kind === 'progression') {
-      // voice-led and shown on the neck: shared notes held, the rest moving to the nearest note
-      const plan = audioToPlan(d);
-      if (plan) { playPath(plan); return; }
       let t = 0;
       dn.chords.forEach(c => {
         setTimeout(() => {
@@ -240,8 +244,6 @@ export function buildTheoryContent(p) {
         t += 1.15;
       });
     } else {
-      const plan = demoToPlan(d);
-      if (plan) { playPath(plan); return; }
       highlightDemo(d); playSeq(dn.seq);
     }
   }
@@ -638,14 +640,14 @@ export function buildTheoryContent(p) {
 
   // ── Placement ───────────────────────────────────────────────────────
   function startPlacement() {
-    view = 'placement'; placeIdx = 0; placePassed = 0; placeMissStreak = 0; placeAnswered = false; placeDone = false; chosenIdx = -1;
+    view = 'placement'; placeIdx = 0; placePassed = 0; placeLessonId = null; placeMissStreak = 0; placeAnswered = false; placeDone = false; chosenIdx = -1;
     persist(); renderPlacement(); el.scrollTop = 0;
   }
   function renderPlacement() {
     const Q = CURRICULUM.placement || [];
     if (!Q.length) { view = 'path'; return renderPath(); }
     if (placeDone) {
-      setPlaced(placePassed || 1);
+      setPlaced(placePassed || 1, placePassed ? placeLessonId : (ALL[0] && ALL[0].id));
       const recd = recommendNext(getProgress(), ALL);
       let h = `<div class="tp-wrap rk"><div class="tp-title">🎯 Your level</div>`;
       h += `<div class="tp-card"><div class="tp-sum">Nice — you placed around <b>Level ${placePassed || 1}</b>.</div>`;
@@ -679,7 +681,11 @@ export function buildTheoryContent(p) {
   function answerPlacement(q, i) {
     if (placeAnswered) return;
     chosenIdx = i; lastCorrect = (i === q.answer); placeAnswered = true;
-    if (lastCorrect) { placePassed = Math.max(placePassed, q.level); placeMissStreak = 0; }
+    if (lastCorrect) {
+      const lv = placeLevelOf(q);
+      if (lv > placePassed) { placePassed = lv; placeLessonId = q.lessonId || null; }
+      placeMissStreak = 0;
+    }
     else placeMissStreak++;
     renderPlacement();
   }
