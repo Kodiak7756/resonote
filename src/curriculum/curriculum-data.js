@@ -410,9 +410,127 @@ export const CURRICULUM = {
           }
         },
         {
+          "id": "octave-shapes",
+          "title": "Octave Shapes: The Same Note, Two Strings Over",
+          "level": 6,
+          "basics": true,
+          "teach": {
+            "summary": "Once you know a note on the low strings, you can find it again an octave higher without counting: skip one string and go up two frets. It's the quickest way around the neck, and you'll use it for power chords, riffs and solos.",
+            "points": [
+              "From the 6th (low E) or 5th (A) string: skip one string and go up two frets. G on the 6th string, 3rd fret → G on the 4th string, 5th fret.",
+              "From the 4th (D) or 3rd (G) string: skip one string and go up THREE frets. Crossing the B string always costs one extra fret. F on the 4th string, 3rd fret → F on the 2nd string, 6th fret.",
+              "Play both notes together and keep the string in between quiet: let the underside of your first finger lean on it to mute it.",
+              "The low and high E strings are both E, so their frets have the same names: the 3rd fret is G on both, the 5th fret is A on both."
+            ],
+            "demo": {
+              "kind": "interval",
+              "root": "G",
+              "intervalSemitones": 12,
+              "caption": "G and the G an octave up, two strings over"
+            },
+            "earTip": "An octave sounds like the same note, only higher. The two notes blend so well they almost sound like one. If your shape sounds sour, one finger is a fret off: move it until the two notes lock together."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You're playing G on the 6th string, 3rd fret. Where's the G an octave higher, using the octave shape?",
+              "options": [
+                "4th string, 5th fret",
+                "5th string, 5th fret",
+                "4th string, 3rd fret",
+                "3rd string, 5th fret"
+              ],
+              "answer": 0,
+              "explain": "From the 6th string, skip one string (the 5th) and go up two frets: 4th string, 5th fret. That's G again, one octave up."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You're on F at the 4th string, 3rd fret. Where's the F an octave higher?",
+              "options": [
+                "2nd string, 5th fret",
+                "2nd string, 6th fret",
+                "3rd string, 5th fret",
+                "1st string, 3rd fret"
+              ],
+              "answer": 1,
+              "explain": "From the 4th string the jump crosses the B string, so the shape is three frets up, not two: 2nd string, 6th fret. The B string always costs one extra fret."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two pairs of notes, both starting on A. One pair is a true octave (the same note, higher). The other stops one fret short. Pick the true octave.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "A",
+                    "intervalSemitones": 11,
+                    "caption": "Pair A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "A",
+                    "intervalSemitones": 12,
+                    "caption": "Pair B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is the octave: the two A's blend into one sound. A stops one fret short (A up to G♯) and you can hear the two notes rub. That rub is how your ear tells you an octave shape is a fret off."
+            },
+            {
+              "kind": "play",
+              "prompt": "Find C on the 5th string, 3rd fret, then use the octave shape to play the C an octave higher.",
+              "root": "C",
+              "targetNote": "C",
+              "explain": "Skip the 4th string and go up two frets: 3rd string, 5th fret. Same name, one octave up."
+            }
+          ],
+          "drill": {
+            "title": "Octave Shapes on Every String Pair",
+            "bpm": 70,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "string": 6
+              },
+              {
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "string": 5
+              },
+              {
+                "root": "F",
+                "quality": "Major",
+                "beats": 4,
+                "string": 4
+              },
+              {
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "string": 3
+              }
+            ],
+            "voicing": "octave shapes",
+            "pattern": "For each pair: the low note, then its octave, then both together with the string in between muted. G: 6th string 3rd fret, then 4th string 5th fret. C: 5th string 3rd fret, then 3rd string 5th fret. F: 4th string 3rd fret, then 2nd string 6th fret. A: 3rd string 2nd fret, then 1st string 5th fret. Two frets up from the 6th and 5th strings, three from the 4th and 3rd.",
+            "focus": "Seeing both octave shapes (two frets up, or three when you cross the B string) so you can find any note's twin in a second."
+          }
+        },
+        {
           "id": "finding-any-note",
           "title": "Finding Any Note on the Neck",
-          "level": 6,
+          "level": 7,
           "teach": {
             "summary": "Put it all together: start from an open string's name and count up the alphabet one fret at a time (remembering the B→C and E→F half steps) to find any note.",
             "points": [
@@ -531,9 +649,203 @@ export const CURRICULUM = {
       "summary": "Your first real playing: the open E, A and D chord families plus C and G, the chords of a key by number, smooth changes with anchor fingers, reading a strum pattern, and the progressions songs use most (I–IV–V, I–V–vi–IV, the 50s), ending with a whole tune start to finish.",
       "lessons": [
         {
+          "id": "open-chord-families",
+          "title": "Your First Open Chords: The E, A and D Families",
+          "level": 8,
+          "basics": true,
+          "teach": {
+            "summary": "Open chords mix open strings with a few fretted notes, and they're the chords most songs are played with. Learn them in families: in each one, moving a single finger turns the major chord into a minor one.",
+            "points": [
+              "Reading chord numbers: they go from the 6th string (low E) to the 1st. x means don't play that string, 0 means play it open.",
+              "E family: E is 022100, Em is 022000. Lift the finger off the G string and E becomes Em.",
+              "A family: A is x02220, Am is x02210. The B-string note drops one fret, from the 2nd to the 1st.",
+              "D family: D is xx0232, Dm is xx0231. The high E string note drops one fret, from the 2nd to the 1st.",
+              "Add C (x32010) and G (320003) and you can play hundreds of songs. In every chord here, the lowest string you play is the note the chord is named after."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "E",
+              "progression": [
+                {
+                  "root": "E",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "022100"
+                },
+                {
+                  "root": "E",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "022000"
+                },
+                {
+                  "root": "A",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x02220"
+                },
+                {
+                  "root": "A",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "x02210"
+                },
+                {
+                  "root": "D",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "xx0232"
+                },
+                {
+                  "root": "D",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "xx0231"
+                }
+              ],
+              "caption": "E–Em, A–Am, D–Dm: one finger turns each major chord minor"
+            },
+            "earTip": "Strum E, then Em. The major one sounds bright and settled; the minor one sounds darker, a little sad. Only one note changed, but the whole mood flips."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You're holding an open E chord (022100). Which change turns it into E minor?",
+              "options": [
+                "Lift the finger off the G string",
+                "Lift the finger off the A string",
+                "Add a finger on the B string, 1st fret",
+                "Strum only the top three strings"
+              ],
+              "answer": 0,
+              "explain": "E minor is 022000: the same shape with the G-string finger lifted, so that string rings open. One finger, a whole new mood."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips start on A. One moves to D (major), the other to Am (minor). Pick the clip that goes to the MINOR chord.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "A",
+                    "progression": [
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x02220"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "xx0232"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "A",
+                    "progression": [
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x02220"
+                      },
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Minor",
+                        "frets": "x02210"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B goes A to Am: only the B-string note drops a fret, and the bright A turns darker. A moves to D, another bright major chord."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Which family is played on just the top four strings (the 4th string down to the 1st)?",
+              "options": [
+                "The E family",
+                "The D family",
+                "The A family",
+                "None of them"
+              ],
+              "answer": 1,
+              "explain": "D (xx0232) and Dm (xx0231) skip the two lowest strings and start on the open 4th string, D. Aim your strum at the D string so the low E and A stay quiet."
+            },
+            {
+              "kind": "play",
+              "prompt": "Make an Am chord (x02210) and pick its lowest string, the open 5th string. Play that note.",
+              "root": "A",
+              "targetNote": "A",
+              "explain": "Am is named after its lowest note, the open A string. The same goes for every chord in this lesson: E on the 6th string, A on the 5th, D on the 4th."
+            }
+          ],
+          "drill": {
+            "title": "Chord Families: Major to Minor",
+            "bpm": 60,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "E",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "022100"
+              },
+              {
+                "root": "E",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "022000"
+              },
+              {
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x02220"
+              },
+              {
+                "root": "A",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "x02210"
+              },
+              {
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "xx0232"
+              },
+              {
+                "root": "D",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "xx0231"
+              }
+            ],
+            "voicing": "open chords",
+            "pattern": "One strum per bar, letting it ring for four beats. Go E, Em, A, Am, D, Dm. In each pair only one finger moves, so keep the rest of the shape planted and just lift or drop that one finger.",
+            "focus": "Feeling each major-to-minor change as one finger moving, and hearing the mood go from bright to dark."
+          }
+        },
+        {
           "id": "note-values",
           "title": "Note Values: Quarters, Eighths & Sixteenths",
-          "level": 7,
+          "level": 9,
           "teach": {
             "summary": "Rhythm is just how long each note lasts, measured against a steady pulse. In 4/4 the beat is a quarter note; cut it in half for eighths, in half again for sixteenths. Counting them out loud is the whole secret.",
             "points": [
@@ -682,9 +994,226 @@ export const CURRICULUM = {
           }
         },
         {
+          "id": "chords-of-the-key",
+          "title": "The Chords of a Key, by Number",
+          "level": 10,
+          "teach": {
+            "summary": "Songs take their chords from a family that belongs together, called a key. Number the chords from the key's name and you can describe any song's chords in a way that works in every key.",
+            "points": [
+              "Write out six letters starting from the key's name: in G that's G A B C D E. Build a chord on each and number them in Roman numerals: I ii iii IV V vi.",
+              "I, IV and V are major; ii, iii and vi are minor (that's why they're in small letters). In G: G, Am, Bm, C, D, Em.",
+              "In C: C, Dm, Em, F, G, Am. In D: D, Em, F♯m, G, A, Bm. A key's sharps carry into its chords: the key of D has F♯ and C♯ (the Major Scale unit shows why), so its iii is F♯m.",
+              "There's a seventh chord too (vii°), but songs rarely use it, so it comes later. These six chords cover most songs."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "G",
+              "progression": [
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "320003"
+                },
+                {
+                  "root": "A",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "x02210"
+                },
+                {
+                  "root": "B",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "xx4432"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x32010"
+                },
+                {
+                  "root": "D",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "xx0232"
+                },
+                {
+                  "root": "E",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "022000"
+                },
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "320003"
+                }
+              ],
+              "caption": "The chords of G: I ii iii IV V vi, then home to I"
+            },
+            "earTip": "Play G, Am, Bm, C, D, Em and back to G. The majors (I, IV, V) sound bright and solid; the minors (ii, iii, vi) sound softer and darker. Landing back on G sounds like coming home."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "In the key of G, which chord is the IV?",
+              "options": [
+                "C",
+                "D",
+                "Am",
+                "Em"
+              ],
+              "answer": 0,
+              "explain": "Count G (I), A (ii), B (iii), C (IV). The IV in G is C major, the open C you already know."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "In the key of C, which chord is the vi?",
+              "options": [
+                "A",
+                "Am",
+                "G",
+                "Em"
+              ],
+              "answer": 1,
+              "explain": "Count C D E F G A: the 6th letter is A, and the vi is always minor, so it's Am."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips start on G. One moves to the V (D), the other to the vi (Em). Pick the clip that goes to the vi, the minor one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "320003"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "xx0232"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "320003"
+                      },
+                      {
+                        "root": "E",
+                        "cat": "Triads",
+                        "type": "Minor",
+                        "frets": "022000"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B goes G to Em: darker, a little sad. A goes G to D, the bright V, which sounds like it wants to go back to G."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Why is the iii chord in the key of D written F♯m and not Fm?",
+              "options": [
+                "The key of D uses F♯, so the chord on that letter is built on F♯",
+                "Minor chords always get a sharp",
+                "F minor is too hard to play",
+                "Because it's the third chord"
+              ],
+              "answer": 0,
+              "explain": "The key of D uses F♯ and C♯ instead of F and C. Counting D E F♯ G A B, the third letter is F♯, so the iii chord is F♯m."
+            }
+          ],
+          "drill": {
+            "title": "Walk the Chords of G",
+            "bpm": 66,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "320003"
+              },
+              {
+                "numeral": "ii",
+                "root": "A",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "x02210"
+              },
+              {
+                "numeral": "iii",
+                "root": "B",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "xx4432"
+              },
+              {
+                "numeral": "IV",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x32010"
+              },
+              {
+                "numeral": "V",
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "xx0232"
+              },
+              {
+                "numeral": "vi",
+                "root": "E",
+                "quality": "Minor",
+                "beats": 4,
+                "frets": "022000"
+              },
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "320003"
+              }
+            ],
+            "voicing": "open chords",
+            "strum": "DDDD",
+            "pattern": "Four down-strums per chord, saying each number out loud: one (G), two (Am), three (Bm), four (C), five (D), six (Em), then back to one. Bm is the small four-string shape here (xx4432); the full barre version comes later.",
+            "focus": "Linking each chord of the key to its number, so I–IV–V and I–V–vi–IV make sense in any key."
+          }
+        },
+        {
           "id": "smooth-changes-anchor-fingers",
           "title": "Smooth Changes: Anchor Fingers & Minimal Movement",
-          "level": 8,
+          "level": 11,
           "basics": true,
           "teach": {
             "summary": "The secret to clean chord changes isn't speed — it's MOVING LESS. Look for fingers that can stay put (anchor fingers) and shapes that share notes, so your hand glides instead of leaping.",
@@ -827,7 +1356,7 @@ export const CURRICULUM = {
         {
           "id": "reading-strum-patterns",
           "title": "Reading a Strum Pattern (D-DU-UDU)",
-          "level": 9,
+          "level": 12,
           "teach": {
             "summary": "A strum pattern is a map of your strumming hand: D = downstroke, U = upstroke, and a gap means your hand keeps moving but misses the strings. Your hand pumps steadily up-down the whole time — the pattern just tells you which swings actually hit.",
             "points": [
@@ -933,7 +1462,7 @@ export const CURRICULUM = {
         {
           "id": "i-iv-v",
           "title": "The Three Chords That Run the World: I–IV–V",
-          "level": 10,
+          "level": 13,
           "teach": {
             "summary": "Most folk, country, blues, and early rock songs live on just three chords: the I, the IV, and the V of a key. Learn them by NUMBER and you can play those songs in any key.",
             "points": [
@@ -1076,7 +1605,7 @@ export const CURRICULUM = {
         {
           "id": "i-v-vi-iv-pop",
           "title": "The Pop Progression: I–V–vi–IV",
-          "level": 11,
+          "level": 14,
           "teach": {
             "summary": "Add the vi (a minor chord) to your toolkit and you unlock the most common progression in modern pop. I–V–vi–IV loops forever and feels both uplifting and bittersweet.",
             "points": [
@@ -1240,7 +1769,7 @@ export const CURRICULUM = {
         {
           "id": "fifties-and-transposing",
           "title": "The 50s Progression & Transposing by Number",
-          "level": 12,
+          "level": 15,
           "teach": {
             "summary": "The 50s progression — I–vi–IV–V — is the doo-wop classic behind countless oldies. And because you now think in numbers, you can TRANSPOSE any song to a new key just by reading the numbers off in the new key.",
             "points": [
@@ -1340,7 +1869,7 @@ export const CURRICULUM = {
         {
           "id": "full-song-playthrough",
           "title": "Playing a Full Song Start to Finish",
-          "level": 13,
+          "level": 16,
           "teach": {
             "summary": "Time to put it all together: a complete short progression played through with no stops. We'll use an eight-bar I–V–vi–IV–IV–I–V–I shape — verse-like, then a 'home' ending — so you practice changes, keeping time, and landing the final chord.",
             "points": [
@@ -1635,9 +2164,167 @@ export const CURRICULUM = {
       "summary": "Rock and blues basics: power chords, the triplet shuffle feel, the 12-bar blues form, and Box 1 of the minor pentatonic with its blue note, so you can play your first blues solo.",
       "lessons": [
         {
+          "id": "power-chords",
+          "title": "Power Chords: Two Fingers, Big Sound",
+          "level": 17,
+          "basics": true,
+          "teach": {
+            "summary": "A power chord is a root note plus the note two frets up on the next string: two fingers, one shape you can slide anywhere. It's the sound of rock, punk and blues riffs, and the easiest movable chord there is.",
+            "points": [
+              "Root on the 6th string: first finger on the root, third finger two frets up on the 5th string. G5 is 35xxxx; add your little finger on the 4th string, 5th fret, for the fuller 355xxx.",
+              "Root on the 5th string, the shape is the same, one string over: C5 is x355xx.",
+              "Name it from the root, the note under your first finger. The 6th string's 5th fret is A, so that's A5; slide up to the 7th fret for B5.",
+              "Open versions use the open string as the root: E5 is 022xxx, A5 is x022xx. For the chunky rock sound, rest the side of your picking hand on the strings right by the bridge and strum downstrokes."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "G",
+              "progression": [
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "5",
+                  "frets": "355xxx"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "5",
+                  "frets": "x355xx"
+                },
+                {
+                  "root": "D",
+                  "cat": "Triads",
+                  "type": "5",
+                  "frets": "x577xx"
+                },
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "5",
+                  "frets": "355xxx"
+                }
+              ],
+              "caption": "Power chords: G5 – C5 – D5 – G5"
+            },
+            "earTip": "A power chord doesn't sound happy or sad, just strong. That's why it works so well with distortion, which turns fuller chords to mush."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "Your first finger is on the 6th string, 5th fret, in a power chord shape. What chord is it?",
+              "options": [
+                "A5",
+                "C5",
+                "D5",
+                "E5"
+              ],
+              "answer": 0,
+              "explain": "The 6th string's 5th fret is A (count E F F♯ G G♯ A), and a power chord is named after the root under your first finger: A5."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two versions of E. One is the full open E chord (022100), the other is the E power chord (022xxx). Pick the power chord, the plainer, more solid one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "E",
+                    "progression": [
+                      {
+                        "root": "E",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "022100"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "E",
+                    "progression": [
+                      {
+                        "root": "E",
+                        "cat": "Triads",
+                        "type": "5",
+                        "frets": "022xxx"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is E5: just E and B, so it sounds bare and strong, neither bright nor sad. A is the full E chord, with the G♯ on the G string that makes it sound happy."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You play G5 with the root on the 6th string, 3rd fret (35xxxx). Where is C5 with the same shape?",
+              "options": [
+                "5th string, 3rd fret: x35xxx",
+                "6th string, 5th fret: 57xxxx",
+                "5th string, 5th fret: x57xxx",
+                "4th string, 3rd fret: xx35xx"
+              ],
+              "answer": 0,
+              "explain": "C is on the 5th string, 3rd fret, so move the whole shape one string over: x35xxx (or x355xx with your little finger added). Same shape, new root."
+            },
+            {
+              "kind": "play",
+              "prompt": "Play a D power chord with its root on the 5th string (x577xx). Pluck the root.",
+              "root": "D",
+              "targetNote": "D",
+              "explain": "D on the 5th string is the 5th fret (count A A♯ B C C♯ D). The 4th string's 7th fret is A, two frets up, and the 3rd string's 7th fret is D again, an octave higher."
+            }
+          ],
+          "drill": {
+            "title": "Power Chord Chug: I–IV–V in G",
+            "bpm": 80,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "5",
+                "beats": 4
+              },
+              {
+                "numeral": "IV",
+                "root": "C",
+                "quality": "5",
+                "beats": 4
+              },
+              {
+                "numeral": "V",
+                "root": "D",
+                "quality": "5",
+                "beats": 4
+              },
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "5",
+                "beats": 4
+              }
+            ],
+            "voicing": "power chords",
+            "strum": "DDDDDDDD",
+            "pattern": "Eight downstrokes per bar, with the side of your picking hand resting lightly on the strings by the bridge. G5 at the 3rd fret of the 6th string, then move the shape over to C5 (x355xx) and up to D5 (x577xx), then back to G5.",
+            "focus": "Keeping the same shape and moving it as one block, in steady, chunky eighth notes."
+          }
+        },
+        {
           "id": "triplets",
           "title": "Triplets: Three Inside One Beat",
-          "level": 14,
+          "level": 18,
           "teach": {
             "summary": "Most rhythms split a beat into 2 or 4. A triplet splits it into 3 even notes instead — that lopsided 'rolling' feel you hear in blues, swing, and 6/8 ballads. Count it 'trip-l-et' or '1-trip-let'.",
             "points": [
@@ -1763,7 +2450,7 @@ export const CURRICULUM = {
         {
           "id": "twelve-bar-blues",
           "title": "The 12-Bar Blues by the Numbers",
-          "level": 15,
+          "level": 19,
           "teach": {
             "summary": "The 12-bar blues is a fixed 12-measure form built from just the I, IV, and V — usually as '7' chords for that gritty bluesy bite. Learn the bar-by-bar map once and you can jam the blues in any key, anywhere.",
             "points": [
@@ -1897,7 +2584,7 @@ export const CURRICULUM = {
         {
           "id": "minor-pentatonic-box-1",
           "title": "Box 1: Your First Solo Shape",
-          "level": 16,
+          "level": 20,
           "basics": true,
           "teach": {
             "summary": "The minor pentatonic is the single most useful soloing scale on guitar — five notes that sound great over blues, rock, and pop. 'Box 1' is the most famous fingering, the one almost every guitar solo you love is built from.",
@@ -1967,7 +2654,7 @@ export const CURRICULUM = {
         {
           "id": "the-blue-note",
           "title": "The Blue Note: One Note of Grit",
-          "level": 17,
+          "level": 21,
           "teach": {
             "summary": "Add ONE note to the minor pentatonic — the 'flat five' (written b5) — and you get the blues scale. That single passing note is 'the blue note', the source of nearly every bluesy, vocal, crying lick on guitar.",
             "points": [
@@ -2112,7 +2799,7 @@ export const CURRICULUM = {
         {
           "id": "what-is-an-interval",
           "title": "What an Interval Actually Is",
-          "level": 18,
+          "level": 22,
           "teach": {
             "summary": "An interval is just the distance between two notes, measured in half-steps (one fret) and named by a number plus a quality. Everything in music is built by stacking these.",
             "points": [
@@ -2173,7 +2860,7 @@ export const CURRICULUM = {
         {
           "id": "major-vs-minor-third",
           "title": "The 3rd: Major vs Minor (Happy vs Sad)",
-          "level": 19,
+          "level": 23,
           "teach": {
             "summary": "The 3rd is the single most important interval for mood. A major 3rd (4 semitones) sounds bright and happy; a minor 3rd (3 semitones) sounds dark and sad. One fret changes everything.",
             "points": [
@@ -2255,7 +2942,7 @@ export const CURRICULUM = {
         {
           "id": "perfect-fifth-and-fourth",
           "title": "The Perfect 5th and Perfect 4th",
-          "level": 20,
+          "level": 24,
           "teach": {
             "summary": "The perfect 5th (7 semitones) is the most stable, powerful interval after the octave — it's the heart of the power chord. The perfect 4th (5 semitones) is its mirror image and sounds open and strong too.",
             "points": [
@@ -2359,9 +3046,115 @@ export const CURRICULUM = {
           }
         },
         {
+          "id": "interval-shapes",
+          "title": "Interval Shapes and the B-String Shift",
+          "level": 25,
+          "basics": true,
+          "teach": {
+            "summary": "Every interval has a shape on the neck, and the shape stays the same wherever you play it, with one exception: from the G string to the B string, everything moves up one fret. Learn the shapes and you can find a 3rd, 4th or 5th from any note without counting.",
+            "points": [
+              "On string pairs that don't include the B string (6th–5th, 5th–4th, 4th–3rd): a 4th is the same fret on the next string up, a 5th is two frets up, a major 3rd is one fret back and a minor 3rd two frets back.",
+              "From C on the 5th string (3rd fret): F on the 4th string's 3rd fret is the 4th, G on its 5th fret is the 5th, E on its 2nd fret is the major 3rd.",
+              "From the G string to the B string, add one fret to every shape: the 4th is one fret up, the 5th three frets up, the major 3rd the same fret, the minor 3rd one fret back.",
+              "From C on the G string (5th fret): F on the B string's 6th fret, G on its 8th fret, E on its 5th fret."
+            ],
+            "demo": {
+              "kind": "interval",
+              "root": "C",
+              "intervalSemitones": 7,
+              "caption": "C up to G: a 5th, one string over"
+            },
+            "earTip": "A 4th and a 5th both sound open and strong (the 5th a little more settled). A major 3rd sounds sweet and happy. Play each shape and you'll soon hear which is which before you look."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You're on the 4th string, 5th fret (G). Using the 4th shape, where is the C a 4th above it?",
+              "options": [
+                "3rd string, 5th fret",
+                "3rd string, 7th fret",
+                "2nd string, 5th fret",
+                "3rd string, 3rd fret"
+              ],
+              "answer": 0,
+              "explain": "The D and G strings don't include the B string, so a 4th is the same fret on the next string up: 3rd string, 5th fret, which is C."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You're on the 3rd string, 7th fret (D). Where is the A a 5th above it?",
+              "options": [
+                "2nd string, 9th fret",
+                "2nd string, 10th fret",
+                "2nd string, 7th fret",
+                "3rd string, 9th fret"
+              ],
+              "answer": 1,
+              "explain": "From the G string to the B string, add one fret: the 5th is two frets up everywhere else, so here it's three. The 2nd string's 10th fret is A."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two pairs of notes from C. One is a 5th, open and plain; the other is a major 3rd, sweet and happy. Pick the 5th.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 7,
+                    "caption": "Pair A",
+                    "octave": 4
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "interval",
+                    "root": "C",
+                    "intervalSemitones": 4,
+                    "caption": "Pair B",
+                    "octave": 4
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A is C up to G, the 5th: open, plain and strong, neither happy nor sad. B is C up to E, the major 3rd, which sounds sweet and bright."
+            },
+            {
+              "kind": "play",
+              "prompt": "From C on the 3rd string (5th fret), use the major 3rd shape to find E on the 2nd string. Play it.",
+              "root": "C",
+              "targetNote": "E",
+              "explain": "From the G string to the B string, the major 3rd is the same fret: 2nd string, 5th fret, which is E."
+            }
+          ],
+          "drill": {
+            "title": "Shapes Across the B String",
+            "bpm": 66,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "C",
+                "quality": "Major",
+                "beats": 24
+              }
+            ],
+            "intervals": [
+              5,
+              7,
+              4
+            ],
+            "voicing": "interval shapes on string pairs",
+            "pattern": "From C on the 5th string (3rd fret): the 4th (4th string, 3rd fret), the 5th (4th string, 5th fret) and the major 3rd (4th string, 2nd fret). Then from C on the 3rd string (5th fret): the same three, each one fret higher on the 2nd string (6th, 8th and 5th frets). For each: the root, the top note, then both together.",
+            "focus": "Seeing that the interval shapes stay the same everywhere, except that crossing from the G to the B string moves the top note up one fret."
+          }
+        },
+        {
           "id": "the-tritone",
           "title": "The Tritone: The Most Unstable Interval",
-          "level": 21,
+          "level": 26,
           "teach": {
             "summary": "The tritone (6 semitones) sits exactly halfway across the octave. It's the most tense, restless interval — it almost demands to resolve somewhere. Old musicians nicknamed it 'the devil in music'.",
             "points": [
@@ -2463,7 +3256,7 @@ export const CURRICULUM = {
         {
           "id": "consonance-vs-dissonance",
           "title": "Consonance vs Dissonance",
-          "level": 22,
+          "level": 27,
           "teach": {
             "summary": "Some intervals sound smooth and at rest (consonant); others sound clashing and tense (dissonant). Tension isn't bad — it's what makes resolution feel good. Music breathes by moving between the two.",
             "points": [
@@ -2545,7 +3338,7 @@ export const CURRICULUM = {
         {
           "id": "building-and-naming-intervals",
           "title": "Putting It Together: Build & Name Any Interval",
-          "level": 23,
+          "level": 28,
           "teach": {
             "summary": "Now combine number + quality + semitone count so you can name or find any interval on the fly. The 6ths and 7ths fill out the picture above the 5th, and inversions help you spot them fast.",
             "points": [
@@ -2689,7 +3482,7 @@ export const CURRICULUM = {
         {
           "id": "building-the-major-scale",
           "title": "Building the Major Scale",
-          "level": 24,
+          "level": 29,
           "teach": {
             "summary": "Every major scale is built from one fixed pattern of whole steps (2 frets) and half steps (1 fret): W-W-H-W-W-W-H. Start on any note, follow that recipe, and you get a major scale.",
             "points": [
@@ -2802,9 +3595,114 @@ export const CURRICULUM = {
           }
         },
         {
+          "id": "major-scale-position",
+          "title": "The Major Scale in One Position",
+          "level": 30,
+          "basics": true,
+          "teach": {
+            "summary": "You've built the major scale up one string. Now play it the way guitarists do: across all six strings in one spot. Put one finger on each fret and the whole scale sits under your hand.",
+            "points": [
+              "G major in 2nd position: first finger covers the 2nd fret, second finger the 3rd, third finger the 4th, little finger the 5th. One finger per fret.",
+              "From the low G to the high G: 6th string frets 3 and 5 (G A), 5th string 2-3-5 (B C D), 4th string 2-4-5 (E F♯ G), 3rd string 2-4-5 (A B C), 2nd string 3 and 5 (D E), 1st string 2 and 3 (F♯ G).",
+              "The roots are on the 6th string's 3rd fret, the 4th string's 5th fret and the 1st string's 3rd fret. Stay in position: C is on the G string's 5th fret, not down at the B string's 1st fret.",
+              "The pattern moves: with your second finger on the 6th string's 5th fret it's A major, on the 8th fret it's C major."
+            ],
+            "demo": {
+              "kind": "scale",
+              "root": "G",
+              "scaleCat": "Diatonic",
+              "scaleName": "Major",
+              "caption": "G major in one position (2nd position, frets 2 to 5)"
+            },
+            "earTip": "The major scale sounds like do-re-mi. As you climb, listen to the last two notes before each G (F♯ to G): that one-fret step pulls hard into home."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "In G major 2nd position (one finger per fret, first finger at the 2nd fret), which finger plays the low G on the 6th string, 3rd fret?",
+              "options": [
+                "Second finger",
+                "First finger",
+                "Third finger",
+                "Little finger"
+              ],
+              "answer": 0,
+              "explain": "One finger per fret: first finger on the 2nd fret, second on the 3rd, third on the 4th, little finger on the 5th. The low G is on the 3rd fret, so it's your second finger."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You slide the whole G major pattern up two frets, so the low root is on the 6th string's 5th fret. What scale are you playing?",
+              "options": [
+                "A major",
+                "B major",
+                "G major, higher up",
+                "A minor"
+              ],
+              "answer": 0,
+              "explain": "The low root moved from G (3rd fret) to A (5th fret) and the pattern didn't change, so it's A major. Same shape, new key."
+            },
+            {
+              "kind": "ear",
+              "prompt": "One run is the G major scale; the other has three notes lowered and sounds darker. Pick the major scale, the bright do-re-mi one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "G",
+                    "scaleCat": "Diatonic",
+                    "scaleName": "Nat. Minor",
+                    "drone": true,
+                    "caption": "Run A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "scale",
+                    "root": "G",
+                    "scaleCat": "Diatonic",
+                    "scaleName": "Major",
+                    "drone": true,
+                    "caption": "Run B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is G major: bright, the do-re-mi you know. A climbs with B♭, E♭ and F instead of B, E and F♯, which makes it darker. That's the natural minor scale, coming up in the Minor Keys unit."
+            },
+            {
+              "kind": "play",
+              "prompt": "In G major 2nd position, play the F♯ on the 4th string (4th fret).",
+              "root": "G",
+              "targetNote": "F#",
+              "explain": "F♯ on the 4th string is the 4th fret, under your third finger. It's the note just below G, the one that leads home."
+            }
+          ],
+          "drill": {
+            "title": "G Major, 2nd Position",
+            "bpm": 72,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "Major",
+                "beats": 8
+              }
+            ],
+            "voicing": "scale run in one position",
+            "pattern": "One finger per fret, first finger at the 2nd fret. Start on the low G (6th string, 3rd fret) and climb to the high G (1st string, 3rd fret), one note per beat, then back down to the low G. Keep each finger over its own fret the whole time.",
+            "focus": "Playing the major scale across all six strings without moving your hand, with the G chord sounding underneath."
+          }
+        },
+        {
           "id": "scale-degree-names",
           "title": "Scale Degrees & Their Names",
-          "level": 25,
+          "level": 31,
           "teach": {
             "summary": "Each of the seven notes has a number (1-7) and a traditional name. The names describe each note's JOB — its pull toward or away from home base (the tonic).",
             "points": [
@@ -2865,7 +3763,7 @@ export const CURRICULUM = {
         {
           "id": "nashville-number-system",
           "title": "Thinking in Numbers",
-          "level": 26,
+          "level": 32,
           "teach": {
             "summary": "Instead of naming notes and chords by letter, name them by their NUMBER in the scale (1-7). A '1-4-5' is the same shape of song in every key — only the starting note changes.",
             "points": [
@@ -2965,7 +3863,7 @@ export const CURRICULUM = {
         {
           "id": "key-signatures",
           "title": "Key Signatures: Sharps & Flats",
-          "level": 27,
+          "level": 33,
           "teach": {
             "summary": "Most keys need sharps or flats to keep the W-W-H-W-W-W-H pattern intact. A key signature is just the fixed set of sharps/flats a key uses — its fingerprint.",
             "points": [
@@ -3086,7 +3984,7 @@ export const CURRICULUM = {
         {
           "id": "circle-of-fifths",
           "title": "The Circle of Fifths",
-          "level": 28,
+          "level": 34,
           "teach": {
             "summary": "Arrange the keys by perfect fifths and they form a circle. Each step clockwise goes up a 5th and ADDS one sharp; each new key is also built on the '5' (dominant) of the key before it.",
             "points": [
@@ -3179,7 +4077,7 @@ export const CURRICULUM = {
         {
           "id": "hearing-relative-major-minor",
           "title": "One Key Signature, Two Homes",
-          "level": 29,
+          "level": 35,
           "teach": {
             "summary": "Every major key shares its exact key signature with a minor key — its 'relative minor,' built on the 6th degree. Same seven notes, different home base, completely different mood.",
             "points": [
@@ -3314,7 +4212,7 @@ export const CURRICULUM = {
         {
           "id": "stacking-thirds",
           "title": "Stacking Thirds: The Major Triad",
-          "level": 30,
+          "level": 36,
           "teach": {
             "summary": "A triad is just three notes stacked in 3rds: a root, the note a 3rd up, and the note a 5th up. Stack a major 3rd then a minor 3rd and you get a major triad — the brightest, most 'resolved' chord sound.",
             "points": [
@@ -3409,7 +4307,7 @@ export const CURRICULUM = {
         {
           "id": "the-third-decides",
           "title": "The 3rd Decides: Major vs Minor",
-          "level": 31,
+          "level": 37,
           "teach": {
             "summary": "Major and minor triads share the same root and the same 5th — only the 3rd moves. Lower the 3rd by one fret (a half step) and a major triad becomes minor.",
             "points": [
@@ -3522,7 +4420,7 @@ export const CURRICULUM = {
         {
           "id": "diminished-triad",
           "title": "Diminished: Two Minor 3rds",
-          "level": 32,
+          "level": 38,
           "teach": {
             "summary": "Take a minor triad and lower the 5th by a half step too. Now you've stacked two minor 3rds — that's a diminished triad, a tense, unstable sound that begs to resolve.",
             "points": [
@@ -3602,7 +4500,7 @@ export const CURRICULUM = {
         {
           "id": "augmented-triad",
           "title": "Augmented: Two Major 3rds",
-          "level": 33,
+          "level": 39,
           "teach": {
             "summary": "Stack two MAJOR 3rds instead and you get an augmented triad. The 5th is raised a half step — bright but dreamy and unsettled, like it's floating with nowhere to land.",
             "points": [
@@ -3723,7 +4621,7 @@ export const CURRICULUM = {
         {
           "id": "triad-inversions",
           "title": "Inversions: Same Chord, New Bottom Note",
-          "level": 34,
+          "level": 40,
           "teach": {
             "summary": "An inversion is the same three notes with a different one on the bottom. Root position has the root lowest; 1st inversion puts the 3rd on the bottom; 2nd inversion puts the 5th on the bottom.",
             "points": [
@@ -3796,7 +4694,7 @@ export const CURRICULUM = {
         {
           "id": "triads-across-the-neck",
           "title": "Triads Across the Neck",
-          "level": 35,
+          "level": 41,
           "basics": true,
           "teach": {
             "summary": "Because a triad is only three notes, you can play it as small, movable shapes all over the neck — on the top three strings, the middle three, and so on. Learn one shape and you can slide it to any root.",
@@ -3940,6 +4838,827 @@ export const CURRICULUM = {
       }
     },
     {
+      "unitId": "barre-caged",
+      "title": "Barre Chords, CAGED & the Capo",
+      "icon": "🪜",
+      "summary": "Take your open shapes up the neck: E-shape and A-shape barre chords, the five CAGED shapes that link one chord all the way up, and the capo, which moves open shapes into any key.",
+      "lessons": [
+        {
+          "id": "barre-e-shape",
+          "title": "Barre Chords: The E Shape",
+          "level": 42,
+          "basics": true,
+          "teach": {
+            "summary": "A barre chord is an open chord with your first finger doing the job of the nut. Play the E shape with your other three fingers, lay your first finger across all six strings behind it, and you can slide that one shape to any fret.",
+            "points": [
+              "F is the classic first one: 133211. Your first finger lies flat across the 1st fret, and your other three fingers make the E shape (022100), moved up one fret.",
+              "Name it from the 6th string, the note under your first finger: the 3rd fret is G (355433), the 5th fret is A (577655).",
+              "For minor, lift the finger off the G string, just like E to Em: Fm is 133111, Am at the 5th fret is 577555.",
+              "Press with the bony side of your first finger, not the soft middle, and let your arm pull back gently instead of crushing with your thumb. Some buzzing at first is normal."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "F",
+              "progression": [
+                {
+                  "root": "F",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "133211"
+                },
+                {
+                  "root": "F",
+                  "cat": "Triads",
+                  "type": "Minor",
+                  "frets": "133111"
+                },
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "355433"
+                },
+                {
+                  "root": "A",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "577655"
+                }
+              ],
+              "caption": "E-shape barre chords: F, Fm, G, A"
+            },
+            "earTip": "A barre chord should sound like a full open chord, every string ringing. Pick it one string at a time: a string that buzzes or thuds needs a bit more pressure or a tiny finger shift."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "You play the E-shape barre with your first finger across the 3rd fret. What chord is it?",
+              "options": [
+                "G",
+                "A",
+                "F",
+                "C"
+              ],
+              "answer": 0,
+              "explain": "The E shape is named from the 6th string. The low E string's 3rd fret is G, so it's G major (355433)."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You're holding F (133211). Which change makes it F minor?",
+              "options": [
+                "Lift the finger off the G string (133111)",
+                "Lift the finger off the A string",
+                "Move the barre up one fret",
+                "Lift the barre finger"
+              ],
+              "answer": 0,
+              "explain": "Same trick as E to Em: lift the finger off the G string and let the barre hold that string at the 1st fret. 133111 is Fm."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two barre chords at the 5th fret: A (577655) and Am (577555). Pick Am, the darker one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "A",
+                    "progression": [
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Minor",
+                        "frets": "577555"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "A",
+                    "progression": [
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "577655"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A is Am: the G string is held only by the barre at the 5th fret (C) instead of the 6th fret (C♯), and the chord turns dark. B is the bright A major."
+            },
+            {
+              "kind": "play",
+              "prompt": "Hold the A barre chord at the 5th fret (577655) and pick the 6th string. Play that root note.",
+              "root": "A",
+              "targetNote": "A",
+              "explain": "The root is under your first finger on the 6th string: the 5th fret is A. The 4th string's 7th fret and the 1st string's 5th fret are A's too."
+            }
+          ],
+          "drill": {
+            "title": "E-Shape Barre Up and Down",
+            "bpm": 66,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "577655"
+              },
+              {
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "355433"
+              },
+              {
+                "root": "F",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "133211"
+              },
+              {
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "355433"
+              }
+            ],
+            "voicing": "E-shape barre chords",
+            "strum": "DDDD",
+            "pattern": "Four down-strums per chord: A at the 5th fret, G at the 3rd, F at the 1st, back to G. Keep the shape locked and move your whole hand: ease off the pressure as you move, then squeeze again as you land.",
+            "focus": "Moving one barre shape as a single block, and naming each chord from the note on the 6th string."
+          }
+        },
+        {
+          "id": "barre-a-shape",
+          "title": "Barre Chords: The A Shape",
+          "level": 43,
+          "basics": true,
+          "teach": {
+            "summary": "The second barre shape comes from the open A chord, with its root on the 5th string. With the E shape and the A shape together you can play any major or minor chord without moving far up the neck.",
+            "points": [
+              "Start with Bm: x24432. Barre the 2nd fret from the 5th string down, and make the Am shape (x02210) two frets up with your other fingers. B major is x24442: one finger (often the third) lies flat across the 4th, 3rd and 2nd strings at the 4th fret.",
+              "Name it from the 5th string: the 3rd fret is C (x35553), the 5th fret is D (x57775), the 7th fret is E (x79997).",
+              "The I–IV–V trick: play the I as an E shape, and the IV and V are A shapes at the same fret and two frets up. In G: G (355433), C (x35553), D (x57775).",
+              "In A it's A (577655), D (x57775), E (x79997): the same three shapes, two frets higher."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "G",
+              "progression": [
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "355433"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x35553"
+                },
+                {
+                  "root": "D",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x57775"
+                },
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "355433"
+                }
+              ],
+              "caption": "I–IV–V in G with barre chords: an E shape, then two A shapes"
+            },
+            "earTip": "In the A shape the high E string is hard to keep ringing. If it thuds, let it go quiet: the chord still sounds full without it."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "Your first finger barres the 5th fret in the A shape (root on the 5th string). What chord is it?",
+              "options": [
+                "D",
+                "A",
+                "E",
+                "C"
+              ],
+              "answer": 0,
+              "explain": "The 5th string's 5th fret is D (count A A♯ B C C♯ D), so the A shape at the 5th fret is D major (x57775)."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "You're playing G as an E-shape barre at the 3rd fret. Where is the IV chord (C) as an A shape?",
+              "options": [
+                "5th string, 3rd fret: the same fret, one string over",
+                "5th string, 5th fret",
+                "6th string, 8th fret",
+                "5th string, 1st fret"
+              ],
+              "answer": 0,
+              "explain": "C is on the 5th string's 3rd fret, right under your barre. The IV is an A shape at the same fret, and the V (D) is the same A shape two frets up."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips use barre chords in G. One goes G, C, D and back home to G; the other stops on D. Pick the clip that ends at home.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "355433"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x35553"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x57775"
+                      },
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "355433"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "355433"
+                      },
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x35553"
+                      },
+                      {
+                        "root": "D",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x57775"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 0,
+              "explain": "A goes G, C, D and back to G, which sounds finished. B stops on D, the V, and leaves you hanging, waiting for G."
+            },
+            {
+              "kind": "play",
+              "prompt": "Hold Bm (x24432) and pick the 5th string. Play the root.",
+              "root": "B",
+              "targetNote": "B",
+              "explain": "The 5th string's 2nd fret is B, under your barre. The 3rd string's 4th fret is B too, an octave higher."
+            }
+          ],
+          "drill": {
+            "title": "I–IV–V Anywhere: E Shape + A Shape",
+            "bpm": 66,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "355433"
+              },
+              {
+                "numeral": "IV",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x35553"
+              },
+              {
+                "numeral": "V",
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x57775"
+              },
+              {
+                "numeral": "I",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "355433"
+              },
+              {
+                "numeral": "I",
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "577655"
+              },
+              {
+                "numeral": "IV",
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x57775"
+              },
+              {
+                "numeral": "V",
+                "root": "E",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x79997"
+              },
+              {
+                "numeral": "I",
+                "root": "A",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "577655"
+              }
+            ],
+            "voicing": "barre chords: E shape and A shape",
+            "strum": "DDDD",
+            "pattern": "Four down-strums per chord. In G: G at the 3rd fret (E shape), C at the same fret on the 5th string (A shape), D two frets higher (A shape), back to G. Then the same three shapes two frets higher, in A: A, D, E, A.",
+            "focus": "Using one E-shape and A-shape pattern to play I–IV–V in any key."
+          }
+        },
+        {
+          "id": "caged-overview",
+          "title": "CAGED: Five Shapes, One Chord",
+          "level": 44,
+          "basics": true,
+          "teach": {
+            "summary": "You already know five open chord shapes: C, A, G, E and D. Each one can be moved up the neck, and in that order, C–A–G–E–D, they link together to play the same chord in five places, all the way up.",
+            "points": [
+              "C major five ways: the open C shape (x32010), the A shape at the 3rd fret (x35553), the G shape at the 5th (875558), the E shape at the 8th (8-10-10-9-8-8) and the D shape at the 10th (x-x-10-12-13-12).",
+              "Each shape shares root notes with the next one, so they link like puzzle pieces: the open C's root on the 5th string (3rd fret) is the root the A shape is built on.",
+              "The order never changes: C, A, G, E, D, then the C shape again, an octave higher. Start from any shape and keep going.",
+              "The big G and D shapes are hard to grab whole. Play part of them, like the top four strings of the G shape (xx5558), and you still have the chord."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "C",
+              "progression": [
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x32010"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "x35553"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "875558"
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": [
+                    8,
+                    10,
+                    10,
+                    9,
+                    8,
+                    8
+                  ]
+                },
+                {
+                  "root": "C",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": [
+                    -1,
+                    -1,
+                    10,
+                    12,
+                    13,
+                    12
+                  ]
+                }
+              ],
+              "caption": "C major five ways up the neck: C, A, G, E and D shapes"
+            },
+            "earTip": "All five shapes are the same chord, so they sound alike, but each has its own color: the open C rings and shimmers, the higher shapes sound tighter and brighter. Songs use that: the same chord somewhere else changes the feel."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "In what order do the CAGED shapes link up the neck?",
+              "options": [
+                "C–A–G–E–D",
+                "C–D–E–G–A",
+                "A–C–D–E–G",
+                "E–A–D–G–C"
+              ],
+              "answer": 0,
+              "explain": "C, A, G, E, D: the order spells the name. After the D shape comes the C shape again, an octave higher."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "Which shape comes just before the E shape, sharing its root on the 6th string?",
+              "options": [
+                "The G shape",
+                "The D shape",
+                "The A shape",
+                "The C shape"
+              ],
+              "answer": 0,
+              "explain": "C–A–G–E–D: the G shape comes right before the E shape. For C, the G shape's lowest note is the 6th string's 8th fret, the same root the E shape is built on."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Two C major chords: the open C and the E-shape barre C at the 8th fret. Pick the barre chord, the tighter, brighter one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "x32010"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "C",
+                    "progression": [
+                      {
+                        "root": "C",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": [
+                          8,
+                          10,
+                          10,
+                          9,
+                          8,
+                          8
+                        ]
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is the E-shape C at the 8th fret: every note is fretted, so it sounds tighter and higher up. A is the open C, ringing with open strings."
+            },
+            {
+              "kind": "play",
+              "prompt": "In the A-shape C chord (x35553), find the C on the 3rd string and play it.",
+              "root": "C",
+              "targetNote": "C",
+              "explain": "The 3rd string's 5th fret is C, an octave above the root on the 5th string's 3rd fret. The G shape is built around this same C."
+            }
+          ],
+          "drill": {
+            "title": "C Through All Five Shapes",
+            "bpm": 60,
+            "timeSig": [
+              4,
+              4
+            ],
+            "progression": [
+              {
+                "numeral": "C shape",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x32010"
+              },
+              {
+                "numeral": "A shape",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x35553"
+              },
+              {
+                "numeral": "G shape",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "875558"
+              },
+              {
+                "numeral": "E shape",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": [
+                  8,
+                  10,
+                  10,
+                  9,
+                  8,
+                  8
+                ]
+              },
+              {
+                "numeral": "D shape",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": [
+                  -1,
+                  -1,
+                  10,
+                  12,
+                  13,
+                  12
+                ]
+              }
+            ],
+            "voicing": "CAGED shapes up the neck",
+            "pattern": "One strum per bar, letting each chord ring. Open C, then the A shape at the 3rd fret, the G shape at the 5th (just the top four strings, xx5558, is fine), the E shape at the 8th and the D shape at the 10th. Say each shape's name as you land on it.",
+            "focus": "Seeing one chord in five places, each shape linked to the next by shared root notes."
+          }
+        },
+        {
+          "id": "capo-basics",
+          "title": "The Capo: Same Shapes, New Key",
+          "level": 45,
+          "basics": true,
+          "teach": {
+            "summary": "A capo clamps across the strings and becomes a new nut. Each fret you move it up raises everything a half step, so you can play in a new key with the open chord shapes you already know.",
+            "points": [
+              "Capo on the 2nd fret and play a G shape: it sounds as A. The C shape sounds as D, the D shape as E. Your hands play the same shapes; the sound moves up two half steps.",
+              "To name what you hear, count up from the shape's name, one half step per fret: G shape, capo 2 → G♯, A.",
+              "Why use one? To fit a singer's voice, or to play a song in a key full of barre chords, like B♭ or E♭, with easy open shapes.",
+              "B♭ major: capo 3 and play G shapes (G, C and D sound as B♭, E♭ and F), or capo 1 with A shapes. E♭ major: capo 1 with D shapes, or capo 3 with C shapes."
+            ],
+            "demo": {
+              "kind": "progression",
+              "root": "G",
+              "progression": [
+                {
+                  "root": "G",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "320003"
+                },
+                {
+                  "root": "A",
+                  "cat": "Triads",
+                  "type": "Major",
+                  "frets": "542225"
+                }
+              ],
+              "caption": "The G shape open, then the same shape with a capo on 2: A"
+            },
+            "earTip": "With a capo on, the \"open\" strings still ring, so capo chords keep that open, jangly sound. A barre chord in the same key sounds tighter. That's why so many songs are played with a capo."
+          },
+          "exercises": [
+            {
+              "kind": "mcq",
+              "prompt": "With a capo on the 2nd fret, you play a G shape. What chord do you hear?",
+              "options": [
+                "A",
+                "G",
+                "B",
+                "F♯"
+              ],
+              "answer": 0,
+              "explain": "Each fret raises a half step: G, then G♯ (1st fret), then A (2nd fret). The G shape with a capo on 2 sounds as A."
+            },
+            {
+              "kind": "mcq",
+              "prompt": "A song uses A, D and E, but you want to play it with G, C and D shapes. Where does the capo go?",
+              "options": [
+                "2nd fret",
+                "1st fret",
+                "3rd fret",
+                "5th fret"
+              ],
+              "answer": 0,
+              "explain": "From G up to A is two half steps (G, G♯, A), so the capo goes on the 2nd fret. Then the G, C and D shapes sound as A, D and E."
+            },
+            {
+              "kind": "ear",
+              "prompt": "Both clips use the same G chord shape. One is played open, the other with a capo on the 2nd fret. Pick the capo clip, the higher one.",
+              "earOptions": [
+                {
+                  "label": "A",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "G",
+                    "progression": [
+                      {
+                        "root": "G",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "320003"
+                      }
+                    ],
+                    "caption": "Clip A"
+                  }
+                },
+                {
+                  "label": "B",
+                  "audio": {
+                    "kind": "progression",
+                    "root": "A",
+                    "progression": [
+                      {
+                        "root": "A",
+                        "cat": "Triads",
+                        "type": "Major",
+                        "frets": "542225"
+                      }
+                    ],
+                    "caption": "Clip B"
+                  }
+                }
+              ],
+              "answer": 1,
+              "explain": "B is the capo clip: the same shape, two half steps higher, so it sounds as A. A is the open G."
+            },
+            {
+              "kind": "play",
+              "prompt": "With a capo on the 2nd fret, the \"open\" 6th string sounds two half steps above E. Play that note.",
+              "root": "E",
+              "targetNote": "F#",
+              "explain": "E up two half steps is F♯ (E, F, F♯). With a capo on 2, every \"open\" string is really the 2nd fret, so the 6th string sounds F♯."
+            }
+          ],
+          "drill": {
+            "title": "Same Shapes, Capo 2",
+            "bpm": 80,
+            "timeSig": [
+              4,
+              4
+            ],
+            "capo": 2,
+            "progression": [
+              {
+                "numeral": "open",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "capo": 0,
+                "frets": "320003"
+              },
+              {
+                "numeral": "open",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "capo": 0,
+                "frets": "x32010"
+              },
+              {
+                "numeral": "open",
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "capo": 0,
+                "frets": "xx0232"
+              },
+              {
+                "numeral": "open",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "capo": 0,
+                "frets": "320003"
+              },
+              {
+                "numeral": "capo 2",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "320003"
+              },
+              {
+                "numeral": "capo 2",
+                "root": "C",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "x32010"
+              },
+              {
+                "numeral": "capo 2",
+                "root": "D",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "xx0232"
+              },
+              {
+                "numeral": "capo 2",
+                "root": "G",
+                "quality": "Major",
+                "beats": 4,
+                "frets": "320003"
+              }
+            ],
+            "voicing": "open shapes with a capo",
+            "strum": "DDDD",
+            "pattern": "Four down-strums per chord. Play G, C, D, G open, then put the capo on the 2nd fret and play exactly the same shapes: now they sound as A, D, E, A. Same fingers, new key.",
+            "focus": "Hearing a whole progression move up when the capo goes on, while your hands play exactly the same shapes."
+          }
+        }
+      ],
+      "improv": {
+        "title": "Barre Chord Groove: I–IV–V in A",
+        "bpm": 84,
+        "timeSig": [
+          4,
+          4
+        ],
+        "backing": {
+          "drums": "pop",
+          "progression": [
+            {
+              "numeral": "I",
+              "root": "A",
+              "quality": "Major",
+              "beats": 4
+            },
+            {
+              "numeral": "IV",
+              "root": "D",
+              "quality": "Major",
+              "beats": 4
+            },
+            {
+              "numeral": "V",
+              "root": "E",
+              "quality": "Major",
+              "beats": 4
+            },
+            {
+              "numeral": "I",
+              "root": "A",
+              "quality": "Major",
+              "beats": 4
+            }
+          ]
+        },
+        "scale": {
+          "root": "A",
+          "scaleCat": "Diatonic",
+          "scaleName": "Major"
+        },
+        "prompt": "An I–IV–V loop in A. First play the chords: A as an E-shape barre at the 5th fret, then D and E as A shapes at the 5th and 7th frets. Then solo with the major scale in one position, moved up to A: the same pattern you learned in G, with your second finger on the 6th string's 5th fret. Land on A over the A chord, D over D and E over E."
+      }
+    },
+    {
       "unitId": "sevenths",
       "title": "Seventh Chords",
       "icon": "7️⃣",
@@ -3948,7 +5667,7 @@ export const CURRICULUM = {
         {
           "id": "stacking-the-seventh",
           "title": "Stacking the 7th",
-          "level": 36,
+          "level": 46,
           "teach": {
             "summary": "A seventh chord is just your familiar triad with one more note stacked on top — the 7th. That extra note turns three-note chords into four-note ones with way more flavour.",
             "points": [
@@ -4044,7 +5763,7 @@ export const CURRICULUM = {
         {
           "id": "major-7-vs-dominant-7",
           "title": "Major 7 vs Dominant 7",
-          "level": 37,
+          "level": 47,
           "teach": {
             "summary": "Both chords have a major triad underneath, but the top note decides everything. A major 7th sounds dreamy and at rest; a flat 7th makes a dominant 7 that sounds restless and wants to move.",
             "points": [
@@ -4143,7 +5862,7 @@ export const CURRICULUM = {
         {
           "id": "the-minor-7",
           "title": "The Minor 7",
-          "level": 38,
+          "level": 48,
           "teach": {
             "summary": "Take a minor triad and add a flat 7th and you get a minor 7 — smooth, warm, and mellow. It's the soft soul-and-R&B chord, much rounder than a plain minor.",
             "points": [
@@ -4262,7 +5981,7 @@ export const CURRICULUM = {
         {
           "id": "dominant-7-and-the-pull",
           "title": "The Dominant 7 and the V→I Pull",
-          "level": 39,
+          "level": 49,
           "teach": {
             "summary": "You already feel the V chord pull home to the I. Turning that V into a dominant 7 makes the pull even stronger, because the 3rd and flat 7th form a tense interval called a tritone that's begging to resolve.",
             "points": [
@@ -4372,7 +6091,7 @@ export const CURRICULUM = {
         {
           "id": "ii-v-i",
           "title": "The ii–V–I Progression",
-          "level": 40,
+          "level": 50,
           "teach": {
             "summary": "The most important chord move in jazz and a ton of pop is ii–V–I. With sevenths it becomes Dm7 → G7 → Cmaj7 in the key of C — a smooth setup, tension, and satisfying arrival.",
             "points": [
@@ -4500,7 +6219,7 @@ export const CURRICULUM = {
         {
           "id": "darker-sevenths",
           "title": "Darker Sevenths: m7♭5 and dim7",
-          "level": 41,
+          "level": 51,
           "teach": {
             "summary": "Two moodier sevenths round out the family. The m7♭5 (half-diminished) is tense and yearning — it's the ii chord in a minor key. The dim7 is symmetrical and spooky, a pure suspense chord.",
             "points": [
@@ -4698,7 +6417,7 @@ export const CURRICULUM = {
         {
           "id": "diatonic-triads-of-a-key",
           "title": "The Seven Chords of a Key",
-          "level": 42,
+          "level": 52,
           "teach": {
             "summary": "Stack thirds on each note of the major scale and you get exactly seven chords — the only triads that 'belong' to that key.",
             "points": [
@@ -4846,7 +6565,7 @@ export const CURRICULUM = {
         {
           "id": "three-functions",
           "title": "Home, Away, Tension",
-          "level": 43,
+          "level": 53,
           "teach": {
             "summary": "Those seven chords sort into three jobs: tonic (home), subdominant (moving away), and dominant (tension that wants to resolve).",
             "points": [
@@ -4976,7 +6695,7 @@ export const CURRICULUM = {
         {
           "id": "leading-tone-and-tritone",
           "title": "Why V Pulls So Hard",
-          "level": 44,
+          "level": 54,
           "teach": {
             "summary": "The dominant's pull isn't magic — it's a note a half-step from home plus a built-in tritone that wants to snap shut.",
             "points": [
@@ -5059,7 +6778,7 @@ export const CURRICULUM = {
         {
           "id": "authentic-cadence",
           "title": "The Authentic Cadence (V→I)",
-          "level": 45,
+          "level": 55,
           "teach": {
             "summary": "A cadence is how a phrase ends. The authentic cadence — V to I — is the strongest, most final-sounding way to land back home.",
             "points": [
@@ -5177,7 +6896,7 @@ export const CURRICULUM = {
         {
           "id": "plagal-and-half",
           "title": "Plagal & Half Cadences",
-          "level": 46,
+          "level": 56,
           "teach": {
             "summary": "Not every ending slams the door. The plagal cadence (IV→I) is a gentle 'amen,' and the half cadence stops ON the dominant, leaving the phrase open.",
             "points": [
@@ -5307,7 +7026,7 @@ export const CURRICULUM = {
         {
           "id": "deceptive-cadence",
           "title": "The Deceptive Cadence",
-          "level": 47,
+          "level": 57,
           "teach": {
             "summary": "Set up the dominant so the ear EXPECTS the tonic — then land on vi instead. The surprise is the deceptive cadence (V→vi).",
             "points": [
@@ -5425,7 +7144,7 @@ export const CURRICULUM = {
         {
           "id": "suspensions-resolve",
           "title": "Suspensions: Hang, Then Resolve",
-          "level": 48,
+          "level": 58,
           "teach": {
             "summary": "A suspension holds a non-chord tone that clashes for a moment, then steps into the real chord tone — tiny tension and release inside a single chord.",
             "points": [
@@ -5586,7 +7305,7 @@ export const CURRICULUM = {
         {
           "id": "putting-it-together",
           "title": "Tension to Resolution: The Full Arc",
-          "level": 49,
+          "level": 59,
           "teach": {
             "summary": "Now combine everything: build tension through subdominant and dominant, decorate it with a suspension, and choose how you resolve — or deceive.",
             "points": [
@@ -5798,7 +7517,7 @@ export const CURRICULUM = {
         {
           "id": "natural-minor-scale",
           "title": "The Natural Minor Scale",
-          "level": 50,
+          "level": 60,
           "teach": {
             "summary": "Minor's home base is the natural minor scale — the same seven notes as a major scale, just starting and resting on a different note so everything sounds darker.",
             "points": [
@@ -5885,7 +7604,7 @@ export const CURRICULUM = {
         {
           "id": "minor-diatonic-chords",
           "title": "The Seven Chords of a Minor Key",
-          "level": 51,
+          "level": 61,
           "teach": {
             "summary": "Stack thirds on each note of the natural minor scale and you get its seven diatonic chords — same idea as a major key, but a brand-new pattern of qualities.",
             "points": [
@@ -6057,7 +7776,7 @@ export const CURRICULUM = {
         {
           "id": "harmonic-minor-major-V",
           "title": "Harmonic Minor & the Real V",
-          "level": 52,
+          "level": 62,
           "teach": {
             "summary": "Natural minor has no leading tone, so its v chord is weak. Raise the 7th degree a half step and you get harmonic minor — which hands you a true major V with a leading tone that pulls hard home.",
             "points": [
@@ -6143,7 +7862,7 @@ export const CURRICULUM = {
         {
           "id": "minor-cadences",
           "title": "Cadences Home in Minor",
-          "level": 53,
+          "level": 63,
           "teach": {
             "summary": "Now that you have a real major V, you can build the two workhorse minor cadences: the plain i–iv–V–i and the jazzier, smoother iiø7–V7–i.",
             "points": [
@@ -6284,7 +8003,7 @@ export const CURRICULUM = {
         {
           "id": "melodic-minor",
           "title": "Melodic Minor — Fixing the Gap",
-          "level": 54,
+          "level": 64,
           "teach": {
             "summary": "Harmonic minor's raised 7th fixed the cadence but left an awkward stretch between the 6th and 7th. Melodic minor smooths it by ALSO raising the 6th — but only going up.",
             "points": [
@@ -6352,7 +8071,7 @@ export const CURRICULUM = {
         {
           "id": "relative-vs-parallel",
           "title": "Relative vs Parallel Minor",
-          "level": 55,
+          "level": 65,
           "teach": {
             "summary": "Two minors hang around any major key, and mixing them up wrecks your soloing. 'Relative' shares the notes; 'parallel' shares the root. Learn to tell which one you're dealing with.",
             "points": [
@@ -6510,7 +8229,7 @@ export const CURRICULUM = {
         {
           "id": "what-is-a-mode",
           "title": "What a Mode Really Is",
-          "level": 56,
+          "level": 66,
           "teach": {
             "summary": "A mode is just the major scale started and centered on a different note. Same seven notes, new home base — and that new home base changes the whole mood.",
             "points": [
@@ -6601,7 +8320,7 @@ export const CURRICULUM = {
         {
           "id": "ionian-aeolian-anchors",
           "title": "Your Two Anchors: Ionian & Aeolian",
-          "level": 57,
+          "level": 67,
           "teach": {
             "summary": "You already know two modes. Ionian is just the major scale (bright, happy). Aeolian is the natural minor scale (sad, serious). Every other mode is a tweak on one of these.",
             "points": [
@@ -6696,7 +8415,7 @@ export const CURRICULUM = {
         {
           "id": "dorian-the-hopeful-minor",
           "title": "Dorian: Minor, But Hopeful",
-          "level": 58,
+          "level": 68,
           "teach": {
             "summary": "Dorian is a minor scale with one bright twist: a raised 6th (♮6). It's minor enough to be moody but hopeful enough to groove — the sound of jazz, funk, and 'Scarborough Fair'.",
             "points": [
@@ -6783,7 +8502,7 @@ export const CURRICULUM = {
         {
           "id": "phrygian-and-lydian",
           "title": "Phrygian (Dark ♭2) & Lydian (Dreamy ♯4)",
-          "level": 59,
+          "level": 69,
           "teach": {
             "summary": "Two opposite colors. Phrygian is minor with a lowered 2nd (♭2) — dark, Spanish, menacing. Lydian is major with a raised 4th (♯4) — floating, dreamy, magical.",
             "points": [
@@ -6870,7 +8589,7 @@ export const CURRICULUM = {
         {
           "id": "mixolydian-the-bluesy-major",
           "title": "Mixolydian: Major Gone Bluesy",
-          "level": 60,
+          "level": 70,
           "teach": {
             "summary": "Mixolydian is the major scale with a lowered 7th (♭7). It keeps the happy major 3rd but loosens up — the sound of dominant 7 chords, blues, rock, and jam bands.",
             "points": [
@@ -6945,7 +8664,7 @@ export const CURRICULUM = {
         {
           "id": "locrian-the-unstable-one",
           "title": "Locrian: The Unstable One",
-          "level": 61,
+          "level": 71,
           "teach": {
             "summary": "Locrian is the odd one out: minor with BOTH a lowered 2nd (♭2) and a lowered 5th (♭5). That flat 5th means it can't even build a stable home chord — it sounds tense and unresolved on purpose.",
             "points": [
@@ -7015,7 +8734,7 @@ export const CURRICULUM = {
         {
           "id": "using-modes-over-a-vamp",
           "title": "Putting It to Work: Modes Over a Vamp",
-          "level": 62,
+          "level": 72,
           "teach": {
             "summary": "Knowing the scale isn't enough — a mode only sounds like itself when the chord underneath stays put. Lock a one- or two-chord vamp on the root, then lean on the mode's characteristic note.",
             "points": [
@@ -7148,7 +8867,7 @@ export const CURRICULUM = {
         {
           "id": "add9-and-six-nine",
           "title": "Add9 and 6/9: Sweetness Without the 7th",
-          "level": 63,
+          "level": 73,
           "teach": {
             "summary": "Add9 takes a plain major triad and stacks the 9th (the 2nd, an octave up) on top — no 7th involved. 6/9 adds both the 6th and the 9th for a lush, open sound.",
             "points": [
@@ -7236,7 +8955,7 @@ export const CURRICULUM = {
         {
           "id": "sus-chords",
           "title": "Sus2 and Sus4: Suspending the 3rd",
-          "level": 64,
+          "level": 74,
           "teach": {
             "summary": "A sus chord removes the 3rd — the note that makes a chord major or minor — and replaces it with the 2nd (sus2) or the 4th (sus4). The result feels neither happy nor sad: open and unresolved.",
             "points": [
@@ -7327,7 +9046,7 @@ export const CURRICULUM = {
         {
           "id": "dominant-extensions",
           "title": "9, 11, 13: Stacking on the Dominant 7",
-          "level": 65,
+          "level": 75,
           "teach": {
             "summary": "Take a dominant 7 (which already has the b7) and keep stacking thirds: add the 9th to get a 9 chord, then the 13th to get a 13 chord. These are the lush, funky, jazzy dominants.",
             "points": [
@@ -7416,7 +9135,7 @@ export const CURRICULUM = {
         {
           "id": "augmented-and-altered-dominants",
           "title": "Augmented & Altered Dominants: Maximum Tension",
-          "level": 66,
+          "level": 76,
           "teach": {
             "summary": "Augmented raises the 5th (C E G#) for an unsettled, suspenseful sound. Altered dominants take a 7 chord and sharpen or flatten the 5th or 9th — turning the dominant's 'pull' into a screaming, spicy tension.",
             "points": [
@@ -7539,7 +9258,7 @@ export const CURRICULUM = {
         {
           "id": "secondary-dominants",
           "title": "Secondary Dominants: Borrowing a Pull",
-          "level": 67,
+          "level": 77,
           "teach": {
             "summary": "A secondary dominant is a dominant 7 chord that 'points at' a chord other than the key's home. The most common is V/V — the dominant of the dominant — which adds a strong, surprising pull mid-progression.",
             "points": [
@@ -7633,7 +9352,7 @@ export const CURRICULUM = {
         {
           "id": "borrowed-chords-modal-interchange",
           "title": "Borrowed Chords: Modal Interchange",
-          "level": 68,
+          "level": 78,
           "teach": {
             "summary": "Modal interchange means borrowing a chord from the parallel key (same root, opposite quality) to add color. In a major key, the most common borrow is the minor iv — it adds a wistful, bittersweet pull back home.",
             "points": [
@@ -7782,7 +9501,7 @@ export const CURRICULUM = {
         {
           "id": "slash-chords-upper-structures",
           "title": "Slash Chords: Triads Over a Bass",
-          "level": 69,
+          "level": 79,
           "teach": {
             "summary": "Put a triad over a bass note that isn't its root and you get a slash chord (G/C = 'G over C'). The upper triad 'harvests' extensions of the bass: which degree you build it on decides the color you get.",
             "points": [
@@ -7849,7 +9568,7 @@ export const CURRICULUM = {
         {
           "id": "slash-flavors-a-string",
           "title": "Slash Flavors: Second Position (A-String Bass)",
-          "level": 70,
+          "level": 80,
           "teach": {
             "summary": "Same seven flavors, new address: the bass moves to the A string's 3rd fret and the triads drop into the low-fret zone. Same intervals, same harvests — different grips. This is how a relationship becomes portable.",
             "points": [
@@ -7916,7 +9635,7 @@ export const CURRICULUM = {
         {
           "id": "slash-walking-bass",
           "title": "Slash Chords in Motion: The Walking Bassline",
-          "level": 71,
+          "level": 81,
           "teach": {
             "summary": "Slash chords' other job: motion. Keep the harmony diatonic and let the BASS walk down the scale — every step lands on a chord root, on a chord tone (an inversion: G/B, C/E), or on a 7th slipped underneath (Am/G = Am7).",
             "points": [
@@ -8042,7 +9761,7 @@ export const CURRICULUM = {
         {
           "id": "common-tones",
           "title": "Common Tones: Let Shared Notes Stay Put",
-          "level": 72,
+          "level": 82,
           "teach": {
             "summary": "Voice leading is the art of moving from one chord to the next as smoothly as possible. The first rule: when two chords share a note, keep that note in the same voice and don't move it.",
             "points": [
@@ -8174,7 +9893,7 @@ export const CURRICULUM = {
         {
           "id": "nearest-note",
           "title": "Move to the Nearest Note",
-          "level": 73,
+          "level": 83,
           "teach": {
             "summary": "For the voices that DO have to move, send each one to the closest available chord tone instead of leaping. Smallest distance equals smoothest sound.",
             "points": [
@@ -8328,7 +10047,7 @@ export const CURRICULUM = {
         {
           "id": "inversions-stay-close",
           "title": "Inversions: Barely Move Your Hand",
-          "level": 74,
+          "level": 84,
           "teach": {
             "summary": "An inversion is the same chord with a different note on the bottom. By choosing the inversion that's already near your hand, you can change chords while barely moving — the secret weapon of smooth comping.",
             "points": [
@@ -8432,7 +10151,7 @@ export const CURRICULUM = {
         {
           "id": "sus-carryover",
           "title": "The Sus Carry-Over Trick",
-          "level": 75,
+          "level": 85,
           "teach": {
             "summary": "Here's a magic shortcut: a chord's sus4 contains the SAME three notes as the sus2 of the chord a 4th higher. So when the root jumps up a 4th, your suspended grab can ring right through the change with almost no finger movement.",
             "points": [
@@ -8571,7 +10290,7 @@ export const CURRICULUM = {
         {
           "id": "contrary-motion",
           "title": "Contrary Motion: Voices Going Opposite Ways",
-          "level": 76,
+          "level": 86,
           "teach": {
             "summary": "Contrary motion is when your bass line moves one direction while an upper voice moves the other. The opposing pull sounds strong, independent, and satisfying — and it instantly makes simple chords feel composed.",
             "points": [
@@ -8732,7 +10451,7 @@ export const CURRICULUM = {
         {
           "id": "ii-v-i-changes-songs",
           "title": "ii–V–I: The Jazz Homecoming",
-          "level": 77,
+          "level": 87,
           "teach": {
             "summary": "The ii–V–I is the most important cadence in jazz and shows up everywhere else too. The minor ii sets up the dominant V, which pulls strongly home to the I. It's a smooth, satisfying 'walk home' you'll use constantly.",
             "points": [
@@ -8827,7 +10546,7 @@ export const CURRICULUM = {
         {
           "id": "walking-bass",
           "title": "Walking Bass Lines",
-          "level": 78,
+          "level": 88,
           "teach": {
             "summary": "A walking bass connects chords with a smooth, stepwise line in the low voice — usually landing on the root of each new chord and filling the gaps with passing notes. It's voice leading applied to the bottom of your sound.",
             "points": [
@@ -8978,7 +10697,7 @@ export const CURRICULUM = {
         {
           "id": "connecting-the-five-boxes",
           "title": "The Five Boxes: One Scale, Whole Neck",
-          "level": 79,
+          "level": 89,
           "teach": {
             "summary": "Box 1 is just one window onto the pentatonic. The same five notes repeat in five connected shapes ('boxes') that tile the entire fretboard, so you're never trapped in one spot. Learn how they link and the whole neck opens up.",
             "points": [
@@ -9054,7 +10773,7 @@ export const CURRICULUM = {
         {
           "id": "matching-scale-to-key",
           "title": "Picking the Right Scale for the Song",
-          "level": 80,
+          "level": 90,
           "teach": {
             "summary": "A scale only sounds good if it matches the song. The two everyday choices: over a minor or bluesy key use the MINOR pentatonic from the key's root; over a bright major key use the MAJOR pentatonic from the key's root. Same five shapes — just rooted differently.",
             "points": [
@@ -9129,7 +10848,7 @@ export const CURRICULUM = {
         {
           "id": "targeting-chord-tones",
           "title": "Land on Chord Tones: The 3rds and 7ths",
-          "level": 81,
+          "level": 91,
           "teach": {
             "summary": "Scales tell you which notes are available; chord tones tell you which ones sound STRONG. The secret to solos that follow the changes is to aim for a chord tone — especially the 3rd or 7th — on the strong beats (beat 1 most of all).",
             "points": [
@@ -9197,7 +10916,7 @@ export const CURRICULUM = {
         {
           "id": "phrasing-and-space",
           "title": "Phrasing: Play a Sentence, Then Breathe",
-          "level": 82,
+          "level": 92,
           "teach": {
             "summary": "Notes don't make a solo — phrases do. Good improvising sounds like talking: short musical sentences (motifs), call-and-response between ideas, and SPACE to let them land. The silence is as important as the notes.",
             "points": [
@@ -9354,7 +11073,7 @@ export const CURRICULUM = {
         {
           "id": "downbeats-upbeats-syncopation",
           "title": "Downbeats, Upbeats & Syncopation",
-          "level": 83,
+          "level": 93,
           "teach": {
             "summary": "Beats come in two flavors: downbeats (the numbers — 1, 2, 3, 4, where you tap your foot) and upbeats (the 'ands' in between). Accent the predictable downbeats and music feels grounded; accent the upbeats instead and you get syncopation — the surprise that makes a groove funky.",
             "points": [
@@ -9490,7 +11209,7 @@ export const CURRICULUM = {
         {
           "id": "time-signatures",
           "title": "Time Signatures: 4/4, 3/4 & 6/8",
-          "level": 84,
+          "level": 94,
           "teach": {
             "summary": "A time signature tells you how many beats are in each bar and how to feel them. The top number is how many beats per bar; the bottom tells you which note value gets the beat. Three of them cover most music you'll ever play.",
             "points": [
@@ -9705,7 +11424,7 @@ export const CURRICULUM = {
         {
           "id": "harmonic-rhythm-and-the-click",
           "title": "Harmonic Rhythm & Locking to the Click",
-          "level": 85,
+          "level": 95,
           "teach": {
             "summary": "Harmonic rhythm is simply how often the chords change — once per bar, twice per bar, every two bars. Slow it down for a hymn-like feel, speed it up for momentum. And whatever the rate, a metronome click is the tool that keeps it honest.",
             "points": [
@@ -9861,7 +11580,7 @@ export const CURRICULUM = {
         {
           "id": "progression-by-feel",
           "title": "Pick a Progression by Feel",
-          "level": 86,
+          "level": 96,
           "teach": {
             "summary": "The same four chords in a different order give totally different moods. I–V–vi–IV feels bright and lifted; vi–IV–I–V feels moody and yearning even though it's the SAME chords. Composing starts here: choose the order for the feeling you want.",
             "points": [
@@ -10021,7 +11740,7 @@ export const CURRICULUM = {
         {
           "id": "what-comes-next",
           "title": "What Chord Comes Next?",
-          "level": 87,
+          "level": 97,
           "teach": {
             "summary": "Chords have natural pull. The V badly wants to go to the I — that's the strongest move in tonal music. The IV likes to fall to I or push to V. Knowing these tendencies lets you steer the ear instead of guessing.",
             "points": [
@@ -10181,7 +11900,7 @@ export const CURRICULUM = {
         {
           "id": "add-colour-on-purpose",
           "title": "Add Colour on Purpose",
-          "level": 88,
+          "level": 98,
           "teach": {
             "summary": "Plain triads are the skeleton; colour tones are the personality. Swap a triad for a 7th, a sus, or a borrowed minor iv and the SAME progression suddenly has a mood. The key is doing it on purpose, at the right moment.",
             "points": [
@@ -10287,7 +12006,7 @@ export const CURRICULUM = {
         {
           "id": "melody-over-harmony",
           "title": "Write a Melody Over the Chords",
-          "level": 89,
+          "level": 99,
           "teach": {
             "summary": "A good melody isn't random — it's anchored to the chords underneath. Land on CHORD TONES (the notes inside the current chord) on the strong beats, and let PASSING TONES (in-between scale notes) connect them on the weak beats. That's the whole secret to melodies that 'fit'.",
             "points": [
@@ -10366,7 +12085,7 @@ export const CURRICULUM = {
         {
           "id": "harmonic-rhythm-and-form",
           "title": "Harmonic Rhythm & Song Form",
-          "level": 90,
+          "level": 100,
           "teach": {
             "summary": "Two big structural choices shape a song: how OFTEN chords change (harmonic rhythm) and how sections REPEAT and CONTRAST (form). Slow chord changes feel spacious; fast changes feel busy. A verse/chorus works because it repeats enough to feel familiar but contrasts enough to feel like a lift.",
             "points": [
@@ -10482,7 +12201,7 @@ export const CURRICULUM = {
         {
           "id": "write-eight-bars",
           "title": "Capstone: Write & Read 8 Bars",
-          "level": 91,
+          "level": 101,
           "teach": {
             "summary": "Time to put it all together. You'll sketch an 8-bar idea using everything from this unit — a progression chosen by feel, a strong cadence, one colour chord — and read it back as a Nashville number / lead-sheet chart so any musician (including future-you) can play it.",
             "points": [
@@ -10681,7 +12400,7 @@ export const CURRICULUM = {
         {
           "id": "pima-hand",
           "title": "Meet Your Picking Hand: P-I-M-A",
-          "level": 92,
+          "level": 102,
           "teach": {
             "summary": "Fingerstyle starts with giving each picking-hand finger a job. Thumb plays the low strings, and three fingers each cover one of the high strings. Once the assignments are automatic, patterns get easy.",
             "points": [
@@ -10768,7 +12487,7 @@ export const CURRICULUM = {
         {
           "id": "thumb-independence",
           "title": "Thumb Independence: The Steady Bass",
-          "level": 93,
+          "level": 103,
           "teach": {
             "summary": "The thumb is the engine of fingerstyle. It keeps a steady, almost robotic pulse on the bass strings while your fingers do everything else on top. Training it to run on autopilot is the single biggest unlock.",
             "points": [
@@ -10848,7 +12567,7 @@ export const CURRICULUM = {
         {
           "id": "alternating-bass-travis",
           "title": "Alternating Bass: Travis Picking",
-          "level": 94,
+          "level": 104,
           "teach": {
             "summary": "Now give the thumb two bass notes to bounce between — usually the root and the 5th. This 'alternating bass' is the heart of Travis picking, the boom-chick groove behind folk, country and a ton of acoustic songs.",
             "points": [
@@ -10959,7 +12678,7 @@ export const CURRICULUM = {
         {
           "id": "arpeggio-roll",
           "title": "Rolling Arpeggios: One Chord, Many Notes",
-          "level": 95,
+          "level": 105,
           "teach": {
             "summary": "Instead of strumming a chord all at once, an arpeggio plays its notes one at a time in a flowing roll. Hold one chord shape and let P-I-M-A unspool it string by string — instant shimmer.",
             "points": [
@@ -11044,7 +12763,7 @@ export const CURRICULUM = {
         {
           "id": "pinch-blocked",
           "title": "Pinches & Blocked Chords",
-          "level": 96,
+          "level": 106,
           "teach": {
             "summary": "A 'pinch' plays a bass note and a high note at the exact same instant — thumb and a finger squeezing together. Combine it with the steady bass and you get accents that punch out a melody or mark the downbeat.",
             "points": [
@@ -11161,7 +12880,7 @@ export const CURRICULUM = {
         {
           "id": "pattern-across-progression",
           "title": "One Pattern, Whole Progression",
-          "level": 97,
+          "level": 107,
           "teach": {
             "summary": "Here's where it all pays off: pick ONE fingerpicking pattern and run it across a chord progression, changing only the fretting hand. The picking hand stays on autopilot while the chords move underneath.",
             "points": [
@@ -11360,7 +13079,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-04-major-vs-minor-ear",
-      "level": 19,
+      "level": 23,
       "lessonId": "major-vs-minor-third",
       "testsUnit": "intervals",
       "kind": "ear",
@@ -11392,7 +13111,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-05-perfect-fifth",
-      "level": 21,
+      "level": 26,
       "lessonId": "the-tritone",
       "testsUnit": "intervals",
       "kind": "mcq",
@@ -11408,7 +13127,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-06-interval-ear",
-      "level": 23,
+      "level": 28,
       "lessonId": "building-and-naming-intervals",
       "testsUnit": "intervals",
       "kind": "ear",
@@ -11438,7 +13157,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-07-major-scale-formula",
-      "level": 26,
+      "level": 32,
       "lessonId": "nashville-number-system",
       "testsUnit": "major-scale-keys",
       "kind": "mcq",
@@ -11454,7 +13173,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-08-key-signature",
-      "level": 29,
+      "level": 35,
       "lessonId": "hearing-relative-major-minor",
       "testsUnit": "major-scale-keys",
       "kind": "mcq",
@@ -11470,7 +13189,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-09-triad-third",
-      "level": 34,
+      "level": 40,
       "lessonId": "triad-inversions",
       "testsUnit": "triads",
       "kind": "mcq",
@@ -11486,7 +13205,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-10-five-one-ear",
-      "level": 41,
+      "level": 51,
       "lessonId": "darker-sevenths",
       "testsUnit": "function-tension",
       "kind": "ear",
@@ -11538,7 +13257,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-11-dom7-pull-ear",
-      "level": 48,
+      "level": 58,
       "lessonId": "suspensions-resolve",
       "testsUnit": "sevenths",
       "kind": "ear",
@@ -11590,7 +13309,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-12-lydian-character",
-      "level": 55,
+      "level": 65,
       "lessonId": "relative-vs-parallel",
       "testsUnit": "modes",
       "kind": "mcq",
@@ -11606,7 +13325,7 @@ export const CURRICULUM = {
     },
     {
       "id": "placement-13-altered-dom-ear",
-      "level": 63,
+      "level": 73,
       "lessonId": "add9-and-six-nine",
       "testsUnit": "extensions-alterations",
       "kind": "ear",
