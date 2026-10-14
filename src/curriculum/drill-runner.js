@@ -611,6 +611,72 @@ function buildOctave(root, opts = {}) {
   });
   return { root: r, notes: uniqNotes(positions), label: opts.label || `${r} octaves`, positions, steps };
 }
+// Octave shapes, one string pair at a time: each drill entry names the string its root sits on
+// (c.string, 6 = low E). The root, then its octave two strings over (two frets up from the 6th
+// and 5th strings, three from the 4th and 3rd, where the jump crosses the B string), then both
+// together with the string between them muted. Only the pair that is sounding is lit.
+function buildOctaveShapes(prog, opts = {}) {
+  const spb = 60 / (opts.bpm || 70), N = customTuning.length;
+  const open = si => _pmidi(noteAt(si, 0));
+  const strNo = si => `${_nth(si + 1)} string`;
+  const fretWord = f => (f === 0 ? 'open' : `${_nth(f)} fret`);
+  const words = ['same fret', 'one fret up', 'two frets up', 'three frets up', 'four frets up'];
+  const steps = [], positions = [], seen = new Set();
+  const keep = ps => ps.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  prog.forEach(c => {
+    const r = toSharp(c.root);
+    let si = Math.max(2, Math.min(N - 1, (c.string > 0 ? c.string : N) - 1));
+    let f = fretOfOn(si, r);
+    if (f < 0) return;
+    let f2 = f + 12 - (open(si - 2) - open(si));
+    if (f2 < 0) { f += 12; f2 += 12; }
+    if (f2 > nfrets()) return;
+    const lo = { ...posWithNote(si, f), disp: r }, hi = { ...posWithNote(si - 2, f2), disp: r };
+    keep([lo, hi]);
+    const shape = { root: r, notes: [r], positions: assignFingers([lo, hi]) };
+    const up = f2 - f, beats = beatsOf(c);
+    steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur: spb, shape, label: `${r} on the ${strNo(si)}, ${fretWord(f)}` });
+    steps.push({ focus: [_fp(hi)], play: [_pp(hi)], dur: spb, shape, label: `octave: two strings over, ${words[up] || up + ' frets up'} → ${strNo(si - 2)}, ${fretWord(f2)}` });
+    steps.push({ focus: [_fp(lo), _fp(hi)], play: [_pp(lo), _pp(hi)], dur: Math.max(1, beats - 2) * spb, shape, label: `${r} + ${r} together · mute the ${strNo(si - 1)} in between` });
+  });
+  if (!steps.length) return buildOctave(toSharp(prog[0]?.root || 'A'), opts);
+  return { root: toSharp(prog[0].root), notes: uniqNotes(positions), label: opts.label || 'Octave shapes on every string pair', positions, steps: padToBar(steps, spb, opts.barBeats || 4, 0), focusOnly: true };
+}
+// Interval shapes on two string pairs — the A and D strings, then the G and B strings — so the
+// one-fret shift at the B string is seen and heard: from C, a 4th is the same fret on the next
+// string up (A3 → D3), a 5th two frets up (D5), a major 3rd one fret back (D2); across G → B every
+// shape moves up one fret (G5 → B6, B8, B5). Each interval: root, top note, then both together.
+const _IV_NAME = { 1: 'Minor 2nd', 2: 'Major 2nd', 3: 'Minor 3rd', 4: 'Major 3rd', 5: 'Perfect 4th', 6: 'Tritone', 7: 'Perfect 5th', 8: 'Minor 6th', 9: 'Major 6th', 10: 'Minor 7th', 11: 'Major 7th', 12: 'Octave' };
+function buildIntervalShapes(root, intervals, opts = {}) {
+  const r = toSharp(root), spb = 60 / (opts.bpm || 66), N = customTuning.length;
+  if (N < 6) return buildIntervalShape(r, intervals, opts);
+  const open = si => _pmidi(noteAt(si, 0));
+  const strNo = si => `${_nth(si + 1)}`;
+  const shapeWord = d => (d === 0 ? 'same fret' : d > 0 ? `${d} fret${d === 1 ? '' : 's'} up` : `${-d} fret${d === -1 ? '' : 's'} back`);
+  const pairs = [[N - 2, N - 3, 'A and D strings'], [2, 1, 'G and B strings']];
+  const steps = [], positions = [], seen = new Set();
+  const keep = ps => ps.forEach(p => { const k = p.si + ':' + p.fret; if (!seen.has(k)) { seen.add(k); positions.push(p); } });
+  for (const [loSi, hiSi, name] of pairs) {
+    const gap = open(hiSi) - open(loSi);
+    let f = fretOfOn(loSi, r);
+    if (f < 0) continue;
+    if (f === 0 || f + Math.min(...intervals) - gap < 0) f += 12;
+    const lo = { ...posWithNote(loSi, f), disp: r };
+    keep([lo]);
+    intervals.forEach(semi => {
+      const f2 = f + semi - gap;
+      if (f2 < 0 || f2 > nfrets()) return;
+      const hi = { ...posWithNote(hiSi, f2), disp: spellInterval(r, semi) };
+      keep([hi]);
+      const what = `${_IV_NAME[semi] || semi + ' half steps'} on the ${name}: ${shapeWord(f2 - f)}`;
+      steps.push({ focus: [_fp(lo)], play: [_pp(lo)], dur: spb, label: `${what} · ${r} on the ${strNo(loSi)} string, ${_nth(f)} fret` });
+      steps.push({ focus: [_fp(hi)], play: [_pp(hi)], dur: spb, label: `${what} · ${hi.disp} on the ${strNo(hiSi)} string, ${_nth(f2)} fret` });
+      steps.push({ focus: [_fp(lo), _fp(hi)], play: [_pp(lo), _pp(hi)], dur: 2 * spb, label: `${what} · ${r} + ${hi.disp} together` });
+    });
+  }
+  if (!steps.length) return buildIntervalShape(r, intervals, opts);
+  return { root: r, notes: uniqNotes(positions), label: opts.label || `${r} interval shapes · A–D strings, then G–B strings`, positions, steps: padToBar(steps, spb, opts.barBeats || 4, 0), focusOnly: true };
+}
 function buildNoteDemo(noteName, opts = {}) {
   const pos = opts.pos || lowestPos(noteName);
   const dur = 60 / (opts.bpm || 100), f = [{ si: pos.si, fret: pos.fret }];
@@ -1003,6 +1069,61 @@ function buildProgression(prog, opts = {}) {
     return out;
   });
   return { type: 'chords', label: opts.label || progLabel(prog), chords, timeSig: opts.timeSig };
+}
+// Open shapes with a capo: each chord is fingered as the shape written (c.frets, named by
+// c.root), and the capo (c.capo, else the drill's capo) moves the whole shape up — the shape's
+// open strings ring at the capo's fret. The chord SOUNDS a half step higher per fret: the G
+// shape with the capo on 2 is an A chord (542225 as the neck reads it).
+function buildCapoShapes(prog, opts = {}) {
+  const spb = 60 / (opts.bpm || 80);
+  const chords = prog.map(c => {
+    const capo = Math.max(0, Math.round(c.capo != null ? +c.capo : +opts.capo || 0));
+    const shapeRoot = toSharp(c.root);
+    const g = gripFor(c, 'open', 0, { openInOtherKeys: true });
+    if (!g) return null;
+    const positions = g.positions.filter(p => p.fret >= 0).map(p => ({ ...posWithNote(p.si, p.fret + capo), finger: p.fret === 0 ? 0 : p.finger }));
+    const r = NOTES[(NOTES.indexOf(shapeRoot) + capo) % 12], suf = chordSuffix(c.quality);
+    const label = capo ? `${shapeRoot}${suf} shape + capo ${capo} = ${r}${suf}` : `${r}${suf} · open`;
+    return { root: r, notes: getChordNotes(r, chordIntervalsFor(c.quality)), quality: c.quality, label, dur: beatsOf(c) * spb, positions };
+  });
+  if (chords.some(x => !x)) return null;
+  return { type: 'chords', label: opts.label || `${progLabelNamed(prog)} · open shapes with a capo`, chords, timeSig: opts.timeSig };
+}
+
+// ── Strumming: a chord struck in a written pattern ───────────────────
+// A drill (or one chord of it) may carry `strum`: one bar's pattern as D (down: every string,
+// low to high), U (up: the top strings, high to low) and - (a miss: the hand still swings).
+// The slots split the bar evenly: 4 are quarter notes, 8 eighths, 12 triplets, 16 sixteenths,
+// so "D-DU-UDU" is down, down-up, up-down-up. A chord longer than a bar repeats the pattern; a
+// shorter one plays as much of it as fits. Each hit rings until the next one.
+function strumHits(positions, pattern, beats, spb, barBeats = 4) {
+  const pat = String(pattern || '').toUpperCase().replace(/[^DU-]/g, '');
+  if (!/[DU]/.test(pat)) return null;
+  const ps = (positions || []).filter(p => p && p.fret >= 0).map(p => noteAt(p.si, p.fret)).sort((a, b) => _pmidi(a) - _pmidi(b));
+  if (!ps.length) return null;
+  const n = pat.length, slot = (barBeats || 4) / n;
+  const nUp = Math.min(ps.length, Math.max(2, Math.ceil(ps.length * 0.6)));
+  const at = [];
+  for (let k = 0; k * slot < beats - 1e-6; k++) { const ch = pat[k % n]; if (ch !== '-') at.push({ beat: k * slot, dir: ch }); }
+  return at.map((h, i) => {
+    const end = i + 1 < at.length ? at[i + 1].beat : beats, down = h.dir === 'D';
+    const onBeat = Math.abs(h.beat - Math.round(h.beat)) < 1e-6;
+    return { at: h.beat * spb, dir: h.dir, pitches: down ? ps : ps.slice(-nUp).reverse(), dur: Math.max(0.12, (end - h.beat) * spb * 0.95), strum: down ? 0.014 : 0.011, gain: down ? (onBeat ? 1 : 0.85) : 0.65 };
+  });
+}
+// Give each chord of a chords plan its strum hits (the chord's own pattern, else the drill's).
+// The pattern rides on the board label after a dash, so the run strip's chord names stay clean.
+function withStrum(plan, prog, drillStrum, spb, bar, opts = {}) {
+  if (!plan || plan.type !== 'chords' || !plan.chords || plan.chords.length !== prog.length) return plan;
+  if (!drillStrum && !prog.some(c => c && c.strum)) return plan;
+  plan.chords.forEach((c, i) => {
+    const pat = (prog[i] && prog[i].strum) || drillStrum;
+    const hits = pat && strumHits(c.positions, pat, (c.dur || spb * 4) / spb, spb, bar);
+    if (!hits || !hits.length) return;
+    c.hits = hits;
+    if (!opts.quiet) c.label = `${c.label} — strum ${pat}`;
+  });
+  return plan;
 }
 
 // ── The voicing a drill names: shells, stabs, power chords ───────────
@@ -1698,6 +1819,15 @@ export function demoToPlan(demo) {
     const nn = toSharp(demo.note || demo.root);
     return demo.all ? buildNoteEverywhere(nn, { bpm: 88, label: demo.caption }) : buildNoteDemo(nn, { bpm: 100, label: demo.caption, times: 3 });
   }
+  if (demo.kind === 'strum') {
+    // one chord strummed in a pattern for a bar or two: { root, quality, frets?, pattern, beats
+    // (one bar), bars, bpm } — a rhythm ear clip where only the strumming changes
+    const bpm = demo.bpm || 80, bar = demo.beats || 4, bars = demo.bars || 2;
+    const c = { root, quality: demo.quality || 'Major', frets: demo.frets, beats: bar * bars };
+    const plan = buildProgression([c], { bpm, openChords: true, label: demo.caption });
+    plan.chords.forEach(ch => { ch.label = demo.caption || ch.label; });
+    return withStrum(plan, [c], demo.pattern, 60 / bpm, bar, { quiet: true });
+  }
   return null;
 }
 
@@ -1800,9 +1930,15 @@ export function playStep(st, opts = {}) {
 }
 
 // drill → synced plan. `bpmOverride` lets the Practice Manager re-time the same
-// exercise to a chosen tempo without changing the curriculum data.
+// exercise to a chosen tempo without changing the curriculum data. A drill that writes a strum
+// pattern (drill.strum, or a chord's own strum) has its chords struck in that pattern.
 export function drillToPlan(drill, bpmOverride) {
   if (!drill) return null;
+  const plan = drillToPlanBase(drill, bpmOverride);
+  const prog = Array.isArray(drill.progression) ? drill.progression : [];
+  return withStrum(plan, prog, drill.strum, 60 / (bpmOverride || drill.bpm || 90), timeSigOf(drill.timeSig)[0]);
+}
+function drillToPlanBase(drill, bpmOverride) {
   // Match on the drill's TITLE / VOICING first (stable signals); only fall back to the
   // free-text pattern for the generic scale case — the pattern often name-drops other
   // concepts ("…match the open A string…") that would mis-route a keyword search.
@@ -1825,6 +1961,8 @@ export function drillToPlan(drill, bpmOverride) {
   if (voicing.includes('open string')) return buildOpenStrings({ bpm });
   if (/step size/.test(title) || /half[- ]?step|whole[- ]?step/.test(title)) return buildStepSizes({ bpm, barBeats: timeSig[0] });
   if (/two-note octaves|octave leaps/.test(sig)) return buildOctave(root, { bpm });
+  if (/octave shapes/.test(voicing) && prog.length) return buildOctaveShapes(prog, { bpm, barBeats: timeSig[0] });
+  if (/interval shapes/.test(voicing)) return buildIntervalShapes(root, Array.isArray(drill.intervals) && drill.intervals.length ? drill.intervals : [5, 7, 4], { bpm, barBeats: timeSig[0] });
 
   // 1.4) The WALKDOWN étude — authored open-position descent (bass = the scale, down). Keyed on
   // "walkdown" only: the Walking Bass Lines lesson (I–vi–ii–V) also says "walking bass" and
@@ -1925,6 +2063,12 @@ export function drillToPlan(drill, bpmOverride) {
     if (tp) return tp;
   }
 
+  // 4.7) Open shapes under a capo — the shape fingered, the chord it sounds named.
+  if (prog.length && (drill.capo != null || prog.some(c => c.capo != null))) {
+    const cp = buildCapoShapes(prog, { bpm, timeSig, capo: drill.capo });
+    if (cp) return cp;
+  }
+
   // 5) CHORD-PROGRESSION drills (the majority) — walk the changes, one voicing per chord
   if (prog.length) return buildProgression(prog, { bpm, label: progLabel(prog), position: positionStrategyFor(sig), timeSig, openChords: voicing === 'open chords', roll: voicing === 'arpeggiated' });
 
@@ -1970,13 +2114,19 @@ export function playPlan(plan, opts = {}) {
       }
       updateOverlays();
     };
+    // a strummed chord (c.hits, from a written strum pattern) is struck hit by hit inside its slot
+    const playHits = c => c.hits.forEach(h => {
+      const go = () => { if (!stopped && isAlive()) playPitches(h.pitches, { dur: h.dur, strum: h.strum, gain: 0.16 * (h.gain || 1) * Math.min(1, Math.sqrt(4 / h.pitches.length)) }); };
+      if (h.at > 0) timers.push(setTimeout(go, h.at * 1000)); else go();
+    });
     function cycleChords() {
       let t = 0;
       plan.chords.forEach((c, idx) => {
         timers.push(setTimeout(() => {
           if (stopped || !isAlive()) return;
           showChord(c, idx);
-          playChord(c, { dur: (c.dur || 1) * 0.92, gain: 0.16 });
+          if (c.hits && c.hits.length) playHits(c);
+          else playChord(c, { dur: (c.dur || 1) * 0.92, gain: 0.16 });
           // broadcast what's sounding so other pedals (Circle of Fifths trace…) can follow along
           window.dispatchEvent(new CustomEvent('resonote:played', { detail: { pcs: c.notes.slice(), root: c.root, label: c.label } }));
         }, t * 1000));
