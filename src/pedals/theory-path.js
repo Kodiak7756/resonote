@@ -19,8 +19,8 @@ const FLOW_LESSONS = new Set([
   'common-tones', 'nearest-note', 'inversions-stay-close', 'sus-carryover', 'contrary-motion', 'walking-bass',
   // Function & cadences
   'diatonic-triads-of-a-key', 'authentic-cadence', 'plagal-and-half', 'deceptive-cadence', 'minor-cadences', 'minor-diatonic-chords', 'dominant-7-and-the-pull',
-  // Changes & songs (real progressions)
-  'smooth-changes-anchor-fingers', 'i-iv-v', 'i-v-vi-iv-pop', 'ii-v-i-changes-songs', 'fifties-and-transposing', 'twelve-bar-blues', 'full-song-playthrough'
+  // Open chords, first changes & songs (real progressions)
+  'open-chord-families', 'smooth-changes-anchor-fingers', 'i-iv-v', 'i-v-vi-iv-pop', 'ii-v-i-changes-songs', 'fifties-and-transposing', 'twelve-bar-blues', 'full-song-playthrough'
 ]);
 // Set the fretboard view the way the header dropdown does (keeps the dropdown + listeners in sync).
 function applyFbView(fbv) {
@@ -94,15 +94,19 @@ function layerPlan(plan, layer, bpm) {
     if (!ps.length) return;
     ps.forEach(q => { const k = q.si + ':' + q.fret; if (!seen.has(k)) { seen.add(k); positions.push(q); } });
     const bass = ps[0], lab = `${c.label} · ${lyName}`;
-    if (layer === 2) {
-      steps.push({ focus: F([bass]), play: P([bass]), dur: spb * 0.9, label: lab });
-      steps.push({ focus: F(ps), play: P(ps), dur: spb * 0.9, gap: spb, label: lab });
+    // The chord keeps the length the drill gave it: bass on beat 1, the grip rings out the rest
+    // of the chord (and layer 4 gives its last beat to the walk-in), so a layered loop is the
+    // same number of bars as the plain one.
+    const beats = Math.max(2, Math.round((c.dur || 2 * spb) / spb));
+    if (layer === 2 || (layer === 4 && beats < 3)) {   // a two-beat chord has no beat to spare for a walk-in
+      steps.push({ focus: F([bass]), play: P([bass]), dur: spb * 0.9, gap: spb, label: lab });
+      steps.push({ focus: F(ps), play: P(ps), dur: spb * (beats - 1) * 0.95, gap: spb * (beats - 1), label: lab });
     } else if (layer === 3) {
       const roll = ps.concat([...ps].reverse().slice(1));
       roll.forEach(q => steps.push({ focus: F([q]), play: P([q]), dur: spb * 0.45, gap: spb * 0.5, label: lab }));
     } else {
-      steps.push({ focus: F([bass]), play: P([bass]), dur: spb * 0.9, label: lab });
-      steps.push({ focus: F(ps), play: P(ps), dur: spb * 0.9, gap: spb, label: lab });
+      steps.push({ focus: F([bass]), play: P([bass]), dur: spb * 0.9, gap: spb, label: lab });
+      steps.push({ focus: F(ps), play: P(ps), dur: spb * (beats - 2) * 0.95, gap: spb * (beats - 2), label: lab });
       const next = plan.chords[(i + 1) % plan.chords.length];
       const nps = [...(next.positions || [])].filter(q => q.fret >= 0).sort((a, b) => midiOf(a) - midiOf(b));
       if (nps.length) {
@@ -118,7 +122,7 @@ function layerPlan(plan, layer, bpm) {
 }
 import { audio } from '../core/audio.js';
 import { playChordNotes, playNote } from '../core/synth.js';
-import { demoToPlan, drillToPlan, playPlan, SEQ_COLORS } from '../curriculum/drill-runner.js';
+import { audioToPlan, drillToPlan, playPlan, playChord, playStep, SEQ_COLORS, timeSigOf } from '../curriculum/drill-runner.js';
 import { CURRICULUM } from '../curriculum/curriculum-data.js';
 import { getProgress, recordAttempt, markComplete, setCurrent, setPlaced, isComplete, recommendNext } from '../curriculum/progress-store.js';
 
@@ -144,7 +148,9 @@ export function buildTheoryContent(p) {
   let curId = s.curId || null;
   let exIdx = 0, answered = false, lastCorrect = false, chosenIdx = -1;
   let buildSel = new Set();
-  let placeIdx = 0, placePassed = 0, placeMissStreak = 0, placeAnswered = false, placeDone = false;
+  let placeIdx = 0, placePassed = 0, placeLessonId = null, placeMissStreak = 0, placeAnswered = false, placeDone = false;
+  // a placement question names the lesson it starts you on; its level is that lesson's level
+  const placeLevelOf = q => (q.lessonId && lessonById(q.lessonId)?.level) || q.level || 1;
   const playWatch = { on: false, target: null };
   let dpTimers = [];   // step-strip follow timers for chord plans (see dpFollowChords); cleared by stopSeq
 
@@ -221,6 +227,11 @@ export function buildTheoryContent(p) {
     });
   }
   function playDemo(d) {
+    if (!d) return;
+    // a clip the runner can play is shown on the neck as it sounds: progressions voice-led (shared
+    // notes held, the rest moving to the nearest note), strum clips struck in their pattern
+    const plan = audioToPlan(d);
+    if (plan) { playPath(plan); return; }
     const dn = demoToNotes(d); if (!dn) return;
     if (d.kind === 'progression') {
       let t = 0;
@@ -233,8 +244,6 @@ export function buildTheoryContent(p) {
         t += 1.15;
       });
     } else {
-      const plan = demoToPlan(d);
-      if (plan) { playPath(plan); return; }
       highlightDemo(d); playSeq(dn.seq);
     }
   }
@@ -392,7 +401,7 @@ export function buildTheoryContent(p) {
         <div class="tp-exhead" style="color:var(--rk-accent)">🎸 PRACTICE DRILL</div>
         <div style="font-weight:700;color:var(--rk-ink);margin-bottom:2px">${d.title || 'Drill'}</div>
         ${prog ? `<div class="mono" style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui))">${prog}</div>` : ''}
-        <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));margin-top:2px">${d.bpm || 90} BPM · ${d.timeSig || '4/4'}${d.voicing ? ' · ' + d.voicing : ''}</div>
+        <div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui));margin-top:2px">${d.bpm || 90} BPM · ${timeSigOf(d.timeSig).join('/')}${d.voicing ? ' · ' + d.voicing : ''}</div>
         ${d.pattern ? `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(9px*var(--ui))">${d.pattern}</div>` : ''}
         ${d.focus ? `<div style="color:var(--rk-ink-dim);font-size:calc(10px*var(--ui));margin-top:3px">🎯 ${d.focus}</div>` : ''}
         <button class="tp-demo" data-act="drillsee" style="margin-top:8px">▶ Hear &amp; see it on the fretboard ↑</button>
@@ -511,7 +520,8 @@ export function buildTheoryContent(p) {
   function dpClearTimers() { dpTimers.forEach(t => clearTimeout(t)); dpTimers = []; }
   function dpResetStrip() { Object.assign(dpStrip, { sig: null, steps: [], sections: [], playIdx: null, selIdx: null, plan: null }); }
   function dpByBar() { return (metroClock.bpm || dp.bpm || 90) > 140; }   // fast tempo → move a bar at a time, not a jitter per note
-  function dpTsig(L) { const m = /(\d+)\s*\/\s*\d+/.exec((L && L.drill && L.drill.timeSig) || ''); return m ? +m[1] : 4; }
+  // timeSig is authored as an array ([3,4]); timeSigOf also reads a "3/4" string.
+  function dpTsig(L) { return timeSigOf(L && L.drill && L.drill.timeSig)[0]; }
   // The exact plan the practice loop plays — built here too so the run can be READ before it starts.
   function dpPlanFor(L) {
     const bpm = dp.bpm || L.drill.bpm || 90;
@@ -579,12 +589,13 @@ export function buildTheoryContent(p) {
     if (plan.type === 'chords') {
       const c = (plan.chords || [])[i]; if (!c) return;
       setChordHighlight(c.root, c.notes, c.label, c.positions || null, SEQ_COLORS); updateOverlays();
-      playChordNotes(c.notes, { dur: 1.0, strum: 0.03, gain: 0.16 });
+      playChord(c, { dur: 1.0, gain: 0.16 });
     } else {
       const st = (plan.steps || [])[i]; if (!st) return;
-      setChordHighlight(plan.root, plan.notes, st.label || plan.label, plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
+      const sh = st.shape || plan;   // a comparison step lights the scale it belongs to
+      setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, st.label || plan.label, sh.positions || plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
       updateOverlays();
-      (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: (st.dur || 0.4) * 0.96, gain: 0.2 }));
+      playStep(st, { gain: 0.2 });
     }
   }
 
@@ -629,14 +640,14 @@ export function buildTheoryContent(p) {
 
   // ── Placement ───────────────────────────────────────────────────────
   function startPlacement() {
-    view = 'placement'; placeIdx = 0; placePassed = 0; placeMissStreak = 0; placeAnswered = false; placeDone = false; chosenIdx = -1;
+    view = 'placement'; placeIdx = 0; placePassed = 0; placeLessonId = null; placeMissStreak = 0; placeAnswered = false; placeDone = false; chosenIdx = -1;
     persist(); renderPlacement(); el.scrollTop = 0;
   }
   function renderPlacement() {
     const Q = CURRICULUM.placement || [];
     if (!Q.length) { view = 'path'; return renderPath(); }
     if (placeDone) {
-      setPlaced(placePassed || 1);
+      setPlaced(placePassed || 1, placePassed ? placeLessonId : (ALL[0] && ALL[0].id));
       const recd = recommendNext(getProgress(), ALL);
       let h = `<div class="tp-wrap rk"><div class="tp-title">🎯 Your level</div>`;
       h += `<div class="tp-card"><div class="tp-sum">Nice — you placed around <b>Level ${placePassed || 1}</b>.</div>`;
@@ -670,7 +681,11 @@ export function buildTheoryContent(p) {
   function answerPlacement(q, i) {
     if (placeAnswered) return;
     chosenIdx = i; lastCorrect = (i === q.answer); placeAnswered = true;
-    if (lastCorrect) { placePassed = Math.max(placePassed, q.level); placeMissStreak = 0; }
+    if (lastCorrect) {
+      const lv = placeLevelOf(q);
+      if (lv > placePassed) { placePassed = lv; placeLessonId = q.lessonId || null; }
+      placeMissStreak = 0;
+    }
     else placeMissStreak++;
     renderPlacement();
   }

@@ -2,7 +2,7 @@ import { audio } from './core/audio.js';
 import { setCurrentInstrument, setCustomTuning, applyTuning, currentInstrument, customTuning, INSTRUMENTS, hexLayout, setHexLayout } from './core/tuning.js';
 import { loadState, saveState, setShowIntervals, setShowNoteMap, chordHighlight, pedalBus, metroClock, fretboardView } from './core/state.js';
 import { boardHistory, restoreBoard, snapshotBoardNow, inventory, read as storeRead, write as storeWrite, KEYS } from './core/store.js';
-import { restoreMissing } from './core/kevin-library.js';
+import { restoreMissing, replaceStaleMarches } from './core/kevin-library.js';
 import { buildInstrumentView, buildTuningBar, updateOverlays, setCurrentTheme, currentTheme, INST_DEFAULT_THEME, setLastClickedNote, fretX, geo, pianoGeo, hexGeo, PIANO_BLACK, PIANO_BLACK_POS, PIANO_WHITE } from './ui/fretboard.js';
 import { renderHeader, renderInstrumentBar, renderInstrumentDisplay, renderCatalog, renderHelp, loadoutDone } from './ui/header.js';
 import { createPedalElement, bringToFront, LINK_PROFILE } from './ui/pedal-system.js';
@@ -1621,6 +1621,11 @@ async function init() {
       if (added.length) storeWrite(KEYS.pieces, library);   // through the store: one cap for every writer
       localStorage.setItem('rn-lib-seeded', '1');
     }
+    // Every boot, not behind the flag: a library seeded before the DGB/ADG marches were
+    // corrected still holds the broken copies, and only an untouched copy is swapped.
+    const stale = storeRead(KEYS.pieces, []);
+    const fixed = replaceStaleMarches(Array.isArray(stale) ? stale : []);
+    if (fixed.replaced.length) storeWrite(KEYS.pieces, fixed.library);
   } catch (e) { /* private mode — the pedals still work, the shelf is just empty */ }
 
   // Mount saved pedals — each one on its own. A pedal that throws in someone

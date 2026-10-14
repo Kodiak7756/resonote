@@ -2,7 +2,7 @@ import { NOTES, SCALE_TYPES } from '../core/music-theory.js';
 import { setChordHighlight, clearChordHighlight, pedalBus, metroClock } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
 import { CURRICULUM } from '../curriculum/curriculum-data.js';
-import { drillToPlan, playPlan, SEQ_COLORS } from '../curriculum/drill-runner.js';
+import { drillToPlan, playPlan, playChord, playStep, SEQ_COLORS } from '../curriculum/drill-runner.js';
 import { stepStripHTML, wireStepStrip, followStrip, paintStripAt, planToStripSteps } from '../ui/step-strip.js';
 // A running drill and a running piece are the same act, so they get the same frame —
 // see src/ui/exercise-view.js. The 📖 Songbook renders through this too.
@@ -253,13 +253,14 @@ export function buildPracticeContent(p) {
       const c = (plan.chords || [])[i]; if (!c) return;
       setChordHighlight(c.root, c.notes, c.label, c.positions, SEQ_COLORS);
       updateOverlays();
-      playChordNotes(c.notes, { dur: 1.1, strum: 0.03, gain: 0.16 });
+      playChord(c, { dur: 1.1, gain: 0.16 });
       return;
     }
     const st = (plan.steps || [])[i]; if (!st) return;
-    setChordHighlight(plan.root, plan.notes, st.label || plan.label, plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
+    const sh = st.shape || plan;   // a comparison step lights the scale it belongs to
+    setChordHighlight(sh.root || plan.root, sh.notes || plan.notes, st.label || plan.label, sh.positions || plan.positions, plan.colors || SEQ_COLORS, st.focus, null, plan.focusOnly);
     updateOverlays();
-    (st.play || []).forEach(pl => playNote(pl.note, pl.octave ?? 3, { dur: 0.9, gain: 0.2 }));
+    playStep(st, { dur: 0.9, gain: 0.2 });
   }
 
   if (p._theoryStop) { p._theoryStop(); p._theoryStop = null; }   // clear any orphan loop on rebuild
