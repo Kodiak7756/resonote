@@ -8,5 +8,6 @@ if not exist node_modules (
 echo.
 echo Resonote is starting. Open http://localhost:5173 in your browser.
 echo The mic works on localhost or https only.
+echo VR headset: open the "Quest:" address printed below in the headset's browser (see VR.md).
 echo.
 call npm run dev -- --host --port 5173 --strictPort
