@@ -38,6 +38,7 @@ import { readPieces, transposeToKey, stepsToPlan, notesToSteps, findSeed, seedNo
 import { pickGrip, assignFingers, findTriadsOnSet, buildNpsBoxes, findScaleBoxes } from '../core/voicings.js';
 import { stepStripHTML, wireStepStrip, followStrip, paintStripAt, planToStripSteps } from '../ui/step-strip.js';
 import { masterTempoBlock, wireMasterTempo } from '../ui/tempo-control.js';
+import { feedNowNext, clearNowNext } from '../core/now-next.js';
 
 const QSUF = { Major: '', Minor: 'm', Dim: '°', Aug: '+' };
 const INV_NAME = ['root pos', '1st inv', '2nd inv'];
@@ -560,9 +561,20 @@ export function buildWorkoutsContent(p) {
     // big now/next banner above the neck — now in the dot color, next in the ghost color
     setNowBanner({ now: { text: `${cur.label} · ${cur.sub}`, color: neckSkin()?.root }, next: nxt ? { text: nxt.label } : null });
     updateOverlays();
+    feedCoach();
     // soft roll so the ear gets the target too
     [...cur.positions].sort((a, b) => (a.octave * 12 + NOTES.indexOf(a.note)) - (b.octave * 12 + NOTES.indexOf(b.note)))
       .forEach((x, i) => setTimeout(() => { if (active) playNote(x.note, x.octave, { dur: 0.5, gain: 0.14 }); }, i * 40));
+  }
+
+  // The Now & Next pedal: the grip you are holding, the next one, and the beats left
+  // on this one (none in 🎤 listen mode — it waits for you, not the clock).
+  function feedCoach() {
+    if (active?.engine !== 'flash' || !active.cur) return;
+    const per = beatsPerItem(), auto = s.adv === 'auto';
+    feedNowNext('workouts', { now: { ...active.cur, hint: active.cur.sub }, next: active.nxt,
+      beatsLeft: auto ? per - active.beat : null, beatsPerChord: per,
+      beat: active.beat % beatsPerBar(), beatsPerBar: beatsPerBar(), bpm: active.bpm });
   }
 
   // Flash items are rolled a PAGE at a time so the strip can show what's coming —
@@ -615,7 +627,7 @@ export function buildWorkoutsContent(p) {
       // bars → beats through the CLOCK's time signature, so 3/4 counts in threes and the
       // beat pips agree with the strip's bar lines instead of both assuming 4.
       if (s.adv === 'auto' && active.beat >= beatsPerItem()) advanceFlash();
-      else refreshStatus();
+      else { refreshStatus(); feedCoach(); }
     }, 60000 / (active.bpm || metroClock.bpm || 90));
   }
 
@@ -969,6 +981,7 @@ export function buildWorkoutsContent(p) {
     active = null;
     if (strip) strip.done = true;            // the strip stays up so you can read back what you just played
     setNowBanner(null);
+    clearNowNext('workouts');
     clearChordHighlight(); clearGhostHighlight(); updateOverlays();
     if (alive()) render();
   }
