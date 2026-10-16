@@ -34,7 +34,8 @@ export function bootHub() {
       what the neck shows and the note the mic hears all follow the PC, and what you change here goes back to it.
       The PC keeps its own card on the board.</p>
       <p>If a button opens a tab instead of a window, open a new browser window and type the address shown under the pedal's name.</p>
-      <p>Input &amp; Tuner stays on the PC — it holds the mic.</p>
+      <p>Your guitar stays plugged into the PC. Input &amp; Tuner here shows what the PC hears, and its buttons and knobs work the PC's input.</p>
+      <p>Opening one of the <b>More pedals</b> adds it to the PC's board too.</p>
     </div>`;
   document.body.appendChild(root);
 
@@ -48,8 +49,8 @@ export function bootHub() {
   let lastSig = '';
   onSyncMessage(m => {
     if (m.kind === 'vr-board') {
-      const sig = JSON.stringify([m.board, m.neckHere]);
-      if (sig !== lastSig) { lastSig = sig; render(m.board || [], m.neckHere); }
+      const sig = JSON.stringify([m.board, m.more, m.neckHere]);
+      if (sig !== lastSig) { lastSig = sig; render(m.board || [], m.neckHere, m.more || []); }
     } else if (m.kind === 'main-hello') ask();
   });
 
@@ -79,12 +80,12 @@ function row({ ref, title, icon, accent, here, docked }) {
     </div>`;
 }
 
-function render(board, neckHere) {
+function render(board, neckHere, more = []) {
   const list = document.getElementById('vr-list');
   if (!list) return;
   list.innerHTML = board.map(row).join('')
     + row({ ref: NECK, title: 'Neck', icon: '🎸', accent: '#e0a14a', here: neckHere })
-    + (board.length ? '' : `<div class="vr-empty">No pedals on the PC's board that can open here — add some there with + PEDALS.</div>`);
+    + (more.length ? `<h2 class="vr-more">More pedals <span>— not on the PC's board yet; opening one adds it there</span></h2>` + more.map(row).join('') : '');
 }
 
 function openWindow(ref) {

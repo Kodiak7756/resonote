@@ -1706,7 +1706,7 @@ async function init() {
 
   // Pop-out windows: keep them in step with this one.
   initSync('main');
-  initPopoutMain({ pedals: () => pedals, buildContent, save, onChange: renderSessionBar, catalog: CATALOG });
+  initPopoutMain({ pedals: () => pedals, buildContent, save, onChange: renderSessionBar, catalog: CATALOG, addPedal });
   onSyncMessage(m => {
     if (m.kind === 'fbclick') remoteFretboardClick(m.info);
     else if (m.kind === 'rebuild-pedal' && m.type) { pedalBus.rebuildPedal(m.type, m.settings || undefined); save(); }

@@ -123,8 +123,60 @@ function displayOf() {
     inst: instOf(),
   };
 }
+// Everything the Input & Tuner pedal shows, so a copy of it in another window
+// (the headset) draws the same readings, device list and knob positions.
+const audioState = () => ({
+  detected: audio.detected, connected: audio.connected, connecting: !!audio.connecting,
+  rms: audio.rms, dbfs: audio.dbfs, peakHold: audio.peakHold, devicePeak: audio.devicePeak,
+  silent: !!audio.silent, neverHeard: !!audio.neverHeard, everHeard: !!audio._everHeard,
+  error: audio.error, diag: audio.diag,
+  devices: (audio.devices || []).map(d => ({ deviceId: d.deviceId, label: d.label, kind: d.kind })),
+  selectedDeviceId: audio.selectedDeviceId, inputGain: audio.inputGain, noiseGate: audio.noiseGate,
+});
+const finite = v => (typeof v === 'number' && isFinite(v)) ? v : -Infinity;   // JSON turns -Infinity into null
+function applyAudio(m) {
+  if (!m) return;
+  audio.detected = m.detected || null; audio.connected = !!m.connected; audio.connecting = !!m.connecting;
+  audio.rms = m.rms || 0; audio.dbfs = finite(m.dbfs); audio.peakHold = finite(m.peakHold); audio.devicePeak = finite(m.devicePeak);
+  audio.silent = !!m.silent; audio.neverHeard = !!m.neverHeard; audio._everHeard = !!m.everHeard;
+  audio.error = m.error || null; audio.diag = m.diag || null;
+  if (Array.isArray(m.devices)) audio.devices = m.devices;
+  if (m.selectedDeviceId !== undefined) audio.selectedDeviceId = m.selectedDeviceId;
+  if (m.inputGain !== undefined) audio.inputGain = m.inputGain;
+  if (m.noiseGate !== undefined) audio.noiseGate = m.noiseGate;
+  audio.emit();
+}
+
+// In every window but the PC's main one, the mic's controls become a remote:
+// the guitar is plugged into the PC, so Connect, the input list, gain and gate
+// are sent there and done there, and the readings come back through applyAudio.
+// The knobs move here at once so dragging one feels like dragging it.
+function remoteMic() {
+  const cmd = (op, arg) => post('audio-cmd', { op, arg });
+  audio.connect     = async id => { audio.connecting = true; audio.emit(); cmd('connect', id ?? null); return true; };
+  audio.disconnect  = () => cmd('disconnect');
+  audio.setDevice   = id => { audio.selectedDeviceId = id; audio.emit(); cmd('setDevice', id); };
+  audio.setGain     = v => { audio.inputGain = v; audio.emit(); cmd('setGain', v); };
+  audio.setGate     = v => { audio.noiseGate = v; audio.emit(); cmd('setGate', v); };
+  audio.primeLabels = async () => { cmd('primeLabels'); return true; };
+  audio.enumerate   = async () => { cmd('enumerate'); };
+}
+function runMicCommand(m) {
+  const a = m.arg;
+  switch (m.op) {
+    case 'connect':     audio.connect(a || audio.selectedDeviceId); break;
+    case 'disconnect':  audio.disconnect(); break;
+    case 'setDevice':   audio.setDevice(a); break;
+    case 'setGain':     if (typeof a === 'number') audio.setGain(a); break;
+    case 'setGate':     if (typeof a === 'number') audio.setGate(a); break;
+    case 'primeLabels': audio.primeLabels(); break;
+    case 'enumerate':   audio.enumerate(); break;
+  }
+}
+
 export function fullState() {
   return {
+    audio: audioState(),
     key: pedalBus.root ? keyOf() : null,
     links: { key: pedalBus.links, tempo: metroClock.links },
     tempo: tempoOf(),
@@ -196,6 +248,7 @@ export function applyFullState(s) {
     if (s.key) applyKey(s.key);
     if (s.display && role !== 'hub') applyDisplay(s.display);   // the hub has no neck to draw
   });
+  if (s.audio && role !== 'main') applyAudio(s.audio);
 }
 
 // ── Wrap the buses so local changes go out ───────────────────────────
@@ -239,8 +292,9 @@ function wireBuses() {
     let last = 0, lastSig = '';
     audio.on(() => {
       const now = performance.now();
-      const msg = { detected: audio.detected, connected: audio.connected, rms: audio.rms, dbfs: audio.dbfs };
-      const sig = JSON.stringify([msg.detected, msg.connected]);
+      const msg = audioState();
+      const sig = JSON.stringify([msg.detected, msg.connected, msg.connecting, msg.error, msg.silent, msg.neverHeard,
+        msg.everHeard, msg.selectedDeviceId, msg.inputGain, msg.noiseGate, msg.devices.length, msg.devices[0]?.label]);
       if (sig === lastSig && now - last < 250) return;   // note unchanged → a slow level heartbeat
       last = now; lastSig = sig;
       post('audio', msg);
@@ -266,9 +320,10 @@ function onMessage(m) {
     case 'display':  if (role !== 'hub') replay(() => applyDisplay(m.display)); break;
     case 'audio':
       if (role === 'main') break;
-      audio.detected = m.detected; audio.connected = !!m.connected;
-      audio.rms = m.rms || 0; audio.dbfs = m.dbfs ?? -Infinity;
-      audio.emit();
+      applyAudio(m);
+      break;
+    case 'audio-cmd':
+      if (role === 'main') runMicCommand(m);
       break;
     case 'need-state':
       if (role === 'main') post('state', { to: m.from, state: fullState() });
@@ -307,6 +362,7 @@ export function initSync(r = 'main', opts = {}) {
     else setInterval(() => { if (pcUp && Date.now() - lastPc > GONE_MS) setPc(false); }, 1000);
   }
   if (!chan && !lan) return false;
+  if (role !== 'main') remoteMic();
   if (role !== 'hub') wireBuses();
   lastDisplaySig = JSON.stringify(displayOf());
   if (import.meta.hot && remote) post('vr-hello');

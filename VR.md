@@ -56,7 +56,13 @@ firewall → Node.js → tick Private.)
   open in the headset, the copy's are the ones the PC saves, and the PC's card
   takes them on when the copy closes. Change those options in one place at a
   time — in the headset while it's open there.
-- **Input & Tuner stays on the PC** — it holds the mic.
+- **The mic stays on the PC.** The guitar is plugged in there. A copy of
+  **Input & Tuner** in the headset shows what the PC hears (tuner, levels,
+  which input) and its buttons and knobs work the PC's input — Connect, the
+  input list, gain and gate all happen on the PC. If the browser on the PC
+  has never been allowed the mic, answer that question on the PC once.
+- **Every pedal can be opened.** Under **More pedals** the hub lists the ones
+  not on the PC's board yet; opening one puts it on the PC's board too.
 - **Sound plays where you press play.** Start the Metronome in the headset and
   it clicks in the headset; start it on the PC (or from the Stream Deck) for
   the audio interface. The two Metronomes keep the same tempo either way.
