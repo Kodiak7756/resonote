@@ -1,8 +1,118 @@
 import { NOTES, CHORD_TYPES, KEY_PATTERNS, getChordNotes, getKeyChords, intervalLabel } from '../core/music-theory.js';
 import { showIntervals, setChordHighlight, clearChordHighlight, pedalBus } from '../core/state.js';
 import { findVoicings, renderMiniDiagram, getKeyPositionZones } from '../core/voicings.js';
-import { updateOverlays } from '../ui/fretboard.js';
+import { updateOverlays, geo } from '../ui/fretboard.js';
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
+import { customTuning, getInst } from '../core/tuning.js';
+import { audio } from '../core/audio.js';
+import { pcColor, pcTextOn } from '../core/colors.js';
+import { startStrumCheck, toMidi } from '../core/strum-check.js';
+
+// ── 🎤 Check my strum ────────────────────────────────────────────────
+// The shape on screen, as the strum check wants it: frets low → high, 'x' for
+// a string that shouldn't sound. (customTuning lists strings high → low.)
+function gripFrets(positions) {
+  const ns = customTuning.length;
+  return Array.from({ length: ns }, (_, i) => {
+    const pos = positions.find(x => x.si === ns - 1 - i && x.fret >= 0);
+    return pos ? pos.fret : 'x';
+  });
+}
+const tuningLowHigh = () => [...customTuning].reverse();
+
+// What each verdict looks like. The mark is a SHAPE first (✓ ✕ ! ×) and a
+// solid or dashed ring, so it reads with no colour at all; the app-wide
+// right/wrong inks ride along. Never a note hue: those belong to the notes.
+const SC_MARK = {
+  rang:    { glyph: '✓', ink: 'var(--rk-ok)',  ring: 'solid',  word: 'rang' },
+  missing: { glyph: '✕', ink: 'var(--rk-bad)', ring: 'dashed', word: "didn't ring" },
+  extra:   { glyph: '!', ink: 'var(--rk-bad)', ring: 'solid',  word: "rang, but shouldn't" },
+  muted:   { glyph: '×', ink: 'var(--rk-ink-faint)', ring: null, word: 'stays quiet' },
+};
+const DASH = { solid: '', dashed: ' stroke-dasharray="2.6 2"' };
+const stringLabel = i => { const s = customTuning[customTuning.length - 1 - i]; return s?.label || s?.note || ''; };
+
+// The chord box for the strum check: every note wears its own spectrum colour
+// with its letter on it; the verdict sits above its string as a mark.
+function strumDiagramSVG(frets, res) {
+  const ns = frets.length, sp = 22, left = 22, top = 40, fh = 22;
+  const fretted = frets.filter(f => f !== 'x' && f > 0);
+  const minF = fretted.length ? Math.min(...fretted) : 1, maxF = fretted.length ? Math.max(...fretted) : 1;
+  const start = maxF <= 4 ? 1 : minF, rows = Math.max(4, maxF - start + 1);
+  const w = left * 2 + (ns - 1) * sp, h = top + rows * fh + 22;
+  const tun = tuningLowHigh();
+  const noteAt = (i, f) => NOTES[(((toMidi(tun[i]) + f) % 12) + 12) % 12];
+  let s = `<svg class="sc-diagram" data-frets="${frets.join(',')}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="Strum check for this chord shape">`;
+  if (start === 1) s += `<rect x="${left - 2}" y="${top - 3}" width="${(ns - 1) * sp + 4}" height="4" rx="1" fill="var(--rk-ink-dim)"/>`;
+  else s += `<text x="${left - 8}" y="${top + fh / 2 + 3}" text-anchor="end" font-size="9" fill="var(--rk-ink-mute)" font-family="'JetBrains Mono',monospace">${start}fr</text>`;
+  for (let r = 0; r <= rows; r++) s += `<line x1="${left}" y1="${top + r * fh}" x2="${left + (ns - 1) * sp}" y2="${top + r * fh}" stroke="var(--rk-edge)" stroke-width="${r === 0 ? 1.4 : 0.8}"/>`;
+  for (let i = 0; i < ns; i++) s += `<line x1="${left + i * sp}" y1="${top}" x2="${left + i * sp}" y2="${top + rows * fh}" stroke="var(--rk-ink-faint)" stroke-width="${1.6 - i * 0.18}"/>`;
+  frets.forEach((f, i) => {
+    const x = left + i * sp, st = res?.strings[i]?.status || (f === 'x' ? 'muted' : null);
+    const gone = st === 'missing';
+    if (f !== 'x') {
+      const n = noteAt(i, f), cy = f === 0 ? top - 11 : top + (f - start) * fh + fh / 2, r = f === 0 ? 7 : 8.5;
+      s += `<g opacity="${gone ? 0.38 : 1}"><circle cx="${x}" cy="${cy}" r="${r}" fill="${pcColor(n, 70, 46)}" stroke="${gone ? 'var(--rk-bad)' : 'rgba(0,0,0,.45)'}" stroke-width="${gone ? 1.4 : 1}"${gone ? DASH.dashed : ''}/>`;
+      s += `<text x="${x}" y="${cy + 3}" text-anchor="middle" font-size="${n.length > 1 ? 7 : 8.5}" font-weight="800" font-family="'JetBrains Mono',monospace" fill="${pcTextOn(n)}">${n}</text></g>`;
+    }
+    if (st && SC_MARK[st]) {
+      const m = SC_MARK[st], my = 11;
+      s += `<g class="sc-mark" data-string="${i}" data-status="${st}"><title>${(res?.strings[i]?.name || stringLabel(i))} string: ${m.word}</title>`;
+      if (m.ring) s += `<circle cx="${x}" cy="${my}" r="8" fill="var(--rk-panel)" stroke="${m.ink}" stroke-width="1.4"${DASH[m.ring]}/>`;
+      s += `<text x="${x}" y="${my + 4}" text-anchor="middle" font-size="${m.ring ? 10 : 11}" font-weight="800" fill="${m.ink}">${m.glyph}</text></g>`;
+    }
+    s += `<text x="${x}" y="${h - 6}" text-anchor="middle" font-size="9" fill="var(--rk-ink-mute)" font-family="'JetBrains Mono',monospace">${stringLabel(i)}</text>`;
+  });
+  return s + '</svg>';
+}
+
+// The same verdicts on the main neck, in their own layer above the chord
+// dots, so the neck's redraws (which own names/chord/note layers) leave them be.
+// A full neck rebuild (resize, new instrument) drops the layer; the audio tick
+// puts it back while a result is showing.
+let neckRes = null, neckHooked = false;
+function paintNeckMarks(res) {
+  neckRes = res;
+  if (!neckHooked) {
+    neckHooked = true;
+    audio.on(() => {
+      const g = document.getElementById('strum-ov');
+      if (neckRes && (!g || g !== g.parentNode.lastElementChild)) paintNeckMarks(neckRes);
+    });
+  }
+  const svg = document.getElementById('fb-svg');
+  let g = document.getElementById('strum-ov');
+  if (!res || !svg || getInst().renderer !== 'fretboard' || res.strings.length !== customTuning.length) { if (g) g.innerHTML = ''; return; }
+  if (!g) {
+    g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.id = 'strum-ov';
+    g.setAttribute('pointer-events', 'none');
+  }
+  if (g !== svg.lastElementChild) svg.appendChild(g);
+  const G = geo(), ns = customTuning.length;
+  let h = '';
+  res.strings.forEach(s => {
+    const m = SC_MARK[s.status];
+    if (!m) return;
+    const si = ns - 1 - s.string, y = G.sy(si);
+    const cx = G.fm(s.expected ? s.fret : 0), open = !s.expected || s.fret === 0;
+    // badge up and to the right: clear of the string names left of the nut
+    const r = open ? 14 : 12.5, bx = cx + (open ? 12 : 11), by = y - (open ? 12 : 11);
+    h += `<g class="sc-neck" data-string="${s.string}" data-status="${s.status}">`;
+    if (m.ring && s.expected) h += `<circle cx="${cx}" cy="${y}" r="${r}" fill="none" stroke="${m.ink}" stroke-width="2.2"${DASH[m.ring]}/>`;
+    if (!s.expected && s.status === 'muted') {
+      // on the nut, right of the string names (which sit above the neck);
+      // a plain light ink — the pedal's --rk-ink-* tokens don't reach the neck
+      h += `<circle cx="${bx}" cy="${y}" r="6.4" fill="#15140d" stroke="rgba(235,235,235,.55)" stroke-width="1"/>`;
+      h += `<text x="${bx}" y="${y + 3.5}" text-anchor="middle" font-size="10" font-weight="900" fill="rgba(235,235,235,.8)">${m.glyph}</text>`;
+    } else {
+      h += `<circle cx="${bx}" cy="${by}" r="6.4" fill="#15140d" stroke="${m.ink}" stroke-width="1.2"/>`;
+      h += `<text x="${bx}" y="${by + 3}" text-anchor="middle" font-size="8.5" font-weight="900" fill="${m.ink}">${m.glyph}</text>`;
+    }
+    h += `</g>`;
+  });
+  g.innerHTML = h;
+}
 
 const CD_BLURB = {
   chord: `Pick any chord and see <b>every playable shape</b> for it on the neck. Tap a shape to light it up on the fretboard — the labels show each note's <b>degree</b> (R · 3 · 5 · 7) so you learn what you're fretting, not just where.`,
@@ -30,6 +140,11 @@ export function buildChordContent(p) {
   let selVoicing   = null, voicings = [];
   let keyView      = s.keyView || 'positions';
   let selKeyZone   = null, selZoneChord = null, selKeyVoicing = null, keyPositionData = null;
+
+  // 🎤 Check my strum — on for this pedal until switched off (not saved: it
+  // listens to the input, so it starts each session off). A rebuild keeps it.
+  p._strumCheck?.stop(); p._strumCheck = null;
+  let strumRes = null, strumState = '', strumKey = '';
 
   pedalBus.on(ev => {
     if (!ev.root || ev.source === p.id || !pedalBus.follows(p.type) || !document.getElementById(`body-${p.id}`)) return;
@@ -100,6 +215,7 @@ export function buildChordContent(p) {
       }
     } else { clearChordHighlight(); }
     updateOverlays();
+    syncStrum();
   }
 
   function getSelectedProgressionChord() {
@@ -116,6 +232,68 @@ export function buildChordContent(p) {
       }
     }
     return null;
+  }
+
+  // The one shape the pedal is showing right now, if it is showing one.
+  function currentGrip() {
+    if (getInst().renderer !== 'fretboard') return null;
+    let pos = null, name = '';
+    if (mode === 'chord') {
+      if (view === 'positions' && selVoicing !== null && voicings[selVoicing]) { pos = voicings[selVoicing].positions; name = `${root} ${chordType}`; }
+    } else if (keyView === 'positions') {
+      const zc = selKeyZone !== null && selZoneChord !== null ? keyPositionData?.zones[selKeyZone]?.chords[selZoneChord] : null;
+      if (zc) { pos = zc.positions; name = `${zc.root} ${zc.quality}`; }
+    } else if (keyView === 'chords' && selKeyChord !== null && selKeyVoicing !== null) {
+      const ch = getKeyChords(root, keyMode)[selKeyChord];
+      const v = ch && findVoicings(ch.root, ch.notes, ch.quality)[selKeyVoicing];
+      if (v) { pos = v.positions; name = `${ch.root} ${ch.quality}`; }
+    }
+    if (!pos) return null;
+    const frets = gripFrets(pos);
+    if (!frets.some(f => f !== 'x')) return null;
+    const tuning = tuningLowHigh();
+    return { frets, tuning, name, key: frets.join(',') + '|' + tuning.map(t => t.note + t.octave).join(',') };
+  }
+
+  // Start, retarget or stop the listener to match the toggle and the shape.
+  function syncStrum() {
+    const g = p._strumOn ? currentGrip() : null;
+    if (!g) {
+      p._strumCheck?.stop(); p._strumCheck = null;
+      strumKey = ''; strumRes = null; strumState = '';
+      paintNeckMarks(null);
+      return;
+    }
+    const changed = g.key !== strumKey;
+    if (changed) { strumKey = g.key; strumRes = null; paintNeckMarks(null); }
+    if (!p._strumCheck) {
+      p._strumCheck = startStrumCheck({
+        frets: g.frets, tuning: g.tuning,
+        isAlive: () => el.isConnected,
+        onState: st => { strumState = st; paintStrum(); },
+        onResult: r => { strumRes = r; paintNeckMarks(r); paintStrum(); },
+      });
+    } else if (changed) p._strumCheck.setVoicing(g.frets, g.tuning);
+  }
+
+  function paintStrum() {
+    const box = el.querySelector(`#sc-${p.id}`);
+    if (!box) return;
+    if (!p._strumOn) { box.innerHTML = ''; box.hidden = true; return; }
+    box.hidden = false;
+    const g = currentGrip();
+    let h;
+    if (!g) h = `<div class="sc-line">Pick one of the shapes above, then strum it.</div>`;
+    else if (!audio.connected) h = `<div class="sc-line">Connect your guitar first: open 🎛️ Input &amp; Tuner, pick your interface and hit Connect.</div>`;
+    else {
+      const busy = strumState === 'checking';
+      h = `<div class="sc-line"><span class="sc-dot${busy ? ' is-busy' : ''}"></span>${busy ? 'Listening to that strum…' : strumRes ? `Strum ${g.name} again any time.` : `Strum ${g.name} once and let it ring.`}</div>`;
+      h += `<div class="sc-board">${strumDiagramSVG(g.frets, strumRes)}</div>`;
+      if (strumRes?.tip) h += `<div class="sc-tip${strumRes.ok ? ' is-ok' : ''}">${strumRes.tip.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`;
+      const keys = ['rang', 'missing'].concat(g.frets.includes('x') ? ['extra', 'muted'] : []);
+      h += `<div class="sc-legend">${keys.map(k => `<span><b style="color:${SC_MARK[k].ink}">${SC_MARK[k].glyph}</b> ${SC_MARK[k].word}</span>`).join('')}</div>`;
+    }
+    box.innerHTML = h;
   }
 
   function render() {
@@ -256,10 +434,15 @@ export function buildChordContent(p) {
         h += `<div class="mono" style="color:var(--rk-ink-mute);font-size:calc(10px*var(--ui));text-align:center;padding:8px 0">All notes of ${root} ${keyMode} shown on fretboard</div>`;
       }
     }
+    if (getInst().renderer === 'fretboard') {
+      h += `<button class="rk-chip sc-toggle${p._strumOn ? ' is-active' : ''}" aria-pressed="${!!p._strumOn}" title="Listens to your guitar and shows which strings of this shape rang">🎤 Check my strum</button>`;
+      h += `<div class="sc-box" id="sc-${p.id}" hidden></div>`;
+    }
     h += theoryPanelHTML('chorddir', CD_THEORY);
     h += `</div>`;
     el.innerHTML = h;
     wireTheoryPanel(el);
+    paintStrum();
 
     el.querySelectorAll('[data-mode]').forEach(b => b.onclick = e => { e.stopPropagation(); mode = b.dataset.mode; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; if (mode === 'chord') computeVoicings(); applyHighlight(); render(); });
     el.querySelectorAll('.root-btn').forEach(b => b.onclick = e => { e.stopPropagation(); root = b.dataset.root; selKeyChord = null; selKeyZone = null; selZoneChord = null; selKeyVoicing = null; keyPositionData = null; if (mode === 'chord') computeVoicings(); pedalBus.setKey(root, mode === 'key' ? keyMode : chordType, { source: p.id }); applyHighlight(); render(); });
@@ -276,6 +459,14 @@ export function buildChordContent(p) {
     el.querySelectorAll('.zone-chord-btn').forEach(b => b.onclick = e => { e.stopPropagation(); const zi = parseInt(b.dataset.kz), zci = parseInt(b.dataset.zci); selKeyZone = zi; selZoneChord = selZoneChord === zci ? null : zci; applyHighlight(); render(); });
     el.querySelectorAll('.zone-voicing-card').forEach(b => b.onclick = e => { e.stopPropagation(); const zi = parseInt(b.dataset.kz), zci = parseInt(b.dataset.zci); selKeyZone = zi; selZoneChord = selZoneChord === zci ? null : zci; applyHighlight(); render(); });
     el.querySelectorAll('.key-voicing-card').forEach(b => b.onclick = e => { e.stopPropagation(); const vi = parseInt(b.dataset.kvi); selKeyVoicing = selKeyVoicing === vi ? null : vi; applyHighlight(); render(); });
+    const scBtn = el.querySelector('.sc-toggle');
+    if (scBtn) scBtn.onclick = e => {
+      e.stopPropagation();
+      p._strumOn = !p._strumOn;
+      scBtn.classList.toggle('is-active', p._strumOn);
+      scBtn.setAttribute('aria-pressed', String(p._strumOn));
+      syncStrum(); paintStrum();
+    };
     const sendProg = el.querySelector('.send-prog');
     if (sendProg) sendProg.onclick = e => {
       e.stopPropagation();
