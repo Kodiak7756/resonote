@@ -155,3 +155,30 @@
   transition: all .15s;
 }
 .catalog-add-btn:hover { background: rgba(68,153,255,.25); }
+
+/* ── 🎤 Check my strum (Chord Directory) ─────────────────────────── */
+.sc-toggle { align-self: center; font-size: calc(10px*var(--ui)); padding: 6px 12px; }
+.sc-box {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: var(--rk-panel); border: 1px solid var(--rk-edge-soft);
+  border-radius: 8px; padding: 8px;
+}
+.sc-box[hidden] { display: none; }
+.sc-line {
+  display: flex; align-items: center; gap: 6px; text-align: center;
+  font-size: calc(10px*var(--ui)); line-height: 1.45; color: var(--rk-ink);
+}
+.sc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rk-ink-faint); flex-shrink: 0; }
+.sc-dot.is-busy { background: var(--rk-accent); animation: sc-pulse .5s ease-in-out infinite alternate; }
+@keyframes sc-pulse { from { opacity: .35; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sc-dot.is-busy { animation: none; } }
+.sc-tip {
+  align-self: stretch; font-size: calc(10.5px*var(--ui)); line-height: 1.45; color: var(--rk-ink);
+  border-left: 2px solid var(--rk-bad); background: var(--rk-soft); padding: 6px 8px; border-radius: 4px;
+}
+.sc-tip.is-ok { border-left-color: var(--rk-ok); }
+.sc-legend {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: calc(8.5px*var(--ui)); color: var(--rk-ink-mute);
+}
+.sc-legend b { font-weight: 900; }
