@@ -8,6 +8,7 @@ import { catOfType, qualSuffix, getKeySeventhChords, getBorrowedChords, getSecon
 import { theoryPanelHTML, wireTheoryPanel } from '../ui/theory-panel.js';
 import { encodeMidi, downloadMidi, midiFilename, stringFretToMidi, PPQ } from '../core/midi-writer.js';
 import { bus } from '../core/mixer.js';
+import { feedLoop, clearNowNext } from '../core/now-next.js';
 
 // ── Progression presets (degrees into the diatonic 7) ────────────────
 export const PROG_PRESETS = [
@@ -113,11 +114,13 @@ export function buildProgressionContent(p) {
 
   // Clean up any existing timer from a previous build
   if (p._progIntv)    { clearInterval(p._progIntv); p._progIntv = null; }
-  if (p._progPlaying) { p._progPlaying = false; }
+  if (p._progPlaying) { p._progPlaying = false; clearNowNext('progression'); }
   metroClock.unregisterTransport(p.id);
   metroClock.registerTransport(p.id, () => { if (p._progPlaying) stopPlaying(); });
 
   let step = 0, beat = 0, pCtx = null;
+  const coachGrips = new Map();          // the Now & Next pedal's grips (feedCoach, below)
+  p._progCoach = feedCoach;
   let slavePulse = -1;
   let slaveBeats = 0;
 
@@ -184,6 +187,7 @@ export function buildProgressionContent(p) {
         if (ch) { highlightChord(ch); if (drillMode) drillScore.changes++; }
       }
       updateLiveDisplay();
+      feedCoach(beat);
     }
   });
 
@@ -432,6 +436,7 @@ export function buildProgressionContent(p) {
 
     const ch0 = getGridChordAt(0);
     if (ch0) highlightChord(ch0);
+    feedCoach(0);
 
     // Slave mode — chord advances arrive from metroClock.on
     if (metroClock.masterSource === 'metronome') { p._progIntv = null; render(); return; }
@@ -449,6 +454,7 @@ export function buildProgressionContent(p) {
       const ch = getGridChordAt(beat);
       if (ch && customGrid[beat]) { highlightChord(ch); if (drillMode) drillScore.changes++; }
       updateLiveDisplay();
+      feedCoach(beat);
       beat++;
     }, 60000 / useBpm);
   }
@@ -462,9 +468,24 @@ export function buildProgressionContent(p) {
       metroClock.playing = false;
       metroClock.setBeat(0, metroClock.pattern?.[0] || 'accent');
     }
+    clearNowNext('progression');
     clearChordHighlight();
     updateOverlays();
     render();
+  }
+
+  // The Now & Next pedal: the painted grid already IS one entry per beat. Each
+  // chord goes with the grip highlightChord puts on the neck (the active
+  // position's voicing), worked out once per chord rather than on every beat.
+  // Only the newest build feeds it (an older build's clock listener lingers).
+  function feedCoach(b) {
+    if (p._progCoach !== feedCoach) return;
+    const withGrip = c => {
+      const k = [c.root, c.quality, c.numeral, positionZone, root, keyType].join('|');
+      if (!coachGrips.has(k)) { const z = applyZoneToChord(c) || c; coachGrips.set(k, { ...c, positions: z.positions ? assignFingers(z.positions) : null }); }
+      return coachGrips.get(k);
+    };
+    feedLoop('progression', customGrid.map(c => c && withGrip(c)), b, { beatsPerBar, bpm: metroClock.bpm });
   }
 
   // ── Live playhead update (no full re-render) ─────────────────────────

@@ -1,0 +1,176 @@
+/* ── Now & Next (pedals/now-next-coach.js) ──────────────────────────────
+   Read at a glance, often from arm's length in the headset, so it is sized
+   from its own box: every length below is in container units (cqw/cqh/cqmin),
+   with a px floor for a pedal squeezed small on the board. Bigger window,
+   bigger everything. Two layouts: stacked (a tall pedal on the board) and
+   side by side (a wide window, as the headset opens it).
+   Colours: the pedal's own kit tokens for the chrome; note colours only from
+   core/colors.js, set inline by the pedal, always with the letter. */
+
+.nn {
+  container: nn / size;
+  height: 100%;
+  overflow: hidden;
+  color: var(--rk-ink);
+  font-family: 'JetBrains Mono', monospace;
+}
+.nn-in {
+  height: 100%;
+  display: grid;
+  gap: 2cqmin;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1.6fr) minmax(0, 1fr) auto;
+  grid-template-areas: "top" "now" "next" "beats";
+}
+
+.nn-top {
+  grid-area: top;
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: max(calc(9px*var(--ui)), 3.4cqmin);
+  font-weight: 700; letter-spacing: .08em;
+  color: var(--rk-ink-dim);
+  white-space: nowrap; overflow: hidden;
+}
+
+.nn-panel {
+  position: relative;
+  min-height: 0; min-width: 0;
+  display: grid;
+  gap: .6cqmin 3cqmin;
+  padding: 2cqmin 2.8cqmin;
+  border-radius: 2.4cqmin;
+  background: var(--rk-panel);
+  border: max(1px, .45cqmin) solid var(--rk-edge-soft);
+  overflow: hidden;
+}
+.nn-tag {
+  grid-area: tag;
+  font-size: max(calc(8px*var(--ui)), 3.4cqmin);
+  font-weight: 800; letter-spacing: .22em;
+  color: var(--rk-ink-mute);
+}
+.nn-name {
+  grid-area: name;
+  font-weight: 800; line-height: 1; letter-spacing: -.02em;
+  color: #f4f4f6;
+  white-space: nowrap;
+}
+.nn-name b { font-weight: 800; }
+.nn-sub, .nn-when, .nn-stay {
+  font-size: max(calc(9px*var(--ui)), 3.4cqmin);
+  color: var(--rk-ink-dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nn-sub { grid-area: sub; }
+.nn-when { grid-area: when; }
+.nn-stay { grid-area: name; font-size: max(calc(11px*var(--ui)), 5cqmin); color: var(--rk-ink); align-self: center; }
+.nn-chart { grid-area: chart; display: flex; align-items: center; justify-content: flex-start; min-height: 0; min-width: 0; }
+/* a chart takes all the height its panel leaves it (each panel ends in a 1fr row) */
+.nn-chart svg { display: block; height: 100%; width: auto; max-width: 100%; }
+.nn-chart text { font-family: 'JetBrains Mono', monospace; font-weight: 800; }
+.nn-chart .nn-dot { font-size: 11px; }
+.nn-chart .nn-x   { font-size: 15px; fill: #c4c4cc; }
+.nn-chart .nn-fr  { font-size: 15px; fill: #e6e6ea; }
+.nn-notes { display: flex; flex-wrap: wrap; gap: 1.2cqmin; align-content: center; }
+.nn-notes span { font-weight: 800; font-size: max(12px, 4.6cqmin); padding: .6cqmin 1.6cqmin; border-radius: 1.2cqmin; }
+
+/* ── stacked (a tall pedal) ─────────────────────────────────────────── */
+/* NOW: the name across the top, its grip filling the rest of the panel */
+.nn-now {
+  grid-area: now;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  grid-template-areas: "tag" "name" "sub" "chart";
+}
+.nn-now .nn-big { font-size: max(22px, min(14cqh, calc(84cqw / (var(--len) * .62)))); padding: .4cqmin 0; }
+.nn-now .nn-chart { justify-content: center; padding-top: 1cqmin; }
+
+/* NEXT: name and when on the left, the grip, then the count */
+.nn-next {
+  grid-area: next;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "tag chart count" "name chart count" "when chart count";
+}
+.nn-next .nn-small { font-size: max(15px, min(8.5cqh, calc(30cqw / (var(--len) * .62)))); }
+.nn-next .nn-when { align-self: start; }
+.nn-next .nn-chart { align-items: flex-start; }
+.nn-next .nn-chart svg { max-height: min(17cqh, 28cqw); }   /* NEXT's grip stays smaller than NOW's */
+.nn-count {
+  grid-area: count;
+  align-self: center;
+  min-width: .7em;              /* the space is kept when empty, so nothing jumps on 3 */
+  font-size: max(30px, min(17cqh, 22cqw));
+  font-weight: 800; line-height: 1; text-align: center;
+  color: var(--rk-hot);
+}
+
+/* ── side by side (a wide window — the headset) ─────────────────────── */
+@container nn (min-aspect-ratio: 6/5) {
+  .nn-in {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "top top" "now next" "beats beats";
+  }
+  .nn-now .nn-big { font-size: max(22px, min(21cqh, calc(50cqw / (var(--len) * .62)))); }
+  .nn-next {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
+    grid-template-areas: "tag count" "name count" "when count" "chart chart";
+  }
+  .nn-next .nn-small { font-size: max(15px, min(12cqh, calc(28cqw / (var(--len) * .62)))); }
+  .nn-next .nn-chart { padding-top: 1.4cqmin; }
+  .nn-next .nn-chart svg { max-height: min(34cqh, 28cqw); }
+  .nn-count { font-size: max(30px, min(22cqh, 15cqw)); }
+}
+
+/* ── the beats of the bar ───────────────────────────────────────────── */
+.nn-beats {
+  grid-area: beats;
+  display: flex; justify-content: center; align-items: center;
+  gap: min(2cqmin, calc(12cqw / var(--n, 4)));
+  padding-bottom: .5cqmin;
+}
+.nn-beats i {
+  font-style: normal; font-weight: 800;
+  width: max(22px, min(10cqmin, calc(70cqw / var(--n, 4)))); aspect-ratio: 1;
+  display: grid; place-items: center;
+  font-size: max(10px, min(4.6cqmin, calc(32cqw / var(--n, 4))));
+  border-radius: 50%;
+  border: max(1px, .5cqmin) solid var(--rk-edge);
+  color: var(--rk-ink-mute);
+  background: var(--rk-panel);
+  transition: transform .08s ease;
+}
+.nn-beats i.one { border-color: var(--rk-line); }
+.nn-beats i.on { background: var(--rk-hot); border-color: var(--rk-hot); color: #121214; transform: scale(1.12); }
+.nn-beats.nn-wait { font-size: max(calc(9px*var(--ui)), 3.6cqmin); color: var(--rk-ink-dim); }
+
+/* ── the countdown: the NEXT panel lights up as the change comes ────── */
+.nn[data-count="3"] .nn-next,
+.nn[data-count="2"] .nn-next { border-color: var(--rk-line); }
+.nn[data-count="1"] .nn-next { border-color: var(--rk-hot); box-shadow: inset 0 0 0 max(1px, .4cqmin) var(--rk-hot); background: var(--rk-soft2); }
+.nn[data-count="1"] .nn-count { color: #fff; }
+.nn[data-count="3"] .nn-when, .nn[data-count="2"] .nn-when, .nn[data-count="1"] .nn-when { color: var(--rk-hot); font-weight: 800; }
+.nn-next.nn-none { opacity: .75; }
+
+/* the change itself: NEXT has just become NOW */
+.nn-now.nn-flip { animation: nn-flip .5s ease-out; }
+@keyframes nn-flip {
+  from { border-color: var(--rk-hot); box-shadow: inset 0 0 0 999px var(--rk-soft2); }
+  to   { border-color: var(--rk-edge-soft); box-shadow: inset 0 0 0 999px transparent; }
+}
+
+/* ── nothing playing ────────────────────────────────────────────────── */
+.nn-empty {
+  grid-row: 1 / -1; grid-column: 1 / -1;
+  align-self: center; justify-self: center;
+  max-width: 34em; padding: 4cqmin;
+  text-align: center; line-height: 1.45;
+  font-family: 'Instrument Sans', system-ui, sans-serif;
+  color: var(--rk-ink-dim);
+}
+.nn-empty b { display: block; margin-bottom: 2cqmin; font-size: max(15px, 7cqmin); color: var(--rk-ink); }
+.nn-empty p { margin: 0 0 1.6cqmin; font-size: max(12px, 4.6cqmin); }
+.nn-empty span { color: var(--rk-ink); font-weight: 700; }
+.nn-empty .nn-also { font-size: max(11px, 3.6cqmin); color: var(--rk-ink-mute); }

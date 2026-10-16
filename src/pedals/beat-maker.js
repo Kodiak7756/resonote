@@ -5,6 +5,7 @@ import { GENRES, GENRE_NAMES, genreChords, compOf } from '../core/genres.js';
 import { playChordNotes } from '../core/synth.js';
 import { setChordHighlight, clearChordHighlight } from '../core/state.js';
 import { updateOverlays } from '../ui/fretboard.js';
+import { feedLoop, clearNowNext } from '../core/now-next.js';
 import { bus } from '../core/mixer.js';
 import { createPulse, audioCtx, clickSound } from '../core/pulse.js';
 import { DRUM_PIECES, PIECE, LEGACY_KEYS, DRUM_MIDI_MAPS, playDrum, stepVel, drumOut,
@@ -150,6 +151,7 @@ export function buildBeatMakerContent(p) {
   // A rebuild stops the beat, as it always has.
   if (p._bmPulse) p._bmPulse.stop();
   closeRun();
+  if (p._bmPlaying) clearNowNext('beatmaker');
   p._bmPlaying = false;
   (p._bmOff || []).forEach(off => off());
   p._bmOff = [];
@@ -234,7 +236,15 @@ export function buildBeatMakerContent(p) {
   }
   function stopChords() {
     compBar = 0;
+    clearNowNext('beatmaker');
     if (s.bmFull) { clearChordHighlight(); updateOverlays(); }
+  }
+  // The Now & Next pedal: the chart as one entry per beat (a chord on each bar's
+  // first beat), and the beat now sounding.
+  function feedCoach(beat) {
+    if (!s.bmFull || !chordBars.length) return;
+    feedLoop('beatmaker', chordBars.flatMap(c => [c, null, null, null]), compBar * 4 + beat,
+      { beatsPerBar: 4, bpm: p._bmPulse?.bpm || metroClock.bpm });
   }
 
   // ── The sequencer ─────────────────────────────────────────────────
@@ -332,6 +342,7 @@ export function buildBeatMakerContent(p) {
       const beatIdx = Math.floor(inBar / 4) % Math.max(1, metroClock.ts || 4);
       metroClock.playing = true;
       metroClock.setBeat(beatIdx, metroClock.pattern?.[beatIdx] || (beatIdx === 0 ? 'accent' : 'regular'));
+      feedCoach(inBar / 4);
     }
     // while recording, the grid follows the playhead so every hit is seen landing
     if (drumEdit.mode === 'rec' && bars > 1) {
