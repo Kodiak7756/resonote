@@ -6,6 +6,8 @@
 // None of them know anything about pedals. They hand {cmd, args} to main.js,
 // which owns the only implementation.
 
+import { ON_PC } from './sync.js';
+
 const KEYMAP = {
   F13:'play',       F14:'metro/toggle', F15:'bpm/down',  F16:'bpm/up',
   F17:'panic',      F18:'loop',         F19:'loop/a',    F20:'loop/b',
@@ -49,8 +51,11 @@ export function initRemote({ apply, state }) {
 
   // The Stream Deck bridge rides the dev server's own socket -- no new port,
   // no new process. import.meta.hot is undefined in a production build, so
-  // this whole block is dev-only.
-  if (import.meta.hot) {
+  // this whole block is dev-only. The socket now also reaches other machines
+  // (the headset, VR.md), so only the PC's own window answers the deck: a copy
+  // of Resonote opened anywhere else must neither act on a key press nor
+  // report its state over the PC's.
+  if (import.meta.hot && ON_PC) {
     import.meta.hot.on('resonote:deck', d => d?.cmd && apply(d.cmd, d.args || {}));
     const push = () => { try { import.meta.hot.send('resonote:deck-state', state()); } catch (_) {} };
     push();

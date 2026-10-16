@@ -4,3 +4,5 @@ dist/
 .DS_Store
 Thumbs.db
 dev-assets/
+# the headset's https certificate, made by the dev server on first run (VR.md)
+dev-cert/

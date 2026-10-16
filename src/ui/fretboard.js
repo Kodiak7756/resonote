@@ -901,7 +901,13 @@ function everyFretOf(note, src = {}) {
   return out;
 }
 
+// Called on every redraw so core/sync.js can publish what the neck shows to a
+// popped-out window. Kept as a hook so this file never imports the sync module.
+let overlayHook = null;
+export function setOverlayHook(fn) { overlayHook = fn; }
+
 export function updateOverlays() {
+  if (overlayHook) overlayHook();
   if (getInst().renderer === 'keyboard') return updateKeyboardOverlays();
   if (getInst().renderer === 'hex')      return updateHexOverlays();
 

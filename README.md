@@ -18,6 +18,7 @@ Then open **http://localhost:5173**. On Windows you can double-click `START-RESO
 - **The mic only works on `localhost` or `https`.** If you open the app over a plain `http://192.168…` address, the tuner and listen-to-advance features won't be able to hear you. Use `localhost` on the same machine, or host it over https.
 - **Your data lives in your browser.** Everything you write — pieces, board layout, settings — is stored in the browser's local storage for `localhost:5173`. Clearing site data clears it. **Export your Songbook** (Practice Manager → 📖 Songbook → ⬇ Export) before you clear anything or move machines, and ⬆ Import it on the other side.
 - **Nothing is locked.** FREE / PRO / STUDIO on the pedals are just labels for now.
+- **In a VR headset (Meta Quest).** While the dev server runs, the headset's browser can open each pedal (and the neck) as its own window, live with the PC, at the `Quest:` address the terminal prints (`https://<this PC>:5443/vr`). See [VR.md](VR.md).
 - Fonts load from Google Fonts; offline it falls back to system fonts and keeps working.
 
 ## Where things are
