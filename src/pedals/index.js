@@ -19,6 +19,7 @@ import { buildImprovLabContent } from './improv-lab.js';
 import { buildWriteItContent } from './write-it.js';
 import { buildMirrorContent }    from './mirror.js';
 import { buildRhythmGameContent } from './rhythm-game.js';
+import { buildNowNextContent } from './now-next-coach.js';
 
 // Ordered by tier so the + PEDALS drawer reads as a ladder: Basic (reference &
 // utilities) → Pro (the learning system) → Studio (production & recording).
@@ -60,6 +61,7 @@ export const CATALOG = [
   { type:'mirror',      family:'reference', title:'Mirror',                         icon:'🎹', color:'#141b1d', accent:'#59a0b8', desc:'See what you are playing on another instrument — the same notes drawn on a piano keyboard or a second neck in any tuning', w:340, h:300, tier:'free'   },
   { type:'rhythmgame',  family:'drill',     title:'Rhythm Game',                    icon:'🎮', color:'#1f2319', accent:'#b3bf70', desc:'Tap along to real rhythm notation scrolling past a hit line — click + figure audible, judged to the millisecond, best scores kept per pattern', w:360, h:560, tier:'free'   },
   { type:'workouts',    family:'drill',     title:'Workouts',                       icon:'🏋', color:'#202318', accent:'#a6ba6c', desc:'One-tap position practices: random open chords, upper & mid triads, CAGED runs, 3nps, broken 3rds — beat-synced or 🎤 listen-to-advance (build your own in PRO)', w:310, h:560, tier:'free'   },
+  { type:'nownext',     family:'utility',   title:'Now & Next',                     icon:'⏭️', color:'#1f1816', accent:'#c38874', desc:'The chord to play now and the one coming next, big enough to read while you play — each with its grip, the beats of the bar and a 3 · 2 · 1 count to the change. Shows whatever the Backing Track, Workouts, Improv Lab or Progression Studio is playing; open it in the headset to look up instead of down', w:320, h:500, tier:'free'   },
   // ── PRO — understand & improve ─────────────────────────────────────
   { type:'theory',      family:'study',     title:'Theory Path',                    icon:'🧭', color:'#18231b', accent:'#73bd85', desc:'Guided music theory, basics → advanced. Find your level, then learn each concept with a teach card + a practical scored exercise', w:470, h:690, tier:'pro'    },
   { type:'practice',    family:'drill',     title:'Practice Manager',               icon:'📋', color:'#1e2117', accent:'#9cb15a', desc:'Structure sessions, track progress & build streaks',                      w:280, h:420, tier:'pro'    },
@@ -71,7 +73,7 @@ export const CATALOG = [
   { type:'writeit',     family:'create',    title:'Write It',                       icon:'✍️', color:'#1f161d', accent:'#c97bb5', desc:'A drill format for COMPOSING: pick a mode, get its one-line recipe and the two-chord vamp that proves it, then write 8 bars to a constraint card (start note, end note, pitch budget, one leap). Tap your answer on the neck, hear it over the vamp, keep it.', w:340, h:660, tier:'pro'    },
   // ── STUDIO — make & record music ───────────────────────────────────
   { type:'beatmaker',   family:'record',    title:'Backing Track',                  icon:'🥁', color:'#1b1823', accent:'#b9acdf', desc:'Beats only or a full backing track. Pick a genre and it loads the groove, the mode, the tempo and the chords in your key — Blues, Rock, Reggae, Funk, Jazz, Pop, Latin, Hip Hop, EDM, Swancore. Or build your own beat on the full kit — kick, snare, hi-hats, three toms, two crashes, ride — in a 1, 2 or 4-bar grid, or play it in live from the 🥁 Drums instrument.', w:320, h:640, tier:'studio' },
-  { type:'amp',         family:'utility',   title:'Amp Modeler',                    icon:'🔊', color:'#1f1816', accent:'#c38874', desc:'Guitar amp tones with gain, EQ, reverb & cabinet simulation',             w:280, h:400, tier:'studio', studioOnly:1 },
+  { type:'amp',         family:'utility',   title:'Amp Modeler',                    icon:'🔊', color:'#1d1614', accent:'#bc7862', desc:'Guitar amp tones with gain, EQ, reverb & cabinet simulation',             w:280, h:400, tier:'studio', studioOnly:1 },
   { type:'looper',      family:'record',    title:'Looper',                         icon:'🔄', color:'#191721', accent:'#a99ad8', desc:'Record, layer & loop audio tracks with overdub',                           w:280, h:380, tier:'studio', studioOnly:1 },
   { type:'reaper',      family:'record',    title:'REAPER Bridge',                  icon:'🌉', color:'#18161f', accent:'#9a88d1', desc:'Two-way bridge to your DAW — export progressions & beats as MIDI for REAPER, and analyze REAPER renders: tempo, key & every note mapped onto the fretboard', w:360, h:600, tier:'studio' },
 ];
@@ -112,6 +114,7 @@ const BUILDERS = {
   writeit:     buildWriteItContent,
   mirror:      buildMirrorContent,
   rhythmgame:  buildRhythmGameContent,
+  nownext:     buildNowNextContent,
 };
 
 export function buildContent(p) {
