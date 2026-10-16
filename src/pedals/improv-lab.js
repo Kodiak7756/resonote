@@ -18,6 +18,7 @@ import { audio } from '../core/audio.js';
 import { createListener } from '../core/listen.js';
 import { CURRICULUM } from '../curriculum/curriculum-data.js';
 import { bus } from '../core/mixer.js';
+import { chordClock, clearNowNext } from '../core/now-next.js';
 
 // BOARD colours, not pedal chrome. setChordHighlight / setNowBanner paint the
 // main fretboard, which sits outside this pedal's card and so cannot inherit
@@ -309,10 +310,15 @@ export function buildImprovLabContent(p) {
     const notes = c.notes || getChordNotes(c.root, chordFormula(c.quality));
     playChordNotes(notes, { gain: 0.13, dur: (c.beats || 4) * jam.spb * 0.95, strum: 0.03 });
     showJamChord(c, next);
+    // the Now & Next pedal counts this chord's beats from here (the groove is 4/4)
+    const beat0 = jam.pos || 0;
+    jam.pos = beat0 + (c.beats || 4);
+    chordClock('improvlab', { now: { ...c, notes, hint: `land on ${thirdOf(c.root, c.quality)} (3rd)` }, next,
+      beats: c.beats || 4, bpm: jam.bpm, beat0: beat0 % 4, beatsPerBar: 4 });
     jam.chordTimer = setTimeout(() => { if (!jam) return; jam.ci = (jam.ci + 1) % jam.prog.length; fireChord(); }, (c.beats || 4) * jam.spb * 1000);
   }
   function stopJam() {
-    if (jam) { clearTimeout(jam.chordTimer); clearInterval(jam.grooveTimer); jam = null; }
+    if (jam) { clearTimeout(jam.chordTimer); clearInterval(jam.grooveTimer); jam = null; clearNowNext('improvlab'); }
   }
 
   // ── render ──────────────────────────────────────────────────────────
