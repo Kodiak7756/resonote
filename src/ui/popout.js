@@ -42,6 +42,10 @@ export const REMOTE = VR && !!VR_REF;
 export const POPOUT = REMOTE ? VR_REF : query.get('popout');
 export const NECK = 'neck';
 export const canPopOut = type => type !== 'audio';
+// A headset window is a COPY — the PC keeps its own card, mic and all — so every
+// pedal can have one, the Input pedal included: its copy works the PC's mic by
+// remote (core/sync.js remoteMic).
+const inHeadset = () => true;
 
 const popped = new Map();        // main window: pedal id → its Window (null if found after a reload)
 const viewers = new Map();       // main window: headset window id → { id: pedal id (or 'neck'), at }
@@ -177,9 +181,25 @@ function findByRef(ref) {
   const all = deps.pedals();
   return all.find(p => p.id === ref) || all.find(p => p.type === ref) || null;
 }
+// …and if the headset asks for a pedal the board doesn't have, put one on the
+// board here first, so every pedal in the catalog can be opened from the hub.
+function findOrAdd(ref) {
+  let p = findByRef(ref);
+  if (!p && deps.addPedal && deps.catalog?.some(c => c.type === ref)) {
+    deps.addPedal(ref);
+    p = findByRef(ref);
+  }
+  return p;
+}
+// The rest of the catalog: what the hub offers under "More pedals".
+function moreList() {
+  const on = new Set(deps.pedals().map(p => p.type));
+  return (deps.catalog || []).filter(c => !on.has(c.type))
+    .map(c => ({ ref: c.type, type: c.type, title: c.title, icon: c.icon || '', accent: c.accent || '' }));
+}
 function boardList() {
   const all = deps.pedals();
-  return all.filter(p => canPopOut(p.type)).map(p => {
+  return all.filter(p => inHeadset(p.type)).map(p => {
     const c = deps.catalog?.find(e => e.type === p.type) || {};
     return { id: p.id, type: p.type, ref: refOf(p, all), title: c.title || p.type, icon: c.icon || '', accent: c.accent || '',
              docked: !!p.minimized, here: viewerCount(p.id) };
@@ -191,13 +211,13 @@ export const hasViewers = id => viewerCount(id) > 0;
 function onHeadset(m) {
   switch (m.kind) {
     case 'vr-board?':
-      post('vr-board', { to: m.from, board: boardList(), neckHere: viewerCount(NECK) });
+      post('vr-board', { to: m.from, board: boardList(), more: moreList(), neckHere: viewerCount(NECK) });
       break;
     case 'vr-need-pedal': {
-      const p = findByRef(m.ref);
+      const p = findOrAdd(m.ref);
       const c = p && deps.catalog?.find(e => e.type === p.type);
-      post('vr-pedal', { to: m.from, ref: m.ref, found: !!(p && canPopOut(p.type)),
-        pedal: p && canPopOut(p.type) ? { id: p.id, type: p.type, w: p.w, h: p.h, settings: p.settings || {} } : null,
+      post('vr-pedal', { to: m.from, ref: m.ref, found: !!(p && inHeadset(p.type)),
+        pedal: p && inHeadset(p.type) ? { id: p.id, type: p.type, w: p.w, h: p.h, settings: p.settings || {} } : null,
         title: c?.title || '', icon: c?.icon || '' });
       break;
     }

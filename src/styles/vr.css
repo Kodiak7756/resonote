@@ -82,6 +82,8 @@ body.vr-hub-page #app { display: none; }
 #vr-hub header .vr-link { margin-left: auto; font-size: 18px; padding: 10px 18px; }
 #vr-hub .vr-live { margin-top: 14px; color: #9a9aa8; font-size: 18px; }
 #vr-hub h1 { margin: 26px 0 14px; font-size: 22px; font-weight: 700; color: #bbb; }
+#vr-hub h2.vr-more { margin: 30px 0 12px; font-size: 18px; font-weight: 700; color: #bbb; }
+#vr-hub h2.vr-more span { font-weight: 400; font-size: 14px; color: #888; }
 
 .vr-row {
   display: flex; align-items: center; gap: 18px;
