@@ -8,8 +8,9 @@
 import { NOTES } from './music-theory.js';
 
 // ── minimal iterative radix-2 complex FFT ────────────────────────────
+// (exported: the strum check in strum-check.js reuses it and hann())
 const _twiddles = new Map();
-function fft(re, im, invert = false) {
+export function fft(re, im, invert = false) {
   const n = re.length;
   for (let i = 1, j = 0; i < n; i++) {
     let bit = n >> 1;
@@ -42,7 +43,7 @@ function fft(re, im, invert = false) {
   if (invert) for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
 }
 
-function hann(n) {
+export function hann(n) {
   const w = new Float64Array(n);
   for (let i = 0; i < n; i++) w[i] = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / (n - 1));
   return w;
